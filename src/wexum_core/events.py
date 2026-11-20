@@ -14,10 +14,16 @@ class EventEnvelope:
     occurred_at: datetime
 
     def __post_init__(self) -> None:
-        if not self.event_type.strip() or not self.tenant_id.strip():
-            raise ValueError("event_type and tenant_id are required")
-        if self.schema_revision < 1:
-            raise ValueError("schema_revision must be positive")
+        if not isinstance(self.event_id, UUID) or self.event_id.int == 0:
+            raise ValueError("event_id must be a nonzero UUID")
+        if not isinstance(self.event_type, str) or not self.event_type.strip():
+            raise ValueError("event_type is required")
+        if not isinstance(self.tenant_id, str) or not self.tenant_id.strip():
+            raise ValueError("tenant_id is required")
+        if type(self.schema_revision) is not int or self.schema_revision < 1:
+            raise ValueError("schema_revision must be a positive integer")
+        if not isinstance(self.occurred_at, datetime):
+            raise ValueError("occurred_at must be a datetime")
         if self.occurred_at.tzinfo is None or self.occurred_at.utcoffset() is None:
             raise ValueError("occurred_at must include a timezone")
 
