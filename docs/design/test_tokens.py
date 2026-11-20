@@ -1,6 +1,5 @@
 """Negative and positive tests for the proposed semantic token contract."""
 
-import copy
 import json
 import unittest
 
