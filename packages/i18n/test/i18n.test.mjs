@@ -60,7 +60,7 @@ test('CLDR plural choices for Arabic zero, two and few', () => {
   const t=runtime('ar-SA',['en-US','ar-SA']);
   assert.equal(t.t('vpn.count',{count:0}),'لا أجهزة');
   assert.equal(t.t('vpn.count',{count:2}),'جهازان');
-  assert.equal(t.t('vpn.count',{count:3}),'3 أجهزة');
+  assert.equal(t.t('vpn.count',{count:3}),`${new Intl.NumberFormat('ar-SA').format(3)} أجهزة`);
 });
 test('select branch and fallback', () => {
   assert.equal(runtime('en-US').t('vpn.state',{status:'connected'}),'Connected');
@@ -128,6 +128,10 @@ test('catalog mutations after runtime construction cannot change reviewed text',
   input['vpn.hello'].params.push('secret');
   assert.equal(i18n.t('vpn.hello',{name:'Alex'}),'Hello, Alex!');
   assert.equal(i18n.t('vpn.count',{count:1}),'1 device');
+});
+test('numbers inside translated patterns use selected locale digits',()=>{
+  const arRuntime=runtime('ar-SA',['en-US','ar-SA']);
+  assert.equal(arRuntime.t('vpn.count',{count:11}),`${new Intl.NumberFormat('ar-SA').format(11)} جهازًا`);
 });
 test('compiled runtime is immutable at the public API level',()=>{
   const i18n=runtime('en-US');
