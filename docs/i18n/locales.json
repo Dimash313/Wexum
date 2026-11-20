@@ -1,0 +1,855 @@
+{
+  "schema": 1,
+  "defaultLocale": "en-US",
+  "translationStatusNote": "Planned only; no language is asserted to have a published translation",
+  "languageDefaults": {
+    "en": "en-US",
+    "ru": "ru-RU",
+    "kk": "kk-KZ",
+    "ar": "ar-SA",
+    "es": "es-ES",
+    "pt": "pt-BR",
+    "fr": "fr-FR",
+    "de": "de-DE",
+    "it": "it-IT",
+    "tr": "tr-TR",
+    "hi": "hi-IN",
+    "id": "id-ID",
+    "zh": "zh-Hans-CN",
+    "ja": "ja-JP",
+    "ko": "ko-KR",
+    "ur": "ur-PK",
+    "sr": "sr-Cyrl-RS",
+    "pa": "pa-Guru-IN",
+    "uz": "uz-Latn-UZ",
+    "bn": "bn-BD"
+  },
+  "scriptDefaults": {
+    "zh-Hans": "zh-Hans-CN",
+    "zh-Hant": "zh-Hant-TW",
+    "sr-Latn": "sr-Latn-RS",
+    "sr-Cyrl": "sr-Cyrl-RS",
+    "uz-Cyrl": "uz-Cyrl-UZ",
+    "uz-Latn": "uz-Latn-UZ",
+    "pa-Arab": "pa-Arab-PK",
+    "pa-Guru": "pa-Guru-IN"
+  },
+  "locales": [
+    {
+      "tag": "en-US",
+      "nameEnglish": "English (United States)",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": null
+    },
+    {
+      "tag": "en-GB",
+      "nameEnglish": "English (United Kingdom)",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ru-RU",
+      "nameEnglish": "Russian",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "kk-KZ",
+      "nameEnglish": "Kazakh",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ar-SA",
+      "nameEnglish": "Arabic (Saudi Arabia)",
+      "direction": "rtl",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "es-ES",
+      "nameEnglish": "Spanish (Spain)",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "es-MX",
+      "nameEnglish": "Spanish (Mexico)",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "es-ES"
+    },
+    {
+      "tag": "pt-BR",
+      "nameEnglish": "Portuguese (Brazil)",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "pt-PT",
+      "nameEnglish": "Portuguese (Portugal)",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "pt-BR"
+    },
+    {
+      "tag": "fr-FR",
+      "nameEnglish": "French (France)",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "de-DE",
+      "nameEnglish": "German (Germany)",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "it-IT",
+      "nameEnglish": "Italian",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "tr-TR",
+      "nameEnglish": "Turkish",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "hi-IN",
+      "nameEnglish": "Hindi",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "id-ID",
+      "nameEnglish": "Indonesian",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "zh-Hans-CN",
+      "nameEnglish": "Chinese (Simplified)",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "zh-Hant-TW",
+      "nameEnglish": "Chinese (Traditional)",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ja-JP",
+      "nameEnglish": "Japanese",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ko-KR",
+      "nameEnglish": "Korean",
+      "direction": "ltr",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ur-PK",
+      "nameEnglish": "Urdu",
+      "direction": "rtl",
+      "tier": "priority",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "fr-CA",
+      "nameEnglish": "French (Canada)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "fr-FR"
+    },
+    {
+      "tag": "es-AR",
+      "nameEnglish": "Spanish (Argentina)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "es-ES"
+    },
+    {
+      "tag": "en-IN",
+      "nameEnglish": "English (India)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "en-AU",
+      "nameEnglish": "English (Australia)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "de-AT",
+      "nameEnglish": "German (Austria)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "de-DE"
+    },
+    {
+      "tag": "nl-NL",
+      "nameEnglish": "Dutch",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "pl-PL",
+      "nameEnglish": "Polish",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "uk-UA",
+      "nameEnglish": "Ukrainian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ro-RO",
+      "nameEnglish": "Romanian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "cs-CZ",
+      "nameEnglish": "Czech",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "sk-SK",
+      "nameEnglish": "Slovak",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "hu-HU",
+      "nameEnglish": "Hungarian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "el-GR",
+      "nameEnglish": "Greek",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "sv-SE",
+      "nameEnglish": "Swedish",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "nb-NO",
+      "nameEnglish": "Norwegian Bokmål",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "da-DK",
+      "nameEnglish": "Danish",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "fi-FI",
+      "nameEnglish": "Finnish",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "et-EE",
+      "nameEnglish": "Estonian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "lv-LV",
+      "nameEnglish": "Latvian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "lt-LT",
+      "nameEnglish": "Lithuanian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "sl-SI",
+      "nameEnglish": "Slovenian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "hr-HR",
+      "nameEnglish": "Croatian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "bs-Latn-BA",
+      "nameEnglish": "Bosnian (Latin)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "sr-Cyrl-RS",
+      "nameEnglish": "Serbian (Cyrillic)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "sr-Latn-RS",
+      "nameEnglish": "Serbian (Latin)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "bg-BG",
+      "nameEnglish": "Bulgarian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "sq-AL",
+      "nameEnglish": "Albanian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "mk-MK",
+      "nameEnglish": "Macedonian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "th-TH",
+      "nameEnglish": "Thai",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "vi-VN",
+      "nameEnglish": "Vietnamese",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ms-MY",
+      "nameEnglish": "Malay",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "fil-PH",
+      "nameEnglish": "Filipino",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "bn-BD",
+      "nameEnglish": "Bengali (Bangladesh)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ta-IN",
+      "nameEnglish": "Tamil",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "te-IN",
+      "nameEnglish": "Telugu",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ml-IN",
+      "nameEnglish": "Malayalam",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "mr-IN",
+      "nameEnglish": "Marathi",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "gu-IN",
+      "nameEnglish": "Gujarati",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "pa-Guru-IN",
+      "nameEnglish": "Punjabi (Gurmukhi)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ne-NP",
+      "nameEnglish": "Nepali",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "si-LK",
+      "nameEnglish": "Sinhala",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "my-MM",
+      "nameEnglish": "Burmese",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "km-KH",
+      "nameEnglish": "Khmer",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "lo-LA",
+      "nameEnglish": "Lao",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "fa-IR",
+      "nameEnglish": "Persian",
+      "direction": "rtl",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "he-IL",
+      "nameEnglish": "Hebrew",
+      "direction": "rtl",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ps-AF",
+      "nameEnglish": "Pashto",
+      "direction": "rtl",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ar-EG",
+      "nameEnglish": "Arabic (Egypt)",
+      "direction": "rtl",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "ar-SA"
+    },
+    {
+      "tag": "az-Latn-AZ",
+      "nameEnglish": "Azerbaijani (Latin)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "uz-Latn-UZ",
+      "nameEnglish": "Uzbek (Latin)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ky-KG",
+      "nameEnglish": "Kyrgyz",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ka-GE",
+      "nameEnglish": "Georgian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "hy-AM",
+      "nameEnglish": "Armenian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "mn-MN",
+      "nameEnglish": "Mongolian",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "sw-KE",
+      "nameEnglish": "Swahili (Kenya)",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "am-ET",
+      "nameEnglish": "Amharic",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ha-NG",
+      "nameEnglish": "Hausa",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "yo-NG",
+      "nameEnglish": "Yoruba",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ig-NG",
+      "nameEnglish": "Igbo",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "zu-ZA",
+      "nameEnglish": "Zulu",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "af-ZA",
+      "nameEnglish": "Afrikaans",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "so-SO",
+      "nameEnglish": "Somali",
+      "direction": "ltr",
+      "tier": "growth",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "de-CH",
+      "nameEnglish": "German (Switzerland)",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "de-DE"
+    },
+    {
+      "tag": "fr-BE",
+      "nameEnglish": "French (Belgium)",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "fr-FR"
+    },
+    {
+      "tag": "fr-CH",
+      "nameEnglish": "French (Switzerland)",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "fr-FR"
+    },
+    {
+      "tag": "es-CO",
+      "nameEnglish": "Spanish (Colombia)",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "es-ES"
+    },
+    {
+      "tag": "es-CL",
+      "nameEnglish": "Spanish (Chile)",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "es-ES"
+    },
+    {
+      "tag": "ar-MA",
+      "nameEnglish": "Arabic (Morocco)",
+      "direction": "rtl",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "ar-SA"
+    },
+    {
+      "tag": "ar-AE",
+      "nameEnglish": "Arabic (UAE)",
+      "direction": "rtl",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "ar-SA"
+    },
+    {
+      "tag": "bn-IN",
+      "nameEnglish": "Bengali (India)",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "bn-BD"
+    },
+    {
+      "tag": "pa-Arab-PK",
+      "nameEnglish": "Punjabi (Shahmukhi)",
+      "direction": "rtl",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ckb-IQ",
+      "nameEnglish": "Central Kurdish (Sorani)",
+      "direction": "rtl",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ug-CN",
+      "nameEnglish": "Uyghur",
+      "direction": "rtl",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "dv-MV",
+      "nameEnglish": "Dhivehi",
+      "direction": "rtl",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "uz-Cyrl-UZ",
+      "nameEnglish": "Uzbek (Cyrillic)",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "tg-TJ",
+      "nameEnglish": "Tajik",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "is-IS",
+      "nameEnglish": "Icelandic",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "mt-MT",
+      "nameEnglish": "Maltese",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ga-IE",
+      "nameEnglish": "Irish",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "eu-ES",
+      "nameEnglish": "Basque",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "ca-ES",
+      "nameEnglish": "Catalan",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    },
+    {
+      "tag": "gl-ES",
+      "nameEnglish": "Galician",
+      "direction": "ltr",
+      "tier": "later",
+      "translationStatus": "planned",
+      "fallback": "en-US"
+    }
+  ]
+}
