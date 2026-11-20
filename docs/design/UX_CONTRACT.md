@@ -25,7 +25,7 @@ Status: proposed. This policy is a handoff guide, not an implemented component l
 
 ## Accessibility and localization
 - Target WCAG 2.2 AA for applicable web UI and platform-native accessibility guidance for Android/iOS/Desktop.
-- Every interactive control: keyboard operation, visible focus, programmatic label and minimum 48 logical units target where feasible.
+- Every interactive control: keyboard operation, visible focus, programmatic label and minimum 48 logical units target where feasible. Use an offset focus ring so it remains visually distinct from a filled primary button; test it in both color modes.
 - Never convey success/error/connection state through color alone; combine labels and clear icons.
 - Honor reduced-motion, zoom, font scaling, high-contrast preferences and OS control conventions.
 - Plan RU, EN, KZ and AR. Do not hardcode text layout order; RTL flips logical layout but not universally meaningful icons or numeric content.
