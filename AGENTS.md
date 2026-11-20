@@ -4,7 +4,7 @@ This document is binding for every ChatGPT, Codex and other coding agent working
 
 ## Mandatory read order for every new session
 1. Inspect current repository, branch, status, latest commits and open PRs/issues. Do not assume the task is unfinished.
-2. Read this file, `README.md`, `docs/engineering/STATE.md`, `docs/architecture/SYSTEM.md`, `docs/architecture/BOUNDARIES.md`, `docs/engineering/QUALITY.md` and `docs/policy/RELIGIOUS_REVIEW.md`.
+2. Read this file, `README.md`, `docs/engineering/STATE.md`, `docs/architecture/SYSTEM.md`, `docs/architecture/BOUNDARIES.md`, `docs/engineering/QUALITY.md`, `docs/engineering/REVIEW_PROTOCOL.md`, and `docs/policy/RELIGIOUS_REVIEW.md`.
 3. Read the relevant product specification and its assigned GitHub issue, dependencies and PRs.
 4. Identify the smallest independently testable change; state the touched paths and risks before coding.
 5. Read recent changes in touched files; never discard or overwrite another agent's work.
@@ -29,3 +29,9 @@ Summarize: issue and scope; files touched; behavior; security/privacy impact; in
 ## Source of truth
 GitHub issues track assignments and acceptance criteria; PRs track proposed code; ADRs track architectural decisions; `docs/engineering/STATE.md` tracks the integrated baseline, not aspirational work. Use cross-references instead of duplicating mutable progress reports.
 
+
+## Agent onboarding and task intake
+- Resume instructions: `docs/engineering/AGENT_START.md`. Use `.github/ISSUE_TEMPLATE/agent_task.yml` for coding tasks and `architecture_decision.yml` for cross-boundary changes.
+- A claimed task is not permission to implement a missing security/ethical/legal precondition. Resolve blockers first.
+- No direct `main` changes. An administrator must activate repository rules; a YAML document alone cannot enforce approvals or status checks.
+- Security concerns must follow `SECURITY.md` and never be publicly exposed in issue bodies.
