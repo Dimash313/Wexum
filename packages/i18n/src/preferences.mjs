@@ -170,6 +170,8 @@ export function createLanguageController({registry, publishedLocales, getSystemL
     refresh() {
       return enqueue(async () => {
         if (!snapshot) throw new Error('Initialize language controller first');
+        // A manual choice stays stable without querying an unrelated OS source.
+        if (override) return snapshot;
         return commit(calculate(await readSystem()));
       });
     },
@@ -183,15 +185,17 @@ export function createLanguageController({registry, publishedLocales, getSystemL
         // Persist before changing the in-memory state; report storage failures.
         await store.save(canonical);
         override = canonical;
-        return commit(calculate(await readSystem()));
+        const entry = registry.locales.find(item => item.tag === canonical);
+        return commit(Object.freeze({locale: canonical, direction: entry.direction, mode: 'manual'}));
       });
     },
     useSystemLanguage() {
       return enqueue(async () => {
         if (!snapshot) throw new Error('Initialize language controller first');
+        const languages = await readSystem();
         await store.clear();
         override = null;
-        return commit(calculate(await readSystem()));
+        return commit(calculate(languages));
       });
     },
   });
