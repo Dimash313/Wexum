@@ -40,6 +40,16 @@ class AuthorizationTests(unittest.TestCase):
         p = Principal("alice", {"org-a": frozenset({"admin"})})
         self.assertFalse(authorize(p, Resource(ResourceKind.ORGANIZATION, "org-b"), Action.READ).allowed)
 
+    def test_roles_are_immutable_snapshot(self):
+        roles = {"org-a": {"viewer"}}
+        principal = Principal("alice", roles)
+        roles["org-a"].add("admin")
+        roles["org-b"] = {"admin"}
+        self.assertFalse(authorize(principal, Resource(ResourceKind.ORGANIZATION, "org-a"), Action.MANAGE).allowed)
+        self.assertFalse(authorize(principal, Resource(ResourceKind.ORGANIZATION, "org-b"), Action.MANAGE).allowed)
+        with self.assertRaises(TypeError):
+            principal.organization_roles["org-a"] = frozenset({"admin"})
+
     def test_unknown_role_denied(self):
         p = Principal("alice", {"org-a": frozenset({"superuser"})})
         self.assertFalse(authorize(p, Resource(ResourceKind.ORGANIZATION, "org-a"), Action.READ).allowed)
