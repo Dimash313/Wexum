@@ -58,10 +58,14 @@ class DesignTokenTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate(self.data)
 
-    def test_not_production_approved_by_default(self):
-        self.data["status"] = "approved"
+    def test_invalid_status_rejected(self):
+        self.data["status"] = "certified-perfect"
         with self.assertRaises(ValueError):
             validate(self.data)
+
+    def test_status_changes_require_governance_not_token_logic(self):
+        self.data["status"] = "approved"
+        validate(self.data)
 
     def test_contrast_is_symmetric(self):
         self.assertEqual(contrast_ratio("#FFFFFF", "#000000"), 21.0)
