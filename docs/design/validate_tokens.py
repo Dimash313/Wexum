@@ -39,8 +39,8 @@ def _nonnegative_scale(value: Any, *, strict: bool) -> bool:
 
 
 def validate(data: dict[str, Any]) -> None:
-    if data.get("status") != "proposed":
-        raise ValueError("tokens must be explicitly marked proposed until reviewed")
+    if data.get("status") not in ("proposed", "approved"):
+        raise ValueError("token status must be proposed or approved; approval requires independent review")
 
     modes = data.get("color")
     if not isinstance(modes, dict) or set(modes) != _MODES:
