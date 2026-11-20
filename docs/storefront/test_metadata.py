@@ -46,6 +46,10 @@ class StorefrontMetadataTests(unittest.TestCase):
         self.data['listings'][0]['status'] = 'published'
         self.assertIn('no published state', str(self.check()))
 
+    def test_malformed_status_does_not_crash_validator(self):
+        self.data['listings'][0]['status'] = []
+        self.assertIn('no published state', str(self.check()))
+
     def test_invalid_product_identifier(self):
         self.data['product'] = '../different'
         self.assertIn('Invalid product', str(self.check()))
