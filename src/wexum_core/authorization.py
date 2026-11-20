@@ -6,6 +6,7 @@ authenticate the principal and load trusted tenant membership before calling it.
 
 from dataclasses import dataclass, field
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Mapping
 
 
@@ -31,6 +32,10 @@ _ROLE_ACTIONS: Mapping[str, frozenset[Action]] = {
 class Principal:
     user_id: str
     organization_roles: Mapping[str, frozenset[str]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        snapshot = {tenant: frozenset(roles) for tenant, roles in self.organization_roles.items()}
+        object.__setattr__(self, "organization_roles", MappingProxyType(snapshot))
 
 
 @dataclass(frozen=True, slots=True)
