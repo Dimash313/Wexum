@@ -28,7 +28,7 @@ Status: proposed. This policy is a handoff guide, not an implemented component l
 - Every interactive control: keyboard operation, visible focus, programmatic label and minimum 48 logical units target where feasible. Use an offset focus ring so it remains visually distinct from a filled primary button; test it in both color modes.
 - Never convey success/error/connection state through color alone; combine labels and clear icons.
 - Honor reduced-motion, zoom, font scaling, high-contrast preferences and OS control conventions.
-- Plan RU, EN, KZ and AR. Do not hardcode text layout order; RTL flips logical layout but not universally meaningful icons or numeric content.
+- Plan broad internationalization, not just RU/EN/KK/AR: the separate i18n workstream (#44; stacked PR #45) maintains 102 planned regional locales across 81 languages. Use canonical BCP 47 tags (e.g., `kk-KZ`, never `KZ` as a language code). Do not hardcode text layout order; RTL flips logical layout but not universally meaningful icons or numeric content. No locale is marketed as supported before reviewed translations exist.
 - Dates, numbers, money and plural forms use locale-aware presentation; do not infer the language from country alone.
 - Persisted form drafts and autosave require trustworthy failure indication and no silent data loss.
 
