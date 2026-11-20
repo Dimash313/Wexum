@@ -233,3 +233,36 @@ test('calls before initialization are rejected',async()=>{
   await assert.rejects(c.setLanguage('es-ES'),/Initialize/);
   await assert.rejects(c.useSystemLanguage(),/Initialize/);
 });
+
+test('manual selection succeeds even when OS language adapter is unavailable after startup',async()=>{
+  let systemReady=true;
+  const store=memoryStore();
+  const c=createLanguageController({registry,publishedLocales:published,store,
+    getSystemLanguages:()=>systemReady?['en-US']:Promise.reject(new Error('system unavailable'))});
+  await c.initialize();
+  systemReady=false;
+  assert.equal((await c.setLanguage('ar-SA')).locale,'ar-SA');
+  assert.equal((await c.refresh()).locale,'ar-SA');
+  assert.equal(store.stored,'ar-SA');
+});
+test('reset failure reading system does not silently clear stored preference',async()=>{
+  let systemReady=true;
+  const store=memoryStore('ar-SA');
+  const c=createLanguageController({registry,publishedLocales:published,store,
+    getSystemLanguages:()=>systemReady?['es-MX']:Promise.reject(new Error('system unavailable'))});
+  await c.initialize();
+  systemReady=false;
+  await assert.rejects(c.useSystemLanguage(),/system unavailable/);
+  assert.equal(store.stored,'ar-SA');
+  assert.equal(c.current.locale,'ar-SA');
+});
+test('manual selection is unchanged by changes in system language',async()=>{
+  const store=memoryStore('es-ES');
+  let calls=0;
+  const c=createLanguageController({registry,publishedLocales:published,store,
+    getSystemLanguages:()=>{calls++;return ['ar-SA'];}});
+  await c.initialize();
+  await c.refresh();
+  assert.equal(c.current.locale,'es-ES');
+  assert.equal(calls,1);
+});
