@@ -116,12 +116,16 @@ function selectLocale(preferred, registry, published) {
   return null;
 }
 
-function fill(pattern, args, declared) {
+function fill(pattern, args, declared, numberFormatter) {
   return pattern.replace(PLACEHOLDER, (_match, name) => {
     if (!declared.includes(name) || !Object.hasOwn(args, name)) throw new TypeError(`Missing message argument: ${name}`);
     const value = args[name];
     if (value === null || value === undefined || (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean')) {
       throw new TypeError(`Invalid value for message argument: ${name}`);
+    }
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) throw new TypeError(`Invalid finite numeric argument: ${name}`);
+      return numberFormatter.format(value);
     }
     return String(value);
   });
@@ -143,6 +147,7 @@ export function createI18n(config) {
   if (!entry || !['ltr', 'rtl'].includes(entry.direction)) fail('locale direction missing');
   const catalog = snapshotCatalog(catalogs[locale]);
   const plural = new Intl.PluralRules(locale);
+  const numberFormatter = new Intl.NumberFormat(locale);
 
   return Object.freeze({
     locale,
@@ -168,7 +173,7 @@ export function createI18n(config) {
         if (typeof choice !== 'string') throw new TypeError('Select argument must be a string');
         pattern = Object.hasOwn(msg.forms, choice) ? msg.forms[choice] : msg.forms.other;
       }
-      return fill(pattern, args, msg.params);
+      return fill(pattern, args, msg.params, numberFormatter);
     },
     number(value, options) { return new Intl.NumberFormat(locale, options).format(value); },
     date(value, options) { return new Intl.DateTimeFormat(locale, options).format(value); },
