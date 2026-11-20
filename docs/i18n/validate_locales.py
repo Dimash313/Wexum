@@ -59,7 +59,7 @@ def validate_registry(data: dict) -> None:
         if "en-US" not in traversed:
             raise ValueError("fallback must reach default locale")
 
-    for group, prefix in (("languageDefaults", "language"), ("scriptDefaults", "script")):
+    for group in ("languageDefaults", "scriptDefaults"):
         mappings = data.get(group)
         if not isinstance(mappings, dict):
             raise ValueError("missing locale default mappings")
@@ -86,7 +86,7 @@ def resolve_locale(preferred: str | None, published: set[str], data: dict) -> st
     canonical = by_lower.get(preferred.lower())
     subtags = preferred.split("-")
     if canonical is None and len(subtags) >= 2:
-        canonical = data["scriptDefaults"].get("-".join(subtags[:2]).replace(subtags[1], subtags[1].title()))
+        canonical = data["scriptDefaults"].get(f"{subtags[0].lower()}-{subtags[1].title()}")
     if canonical is None:
         canonical = data["languageDefaults"].get(subtags[0].lower(), data["defaultLocale"])
 
