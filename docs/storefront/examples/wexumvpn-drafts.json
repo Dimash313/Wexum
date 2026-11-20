@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "product": "WexumVPN",
+  "publicationStatus": "draft",
+  "description": "Internal demonstration drafts only. Not approved for publishing or represented as completed translations.",
+  "listings": [
+    {
+      "store": "google-play",
+      "uiLocale": "en-US",
+      "storeLocale": "en-US",
+      "status": "draft",
+      "metadata": {
+        "title": "WexumVPN",
+        "shortDescription": "VPN application currently in development",
+        "fullDescription": "WexumVPN is an application project under development. Its functionality and availability have not been verified for a public release. This text is an internal draft, not a store listing."
+      },
+      "screenshots": [],
+      "review": {}
+    },
+    {
+      "store": "google-play",
+      "uiLocale": "es-ES",
+      "storeLocale": "es-ES",
+      "status": "draft",
+      "metadata": {
+        "title": "WexumVPN",
+        "shortDescription": "Aplicación VPN en desarrollo",
+        "fullDescription": "WexumVPN es un proyecto de aplicación en desarrollo. Sus funciones y disponibilidad no se han verificado para un lanzamiento público. Este texto es un borrador interno."
+      },
+      "screenshots": [],
+      "review": {}
+    },
+    {
+      "store": "google-play",
+      "uiLocale": "ru-RU",
+      "storeLocale": "ru-RU",
+      "status": "draft",
+      "metadata": {
+        "title": "WexumVPN",
+        "shortDescription": "VPN-приложение в разработке",
+        "fullDescription": "WexumVPN — проект приложения в разработке. Его функции и доступность пока не подтверждены для публичного запуска. Этот текст — внутренний черновик."
+      },
+      "screenshots": [],
+      "review": {}
+    },
+    {
+      "store": "google-play",
+      "uiLocale": "ar-SA",
+      "storeLocale": "ar-SA",
+      "status": "draft",
+      "metadata": {
+        "title": "WexumVPN",
+        "shortDescription": "تطبيق VPN قيد التطوير",
+        "fullDescription": "WexumVPN مشروع تطبيق قيد التطوير. لم يتم التحقق من وظائفه أو توفره للإصدار العام. هذا النص مسودة داخلية وليس وصفاً منشوراً."
+      },
+      "screenshots": [],
+      "review": {}
+    },
+    {
+      "store": "app-store",
+      "uiLocale": "en-US",
+      "storeLocale": "en-US",
+      "status": "draft",
+      "metadata": {
+        "name": "WexumVPN",
+        "subtitle": "VPN project in development",
+        "description": "WexumVPN is a project under development. Its functionality and availability have not been verified for a public release. This description is an internal draft and must not be submitted to App Store Connect.",
+        "keywords": "vpn,project,development",
+        "promotionalText": ""
+      },
+      "screenshots": [],
+      "review": {}
+    },
+    {
+      "store": "app-store",
+      "uiLocale": "es-ES",
+      "storeLocale": "es-ES",
+      "status": "draft",
+      "metadata": {
+        "name": "WexumVPN",
+        "subtitle": "Proyecto VPN en desarrollo",
+        "description": "WexumVPN es un proyecto en desarrollo. Sus funciones y disponibilidad no se han verificado para el lanzamiento público. Esta descripción es un borrador interno.",
+        "keywords": "vpn,proyecto,desarrollo",
+        "promotionalText": ""
+      },
+      "screenshots": [],
+      "review": {}
+    },
+    {
+      "store": "app-store",
+      "uiLocale": "ru-RU",
+      "storeLocale": "ru-RU",
+      "status": "draft",
+      "metadata": {
+        "name": "WexumVPN",
+        "subtitle": "VPN в разработке",
+        "description": "WexumVPN — проект приложения в разработке. Функции и доступность пока не подтверждены для публичного запуска. Описание — внутренний черновик, не готовый к публикации.",
+        "keywords": "vpn,проект,разработка",
+        "promotionalText": ""
+      },
+      "screenshots": [],
+      "review": {}
+    },
+    {
+      "store": "app-store",
+      "uiLocale": "ar-SA",
+      "storeLocale": "ar-SA",
+      "status": "draft",
+      "metadata": {
+        "name": "WexumVPN",
+        "subtitle": "مشروع VPN قيد التطوير",
+        "description": "WexumVPN مشروع قيد التطوير. لم يتم التحقق من وظائفه أو توفره للإصدار العام. هذا الوصف مسودة داخلية ولم تتم مراجعته للنشر.",
+        "keywords": "vpn,مشروع,تطوير",
+        "promotionalText": ""
+      },
+      "screenshots": [],
+      "review": {}
+    }
+  ]
+}
