@@ -96,7 +96,7 @@ def validate_manifest(manifest: object, ui_locales: set[str]) -> list[str]:
             if pair in seen:
                 issues.append(f'{prefix}: duplicate store/locale')
             seen.add(pair)
-        if entry.get('status') not in APPROVED_STATUS:
+        if not isinstance(entry.get('status'), str) or entry['status'] not in APPROVED_STATUS:
             issues.append(f'{prefix}: unknown release status; no published state permitted')
         fields = entry.get('metadata')
         if not isinstance(fields, dict):
