@@ -28,3 +28,14 @@ export function createI18n(config: {
   publishedLocales: string[];
   preferredLocale?: string;
 }): I18nRuntime;
+
+export {
+  browserLanguagePreferences,
+  browserPreferenceStore,
+  resolveLanguage,
+  createLanguageController,
+  type LanguageController,
+  type LocaleMode,
+  type SelectedLanguage,
+  type PreferenceStore,
+} from './preferences.mjs';
