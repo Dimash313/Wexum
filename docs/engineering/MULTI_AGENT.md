@@ -28,6 +28,13 @@ Contract decisions → platform and test harness → independent modules → int
 
 These lanes can be active simultaneously only after shared contracts and cross-platform review are approved. Avoid assigning two agents the same files; e.g. all VPN contracts are integrator-owned in `docs/vpn/`.
 
+## Dedicated interface/UX ownership (do not skip)
+- **VPN UI/UX (#39):** `docs/vpn/ux/` and approved `packages/vpn-design/` contracts; owns UX flows, states, accessibility, design handoff and localized experience. Android/iOS/Desktop client teams implement native UI in their own paths, but **must not independently design contradictory interaction states**.
+- **Platform design system (#40):** `docs/design/` and approved `packages/design-system/`; owns shared tokens, accessible components, responsive layouts, UX standards and compatibility policy across 22 apps and Hub.
+- These two tracks extend the ten VPN engineering lanes: **10 engineering lanes + 1 VPN UX design lane**, with a separate cross-ecosystem design-system lane.
+- UX approval must cover true VPN connection-state messaging. No product team claims a live tunnel based on mocked UI state.
+- Product-specific UX tasks must be created before feature implementation and should explicitly follow the platform design-system API.
+
 ## Agent startup prompt
 "Open Dimash313/Wexum. Read AGENTS.md and the mandatory architecture/quality/policy documents. Fetch current main, open issues and PRs. Work ONLY on GitHub issue #<number> within its owned paths in a dedicated branch. Provide tests and PR; do not merge or claim unverified readiness. Report blockers rather than guessing."
 
