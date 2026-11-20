@@ -179,3 +179,5 @@ export function createI18n(config) {
     date(value, options) { return new Intl.DateTimeFormat(locale, options).format(value); },
   });
 }
+
+export {browserLanguagePreferences, browserPreferenceStore, resolveLanguage, createLanguageController} from './preferences.mjs';
