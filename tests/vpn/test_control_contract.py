@@ -20,6 +20,8 @@ CONTROL_SRC = Path(os.environ.get('WEXUM_VPN_CONTROL_SRC', str(DEFAULT_CONTROL))
 CONTROL_READY = (CONTROL_SRC / 'wexum_vpn_control/__init__.py').is_file()
 if os.environ.get('WEXUM_VPN_CONTROL_SRC') and not CONTROL_READY:
     raise RuntimeError('explicit WEXUM_VPN_CONTROL_SRC has no wexum_vpn_control package')
+if os.environ.get('WEXUM_VPN_REQUIRE_CONTRACTS') == '1' and not CONTROL_READY:
+    raise RuntimeError('required Control Plane source is absent; contract suite cannot skip')
 if CONTROL_READY:
     sys.path.insert(0, str(CONTROL_SRC))
     from wexum_vpn_control import (
@@ -186,6 +188,26 @@ class ControlPlaneContractTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn('unique_sensitive_key_123456', hashes)
         self.assertEqual(len(hashes[0]), 64)
 
+    def _make_store_unavailable(self):
+        # Stable and OS-independent: connect() cannot create a missing parent.
+        self.store.path = Path(self.temp.name) / 'missing_parent' / 'control.db'
+
+    async def test_regression_sqlite_open_failure_maps_to_service_error_on_enroll(self):
+        self._make_store_unavailable()
+        with self.assertRaises(EnrollmentUnavailable):
+            await self.enroll()
+
+    async def test_regression_sqlite_open_failure_maps_to_service_error_on_list(self):
+        self._make_store_unavailable()
+        with self.assertRaises(EnrollmentUnavailable):
+            self.service.list_devices(actor=principal())
+
+    async def test_regression_sqlite_open_failure_maps_to_service_error_on_revoke(self):
+        device = await self.enroll()
+        self._make_store_unavailable()
+        with self.assertRaises(EnrollmentUnavailable):
+            self.service.revoke_device(actor=principal(), device_id=device.device_id)
+
     async def test_regression_recent_active_device_not_hidden_by_history(self):
         """Known #2/#56 blocker: PR #55 currently truncates 200 oldest rows."""
         for i in range(200):
@@ -195,7 +217,7 @@ class ControlPlaneContractTests(unittest.IsolatedAsyncioTestCase):
                 now=instant, expires_at=instant+timedelta(minutes=1), max_devices=1)
         active = await self.enroll(key='latest_active_key_123456')
         visible_ids = {item.device_id for item in self.service.list_devices(actor=principal())}
-        self.assertIn(active.device_id, visible_ids, 'active device hidden by history pagination')
+        self.assertTrue(active.device_id in visible_ids, 'active device hidden by history pagination')
 
 
 if __name__ == '__main__':
