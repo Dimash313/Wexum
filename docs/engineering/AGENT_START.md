@@ -12,6 +12,12 @@ Paste this message to a fresh coding agent:
 >
 > Write minimal, readable and testable code. Add negative, tenant-isolation and failure tests where relevant. Report exact commands, observed results, unresolved security/privacy/legal/religious risks and a PR link. A passing CI run is not 10/10. If blocked, report the blocker and stop rather than fabricate progress. Do not invent product release labels before actual release.
 
+## CTO continuation in a fresh chat
+
+The owner may simply write **«Продолжаем дальше»**. For an agent acting as CTO / integrator, this is a directive to **take the next safe technical action now**, not to ask for a PR number or a fresh assignment. Read [the mandatory CTO protocol](CTO_OPERATING_PROTOCOL.md), root `AGENTS.md`, current GitHub issues/PRs, dependencies and exact-head CI. Choose the highest-priority actionable blocker, carry out a scoped fix/test/integration/audit handoff, and report verifiable results. Escalate only owner-authority decisions. Do not skip release or independent review gates.
+
+A product-lane agent remains bound to its explicitly assigned issue; the CTO protocol does not give all other agents unlimited file ownership.
+
 ## Roles
 - **Product architect:** decomposes a product epic into independent, testable child issues and reviews interface decisions.
 - **Subsystem engineer:** implements one issue within its owned files.
