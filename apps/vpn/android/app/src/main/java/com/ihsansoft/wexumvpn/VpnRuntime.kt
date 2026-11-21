@@ -1,6 +1,6 @@
 package com.ihsansoft.wexumvpn
 
-/** Process-local state only; never persisted as an indicator of network protection. */
+/** In-memory only: process restarts cannot restore a protected flag or an engine session. */
 internal object VpnRuntime {
     val state = ConnectionStateMachine()
 }

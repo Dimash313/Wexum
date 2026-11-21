@@ -1,31 +1,55 @@
 package com.ihsansoft.wexumvpn
 
+import java.util.concurrent.CountDownLatch
+import kotlin.concurrent.thread
+
 fun main() {
-    val machine = ConnectionStateMachine()
-    check(machine.current().phase == ConnectionPhase.DISCONNECTED)
-    check(!machine.tunnelVerified(TunnelEvidence(true, true, true, true)))
-    check(machine.current().phase == ConnectionPhase.DISCONNECTED)
-    machine.requestConsent()
-    check(machine.current().phase == ConnectionPhase.AWAITING_CONSENT)
-    machine.permissionDenied()
-    check(machine.current().failure == ConnectionFailure.PERMISSION_DENIED)
-    machine.requestConsent()
-    machine.permissionGranted()
-    check(machine.current().phase == ConnectionPhase.READY)
-    check(machine.beginConnecting())
-    check(!machine.tunnelVerified(TunnelEvidence(true, true, true, false)))
-    check(machine.current().phase == ConnectionPhase.ERROR)
-    machine.permissionGranted()
-    check(machine.beginConnecting())
-    check(machine.tunnelVerified(TunnelEvidence(true, true, true, true)))
-    check(machine.current().phase == ConnectionPhase.PROTECTED)
-    machine.networkLost()
-    check(machine.current().phase == ConnectionPhase.INTERRUPTED)
-    machine.revoked()
-    check(machine.current().phase == ConnectionPhase.DISCONNECTED)
-    machine.transportUnavailable()
-    check(machine.current().failure == ConnectionFailure.ENGINE_UNAVAILABLE)
-    machine.disconnect()
-    check(machine.current().phase == ConnectionPhase.DISCONNECTED)
-    println("PASS: fail-closed Kotlin state-machine smoke checks")
+    val s = ConnectionStateMachine()
+    check(s.current().phase == ConnectionPhase.DISCONNECTED)
+    val initial = s.user.beginConsent()!!
+    check(s.user.beginConsent() == null)
+    check(s.user.resolveConsent(initial, false))
+    check(s.current().failure == ConnectionFailure.PERMISSION_DENIED)
+    check(s.service.openEngineSession() == null)
+    val attempt = s.user.beginConsent()!!
+    check(!s.user.resolveConsent(initial, true))
+    check(s.user.resolveConsent(attempt, true))
+    check(s.current().phase == ConnectionPhase.PERMISSION_READY)
+    val session = s.service.openEngineSession()!!
+    check(s.service.onEngineSignal(session, EngineSignal.STARTING))
+    check(s.current().phase == ConnectionPhase.CONNECTING)
+    check(s.service.onEngineSignal(session, EngineSignal.INTERRUPTED))
+    check(s.current().phase == ConnectionPhase.INTERRUPTED)
+    check(s.current().phase != ConnectionPhase.PROTECTED)
+    s.service.permissionRevoked()
+    check(!s.service.onEngineSignal(session, EngineSignal.STARTING))
+    check(s.current().phase == ConnectionPhase.DISCONNECTED)
+    check(s.current().failure == ConnectionFailure.PERMISSION_REVOKED)
+    val second = s.user.beginConsent()!!
+    s.service.serviceStopped()
+    check(!s.user.resolveConsent(second, true))
+    check(s.current().phase == ConnectionPhase.DISCONNECTED)
+    val fresh = ConnectionStateMachine()
+    var notifications = 0
+    val subscription = fresh.observe { notifications++ }
+    fresh.service.engineUnavailable()
+    check(notifications == 2)
+    subscription.close()
+    fresh.service.permissionRevoked()
+    check(notifications == 2)
+    // Permission grant and revoke from separate threads: final state must be safe.
+    repeat(100) {
+        val race = ConnectionStateMachine()
+        val id = race.user.beginConsent()!!
+        val ready = CountDownLatch(1)
+        val t = thread { ready.await(); race.user.resolveConsent(id, true) }
+        val t2 = thread { ready.await(); race.service.permissionRevoked() }
+        ready.countDown()
+        t.join(); t2.join()
+        check(race.current().phase != ConnectionPhase.PROTECTED)
+        // The OS permission recheck at resume is authoritative for the local UI.
+        race.user.reconcileOsPermission(false)
+        check(race.current().phase == ConnectionPhase.DISCONNECTED)
+    }
+    println("PASS: permission, service, observer, stale-callback and concurrency smoke")
 }

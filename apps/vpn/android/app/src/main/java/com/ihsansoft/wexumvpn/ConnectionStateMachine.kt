@@ -1,95 +1,164 @@
 package com.ihsansoft.wexumvpn
 
+import java.util.concurrent.atomic.AtomicLong
+
+/** The UI may read these phases. PROTECTED is intentionally unreachable in this scaffold. */
 enum class ConnectionPhase {
-    DISCONNECTED, AWAITING_CONSENT, READY, CONNECTING, PROTECTED, INTERRUPTED, ERROR
+    DISCONNECTED, AWAITING_CONSENT, PERMISSION_READY, CONNECTING, PROTECTED, INTERRUPTED, ERROR
 }
 
 enum class ConnectionFailure {
-    PERMISSION_DENIED, ENGINE_UNAVAILABLE, UNVERIFIED_TUNNEL
+    PERMISSION_DENIED, PERMISSION_REVOKED, CONSENT_FLOW_FAILED, ENGINE_UNAVAILABLE, ENGINE_FAILED
 }
 
 data class ConnectionSnapshot(
-    val phase: ConnectionPhase,
+    val phase: ConnectionPhase = ConnectionPhase.DISCONNECTED,
     val failure: ConnectionFailure? = null,
+    val revision: Long = 0L,
 )
 
-/** Future engine input; booleans alone are not a substitute for a verified tunnel. */
-internal data class TunnelEvidence(
-    val tunEstablished: Boolean,
-    val gatewayAuthenticated: Boolean,
-    val trafficVerified: Boolean,
-    val dnsVerified: Boolean,
-) {
-    fun isComplete(): Boolean =
-        tunEstablished && gatewayAuthenticated && trafficVerified && dnsVerified
-}
+/** No CONNECTED/VERIFIED event until independently reviewed tunnel verification exists. */
+internal enum class EngineSignal { STARTING, INTERRUPTED, STOPPED, FAILED }
 
-/** In-memory and fail-closed: process restart never restores a protected state. */
+/**
+ * Thread-safe process-local state. A UI actor cannot send engine events via UserPort.
+ * Engine session identity is only a stale-callback guard, NEVER server-side authorization.
+ */
 class ConnectionStateMachine {
-    private var snapshot = ConnectionSnapshot(ConnectionPhase.DISCONNECTED)
+    private val lock = Any()
+    private var snapshot = ConnectionSnapshot()
+    private var pendingConsent: Long? = null
+    private var activeEngineSession: Long? = null
+    private val counter = AtomicLong(0L)
+    private val listeners = LinkedHashMap<Long, () -> Unit>()
 
-    @Synchronized
-    fun current(): ConnectionSnapshot = snapshot
+    val user: UserPort = UserPort()
+    internal val service: ServicePort = ServicePort()
 
-    @Synchronized
-    fun requestConsent() {
-        if (snapshot.phase != ConnectionPhase.PROTECTED) {
-            snapshot = ConnectionSnapshot(ConnectionPhase.AWAITING_CONSENT)
+    fun current(): ConnectionSnapshot = synchronized(lock) { snapshot }
+
+    /** Immediate notification and notifications on later state changes. Read current() when invoked. */
+    fun observe(listener: () -> Unit): AutoCloseable {
+        val key = counter.incrementAndGet()
+        synchronized(lock) { listeners[key] = listener }
+        listener()
+        return AutoCloseable { synchronized(lock) { listeners.remove(key) } }
+    }
+
+    private inline fun <T> update(block: () -> T): T {
+        val result: T
+        val notifications: List<() -> Unit>
+        synchronized(lock) {
+            val previous = snapshot
+            result = block()
+            notifications = if (previous != snapshot) listeners.values.toList() else emptyList()
+        }
+        // Do not run listeners under the lock. Subscribers read the latest state.
+        notifications.forEach { it() }
+        return result
+    }
+
+    private fun change(phase: ConnectionPhase, failure: ConnectionFailure? = null) {
+        if (snapshot.phase != phase || snapshot.failure != failure) {
+            snapshot = ConnectionSnapshot(phase, failure, snapshot.revision + 1)
         }
     }
 
-    @Synchronized
-    fun permissionGranted() {
-        if (snapshot.phase == ConnectionPhase.AWAITING_CONSENT ||
-            snapshot.phase == ConnectionPhase.DISCONNECTED ||
-            snapshot.phase == ConnectionPhase.ERROR
-        ) {
-            snapshot = ConnectionSnapshot(ConnectionPhase.READY)
+    /** Only OS-consent bookkeeping is accessible to the Activity. */
+    inner class UserPort internal constructor() {
+        fun beginConsent(): Long? = update {
+            if (snapshot.phase == ConnectionPhase.AWAITING_CONSENT ||
+                snapshot.phase == ConnectionPhase.CONNECTING ||
+                snapshot.phase == ConnectionPhase.PROTECTED
+            ) return@update null
+            val attempt = counter.incrementAndGet()
+            pendingConsent = attempt
+            activeEngineSession = null
+            change(ConnectionPhase.AWAITING_CONSENT)
+            attempt
+        }
+
+        /** Caller MUST independently recheck VpnService.prepare(context) before reporting granted. */
+        fun resolveConsent(attempt: Long, grantedByOs: Boolean): Boolean = update {
+            if (snapshot.phase != ConnectionPhase.AWAITING_CONSENT || pendingConsent != attempt) {
+                return@update false
+            }
+            pendingConsent = null
+            if (grantedByOs) change(ConnectionPhase.PERMISSION_READY)
+            else change(ConnectionPhase.ERROR, ConnectionFailure.PERMISSION_DENIED)
+            true
+        }
+
+        fun consentLaunchFailed(attempt: Long): Boolean = update {
+            if (snapshot.phase != ConnectionPhase.AWAITING_CONSENT || pendingConsent != attempt) {
+                return@update false
+            }
+            pendingConsent = null
+            change(ConnectionPhase.ERROR, ConnectionFailure.CONSENT_FLOW_FAILED)
+            true
+        }
+
+        /** On resume, a revoked OS grant invalidates any previously observed ready/active state. */
+        fun reconcileOsPermission(grantedByOs: Boolean) = update {
+            if (!grantedByOs && snapshot.phase in setOf(
+                    ConnectionPhase.PERMISSION_READY, ConnectionPhase.CONNECTING,
+                    ConnectionPhase.PROTECTED, ConnectionPhase.INTERRUPTED
+                )
+            ) {
+                activeEngineSession = null
+                pendingConsent = null
+                change(ConnectionPhase.DISCONNECTED, ConnectionFailure.PERMISSION_REVOKED)
+            }
         }
     }
 
-    @Synchronized
-    fun permissionDenied() {
-        snapshot = ConnectionSnapshot(ConnectionPhase.ERROR, ConnectionFailure.PERMISSION_DENIED)
-    }
-
-    @Synchronized
-    fun beginConnecting(): Boolean {
-        if (snapshot.phase != ConnectionPhase.READY) return false
-        snapshot = ConnectionSnapshot(ConnectionPhase.CONNECTING)
-        return true
-    }
-
-    @Synchronized
-    internal fun tunnelVerified(evidence: TunnelEvidence): Boolean {
-        if (snapshot.phase != ConnectionPhase.CONNECTING) return false
-        if (!evidence.isComplete()) {
-            snapshot = ConnectionSnapshot(ConnectionPhase.ERROR, ConnectionFailure.UNVERIFIED_TUNNEL)
-            return false
+    /** Only VpnService and a future reviewed engine adapter should call these methods. */
+    internal inner class ServicePort internal constructor() {
+        fun permissionRevoked() = update {
+            pendingConsent = null
+            activeEngineSession = null
+            change(ConnectionPhase.DISCONNECTED, ConnectionFailure.PERMISSION_REVOKED)
         }
-        snapshot = ConnectionSnapshot(ConnectionPhase.PROTECTED)
-        return true
-    }
 
-    @Synchronized
-    fun networkLost() {
-        if (snapshot.phase == ConnectionPhase.PROTECTED || snapshot.phase == ConnectionPhase.CONNECTING) {
-            snapshot = ConnectionSnapshot(ConnectionPhase.INTERRUPTED)
+        fun engineUnavailable() = update {
+            pendingConsent = null
+            activeEngineSession = null
+            change(ConnectionPhase.ERROR, ConnectionFailure.ENGINE_UNAVAILABLE)
         }
-    }
 
-    @Synchronized
-    fun transportUnavailable() {
-        snapshot = ConnectionSnapshot(ConnectionPhase.ERROR, ConnectionFailure.ENGINE_UNAVAILABLE)
-    }
+        fun serviceStopped() = update {
+            pendingConsent = null
+            activeEngineSession = null
+            change(ConnectionPhase.DISCONNECTED)
+        }
 
-    @Synchronized
-    fun revoked() {
-        snapshot = ConnectionSnapshot(ConnectionPhase.DISCONNECTED)
-    }
+        /** Internal only; no production engine calls this path yet. */
+        fun openEngineSession(): Long? = update {
+            if (snapshot.phase != ConnectionPhase.PERMISSION_READY) return@update null
+            val session = counter.incrementAndGet()
+            activeEngineSession = session
+            session
+        }
 
-    @Synchronized
-    fun disconnect() {
-        snapshot = ConnectionSnapshot(ConnectionPhase.DISCONNECTED)
+        fun onEngineSignal(session: Long, event: EngineSignal): Boolean = update {
+            if (session != activeEngineSession) return@update false
+            when (event) {
+                EngineSignal.STARTING -> if (snapshot.phase == ConnectionPhase.PERMISSION_READY) {
+                    change(ConnectionPhase.CONNECTING)
+                }
+                EngineSignal.INTERRUPTED -> if (snapshot.phase == ConnectionPhase.CONNECTING) {
+                    change(ConnectionPhase.INTERRUPTED)
+                }
+                EngineSignal.FAILED -> {
+                    activeEngineSession = null
+                    change(ConnectionPhase.ERROR, ConnectionFailure.ENGINE_FAILED)
+                }
+                EngineSignal.STOPPED -> {
+                    activeEngineSession = null
+                    change(ConnectionPhase.DISCONNECTED)
+                }
+            }
+            true
+        }
     }
 }

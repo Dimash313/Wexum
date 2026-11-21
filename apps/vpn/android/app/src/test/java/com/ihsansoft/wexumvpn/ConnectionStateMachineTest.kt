@@ -1,95 +1,139 @@
 package com.ihsansoft.wexumvpn
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Test
 
 class ConnectionStateMachineTest {
-    @Test fun startsDisconnected() {
-        assertEquals(ConnectionPhase.DISCONNECTED, ConnectionStateMachine().current().phase)
-    }
-
-    @Test fun consentIsNotConnection() {
-        val machine = ConnectionStateMachine()
-        machine.requestConsent()
-        machine.permissionGranted()
-        assertEquals(ConnectionPhase.READY, machine.current().phase)
+    @Test fun permissionApprovalNeverMeansProtected() {
+        val state = ConnectionStateMachine()
+        val id = state.user.beginConsent()!!
+        assertTrue(state.user.resolveConsent(id, true))
+        assertEquals(ConnectionPhase.PERMISSION_READY, state.current().phase)
     }
 
     @Test fun deniedPermissionFailsClosed() {
-        val machine = ConnectionStateMachine()
-        machine.requestConsent()
-        machine.permissionDenied()
-        assertEquals(ConnectionFailure.PERMISSION_DENIED, machine.current().failure)
-        assertFalse(machine.beginConnecting())
+        val state = ConnectionStateMachine()
+        state.user.resolveConsent(state.user.beginConsent()!!, false)
+        assertEquals(ConnectionFailure.PERMISSION_DENIED, state.current().failure)
+        assertNull(state.service.openEngineSession())
     }
 
-    @Test fun cannotConnectWithoutPermission() {
-        val machine = ConnectionStateMachine()
-        assertFalse(machine.beginConnecting())
-        assertEquals(ConnectionPhase.DISCONNECTED, machine.current().phase)
+    @Test fun staleConsentReplyIgnoredAfterRevoke() {
+        val state = ConnectionStateMachine()
+        val old = state.user.beginConsent()!!
+        state.service.permissionRevoked()
+        assertFalse(state.user.resolveConsent(old, true))
+        assertEquals(ConnectionPhase.DISCONNECTED, state.current().phase)
     }
 
-    @Test fun proofCannotArriveBeforeConnectionStarts() {
-        val machine = ConnectionStateMachine()
-        assertFalse(machine.tunnelVerified(TunnelEvidence(true, true, true, true)))
-        assertEquals(ConnectionPhase.DISCONNECTED, machine.current().phase)
+    @Test fun staleConsentReplyIgnoredAfterNextAttempt() {
+        val state = ConnectionStateMachine()
+        val old = state.user.beginConsent()!!
+        state.service.permissionRevoked()
+        val current = state.user.beginConsent()!!
+        assertFalse(state.user.resolveConsent(old, true))
+        assertTrue(state.user.resolveConsent(current, true))
+        assertEquals(ConnectionPhase.PERMISSION_READY, state.current().phase)
     }
 
-    @Test fun eachMissingVerificationFailsClosed() {
-        val proofs = listOf(
-            TunnelEvidence(false, true, true, true),
-            TunnelEvidence(true, false, true, true),
-            TunnelEvidence(true, true, false, true),
-            TunnelEvidence(true, true, true, false),
-        )
-        for (proof in proofs) {
-            val machine = ConnectionStateMachine()
-            machine.permissionGranted()
-            assertTrue(machine.beginConnecting())
-            assertFalse(machine.tunnelVerified(proof))
-            assertEquals(ConnectionFailure.UNVERIFIED_TUNNEL, machine.current().failure)
+    @Test fun repeatedConsentRequestsCannotOverlap() {
+        val state = ConnectionStateMachine()
+        assertNotNull(state.user.beginConsent())
+        assertNull(state.user.beginConsent())
+    }
+
+    @Test fun failedIntentLaunchNeverBecomesReady() {
+        val state = ConnectionStateMachine()
+        assertTrue(state.user.consentLaunchFailed(state.user.beginConsent()!!))
+        assertEquals(ConnectionFailure.CONSENT_FLOW_FAILED, state.current().failure)
+    }
+
+    @Test fun permissionReconciliationOnResumeInvalidatesReady() {
+        val state = ConnectionStateMachine()
+        state.user.resolveConsent(state.user.beginConsent()!!, true)
+        state.user.reconcileOsPermission(false)
+        assertEquals(ConnectionPhase.DISCONNECTED, state.current().phase)
+        assertEquals(ConnectionFailure.PERMISSION_REVOKED, state.current().failure)
+    }
+
+    @Test fun engineCannotStartWithoutPermission() {
+        assertNull(ConnectionStateMachine().service.openEngineSession())
+    }
+
+    @Test fun staleEngineEventsIgnoredAfterRevoke() {
+        val state = ConnectionStateMachine()
+        state.user.resolveConsent(state.user.beginConsent()!!, true)
+        val session = state.service.openEngineSession()!!
+        state.service.onEngineSignal(session, EngineSignal.STARTING)
+        state.service.permissionRevoked()
+        assertFalse(state.service.onEngineSignal(session, EngineSignal.STARTING))
+        assertEquals(ConnectionPhase.DISCONNECTED, state.current().phase)
+    }
+
+    @Test fun engineFailureAlwaysClearsSession() {
+        val state = ConnectionStateMachine()
+        state.user.resolveConsent(state.user.beginConsent()!!, true)
+        val session = state.service.openEngineSession()!!
+        assertTrue(state.service.onEngineSignal(session, EngineSignal.FAILED))
+        assertEquals(ConnectionFailure.ENGINE_FAILED, state.current().failure)
+        assertFalse(state.service.onEngineSignal(session, EngineSignal.STARTING))
+    }
+
+    @Test fun engineSignalsCannotDeclareConnected() {
+        val state = ConnectionStateMachine()
+        state.user.resolveConsent(state.user.beginConsent()!!, true)
+        val session = state.service.openEngineSession()!!
+        for (signal in EngineSignal.values()) {
+            state.service.onEngineSignal(session, signal)
+            assertNotEquals(ConnectionPhase.PROTECTED, state.current().phase)
         }
     }
 
-    @Test fun completeEvidenceIsOnlyTheFutureEngineStateGate() {
-        val machine = ConnectionStateMachine()
-        machine.permissionGranted()
-        assertTrue(machine.beginConnecting())
-        assertTrue(machine.tunnelVerified(TunnelEvidence(true, true, true, true)))
-        assertEquals(ConnectionPhase.PROTECTED, machine.current().phase)
+    @Test fun serviceCrashClearsStateAndInvalidatesCallbacks() {
+        val state = ConnectionStateMachine()
+        state.user.resolveConsent(state.user.beginConsent()!!, true)
+        val session = state.service.openEngineSession()!!
+        state.service.onEngineSignal(session, EngineSignal.STARTING)
+        state.service.serviceStopped()
+        assertEquals(ConnectionPhase.DISCONNECTED, state.current().phase)
+        assertFalse(state.service.onEngineSignal(session, EngineSignal.STARTING))
     }
 
-    @Test fun networkLossRemovesProtectedStatus() {
-        val machine = ConnectionStateMachine()
-        machine.permissionGranted()
-        machine.beginConnecting()
-        machine.tunnelVerified(TunnelEvidence(true, true, true, true))
-        machine.networkLost()
-        assertEquals(ConnectionPhase.INTERRUPTED, machine.current().phase)
+    @Test fun newProcessStartsDisconnected() {
+        val old = ConnectionStateMachine()
+        old.user.resolveConsent(old.user.beginConsent()!!, true)
+        assertEquals(ConnectionPhase.DISCONNECTED, ConnectionStateMachine().current().phase)
     }
 
-    @Test fun revokeRemovesProtectedStatus() {
-        val machine = ConnectionStateMachine()
-        machine.permissionGranted()
-        machine.beginConnecting()
-        machine.tunnelVerified(TunnelEvidence(true, true, true, true))
-        machine.revoked()
-        assertEquals(ConnectionPhase.DISCONNECTED, machine.current().phase)
+    @Test fun observersSeeServiceChangesAndCanUnsubscribe() {
+        val state = ConnectionStateMachine()
+        var count = 0
+        val subscription = state.observe { count++ }
+        assertEquals(1, count)
+        state.service.engineUnavailable()
+        assertEquals(2, count)
+        subscription.close()
+        state.service.permissionRevoked()
+        assertEquals(2, count)
     }
 
-    @Test fun engineUnavailabilityNeverReportsProtection() {
-        val machine = ConnectionStateMachine()
-        machine.permissionGranted()
-        machine.transportUnavailable()
-        assertEquals(ConnectionSnapshot(ConnectionPhase.ERROR, ConnectionFailure.ENGINE_UNAVAILABLE), machine.current())
+    @Test fun redundantSignalsDoNotNotifyTwice() {
+        val state = ConnectionStateMachine()
+        var count = 0
+        val sub = state.observe { count++ }
+        state.service.serviceStopped()
+        assertEquals(1, count)
+        sub.close()
     }
 
-    @Test fun disconnectClearsError() {
-        val machine = ConnectionStateMachine()
-        machine.transportUnavailable()
-        machine.disconnect()
-        assertEquals(ConnectionSnapshot(ConnectionPhase.DISCONNECTED), machine.current())
+    @Test fun interruptedStateCannotPretendProtected() {
+        val state = ConnectionStateMachine()
+        state.user.resolveConsent(state.user.beginConsent()!!, true)
+        val session = state.service.openEngineSession()!!
+        state.service.onEngineSignal(session, EngineSignal.STARTING)
+        state.service.onEngineSignal(session, EngineSignal.INTERRUPTED)
+        assertEquals(ConnectionPhase.INTERRUPTED, state.current().phase)
+        state.service.onEngineSignal(session, EngineSignal.STOPPED)
+        assertEquals(ConnectionPhase.DISCONNECTED, state.current().phase)
     }
 }

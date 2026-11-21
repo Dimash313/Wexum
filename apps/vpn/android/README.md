@@ -1,36 +1,42 @@
-# WexumVPN Android — isolated engineering scaffold
+# WexumVPN Android — isolated engineering work (issue #5)
 
-Scope: issue #5. All code is confined to apps/vpn/android/. This is NOT a working VPN, a protected session, or a deployable product.
+This is **not a working VPN**. No tunnel, authentication handshake, gateway, DNS/route verification, production traffic or entitlements are implemented. Granting Android VPN permission only means **permission granted — not connected**.
 
-## Included
-- Standalone Android application (Kotlin + SDK, minSdk 26, targetSdk 35).
-- System VPN permission request using VpnService.prepare and a service guarded by BIND_VPN_SERVICE.
-- Explicit process-local connection state machine; no protection claim merely from permission approval.
-- Neutral black-and-white status screen, explanatory safety text and OS app language settings.
-- Published native Android resource catalogs: English, Russian, Kazakh, Arabic, with RTL enabled and Android 13+ app locale configuration.
-- Unit tests and a Kotlin-only smoke harness. No network requests, VPN routing, SDK tunnelling, credentials or persistent connection flags.
+## Scope
+- Native Kotlin + Android SDK shell: AGP 8.9.2, Kotlin plugin 2.0.21, compile/target SDK 35 and min SDK 26.
+- User-driven `VpnService.prepare(context)` permission flow. Explicit OS permission recheck after callback and on Activity resume; failed consent intent and invalid results never report protection.
+- Thread-safe process-local state with a separate Activity `UserPort` and internal `ServicePort`. Pending consent IDs and engine-session IDs reject stale messages after revoke/crash. The future engine interface has no event that can claim a verified tunnel.
+- Lifecycle-bound UI observer subscribes onStart and unsubscribes onStop, rendering current service state on the UI thread. Status is never persisted.
+- Placeholder `VpnService` immediately stops without starting TUN or modifying routes. Always-on VPN is disabled in the manifest for this nonfunctional scaffold.
+- Simple black-and-white UI, EN/RU/KK/AR Android resource catalogs, Android 13+ OS app language preferences and RTL.
+- Pure JVM negative tests cover permission replay, grant/revoke races, engine callback replay, failure recovery, observer lifetimes and process reset. No runtime third-party libraries, analytics, traffic inspection or credentials.
 
-## Security decision
-The VpnService subclass stops itself immediately if started: no TUN interface is established, no network routes are changed and no "Connected" state is produced. Even the model's tunnelVerified function is INTERNAL and not called in the application. Its four booleans are hypothetical gating test inputs, NOT acceptable real-world proof. A future approved engine must implement actual protocol handshake, TUN ownership, socket protection, DNS/route testing, network handover, foreground service notifications, credential revocation and independent leakage testing BEFORE wiring this state. Never store a "protected" value across process restarts.
+## Reproducible build proposal
 
-Android system VPN consent is not permission to claim protection. Users can grant and revoke VPN permission; granting changes state only to READY ("not connected"). No destination browsing history, credentials, PII, analytics, third-party SDKs, network traffic or user files are collected.
+Official AGP 8.9.2 requires Gradle **8.11.1** and JDK **17**. Android SDK platform **35** and Build Tools **35.0.0** are required. The build entrypoint enforces versions and fails rather than skipping tests:
 
-## How to check
-From apps/vpn/android/:
+```sh
+bash apps/vpn/android/ci/android-check.sh
+```
 
-- JVM smoke (requires Kotlin CLI and Java):
-  kotlinc app/src/main/java/com/ihsansoft/wexumvpn/ConnectionStateMachine.kt tests/StateMachineSmoke.kt -include-runtime -d /tmp/wexumvpn-state-tests.jar
-  java -jar /tmp/wexumvpn-state-tests.jar
-- Android SDK + Gradle environment, when available:
-  gradle :app:testDebugUnitTest :app:assembleDebug
+When those prerequisites are installed, it runs Gradle `:app:testDebugUnitTest`, `:app:lintDebug`, and `:app:assembleDebug`.
 
-No Gradle wrapper binary, APK, or CI workflow is included; the repo main branch currently lacks an approved Android build workflow. The build and Android runtime were NOT verified without the SDK. Gradle plugin AGP 8.9.2, Kotlin plugin 2.0.21, and JUnit test dependency 4.13.2 need dependency provenance and license checks during integration. Only JUnit is introduced for tests, no added third-party runtime library.
+Pure Kotlin local smoke (independent of Android SDK):
 
-## Integration blockers
-- Foundation #1, independent audit and integrator approval.
-- Approved Android VPN protocol and transport implementation; validated Control Plane (#2), Entitlements (#3), Nodes (#4), Identity (#34), their contract schemas and failures.
-- OS-specific end-to-end testing on real target devices (VPN consent/revoke, doze, network switch, DNS/IP leaks, always-on lockdown, foreground service requirements).
-- Play VPN policy and country/legal/store approval, security/privacy and religious review.
-- Approved shared i18n adapter contract (draft #50) before cross-product integration. Native Android only currently, no geolocation/IP-based language choice.
+```sh
+cd apps/vpn/android
+kotlinc app/src/main/java/com/ihsansoft/wexumvpn/ConnectionStateMachine.kt tests/StateMachineSmoke.kt -include-runtime -d /tmp/wexumvpn-state-tests.jar
+java -jar /tmp/wexumvpn-state-tests.jar
+```
 
-Deployment: none. Rollback: close this draft and remove isolated apps/vpn/android/ directory; no database, migration, user data, or live endpoints.
+**GitHub Actions is not active.** The proposed minimal-permission SHA-pinned workflow is under `ci/android-workflow.proposal.yml`, which GitHub will not execute at that path. Only the integrator may create a workflow at repository-root `.github/workflows/android.yml`, via a separate independently reviewed PR. No binary Gradle wrapper is included because its provenance could not be verified; the pinned `setup-gradle` action installs Gradle 8.11.1 in the proposed runner.
+
+Without local Android SDK + Gradle, Android compilation, JUnit execution, lint and runtime/emulator verification remain **NOT VERIFIED**. Smoke tests are not equivalent to Android tests or a CI result.
+
+## Trust boundaries and blockers
+
+Client-side consent cannot substitute for server-side identity/entitlement authorization. Future integration must use independently reviewed engine and service contracts and real verification of TUN ownership, gateway handshake, protected sockets, credentials, DNS/IP leaks, network switching, always-on lockdown, Android foreground-service requirements and cancellation. No `PROTECTED` event is available until these conditions are designed, implemented and verified.
+
+Foundation PR #1, audit #41, review governance #38, VPN Control Plane #2, Entitlements #3, Nodes #4, Identity #34 and i18n draft #50 remain dependencies. Android store/legal/privacy/religious review is pending. Never merge on a green smoke test alone.
+
+Rollback: close draft PR #66 or remove only `apps/vpn/android/`; there are no deployments, migrations, billing records, credentials or user data.

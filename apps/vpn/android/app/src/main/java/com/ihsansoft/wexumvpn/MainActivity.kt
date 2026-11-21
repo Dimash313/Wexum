@@ -2,6 +2,7 @@ package com.ihsansoft.wexumvpn
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -18,41 +19,39 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 
-/** Transparent permission-only shell. It cannot start a VPN transport. */
+/** UI has no access to trusted engine signals: only permission-bound UserPort. */
 class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var permissionButton: Button
-    private val machine get() = VpnRuntime.state
+    private val user get() = VpnRuntime.state.user
+    private var observer: AutoCloseable? = null
+    private var started = false
+    private var pendingAttempt: Long? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pendingAttempt = if (savedInstanceState?.containsKey(KEY_REQUEST) == true &&
+            VpnRuntime.state.current().phase == ConnectionPhase.AWAITING_CONSENT
+        ) savedInstanceState.getLong(KEY_REQUEST) else null
+
         window.statusBarColor = Color.BLACK
         window.navigationBarColor = Color.BLACK
-
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(28), dp(48), dp(28), dp(28))
             setBackgroundColor(Color.BLACK)
         }
-
-        val heading = text(getString(R.string.home_title), 34f, Color.WHITE).apply {
+        container.addView(text(getString(R.string.home_title), 34f, Color.WHITE).apply {
             setTypeface(null, Typeface.BOLD)
-        }
-        container.addView(heading)
-
-        val subtitle = text(getString(R.string.home_subtitle), 15f, Color.LTGRAY)
-        container.addView(subtitle, gapTop(8))
-
+        })
+        container.addView(text(getString(R.string.home_subtitle), 15f, Color.LTGRAY), gapTop(8))
         status = text("", 28f, Color.WHITE).apply {
             setTypeface(null, Typeface.BOLD)
             setPadding(0, dp(64), 0, dp(18))
             gravity = Gravity.START
         }
         container.addView(status)
-
-        val notice = text(getString(R.string.home_notice), 16f, Color.LTGRAY)
-        container.addView(notice, gapTop(8))
-
+        container.addView(text(getString(R.string.home_notice), 16f, Color.LTGRAY), gapTop(8))
         permissionButton = Button(this).apply {
             text = getString(R.string.permission_button)
             setTextColor(Color.BLACK)
@@ -60,16 +59,13 @@ class MainActivity : Activity() {
             setOnClickListener { requestPermission() }
         }
         container.addView(permissionButton, gapTop(40))
-
-        val languageButton = Button(this).apply {
+        container.addView(Button(this).apply {
             text = getString(R.string.language_button)
             setTextColor(Color.WHITE)
             setBackgroundColor(Color.DKGRAY)
             setOnClickListener { openLanguageSettings() }
-        }
-        container.addView(languageButton, gapTop(12))
-
-        val aboutButton = Button(this).apply {
+        }, gapTop(12))
+        container.addView(Button(this).apply {
             text = getString(R.string.about_button)
             setTextColor(Color.WHITE)
             setBackgroundColor(Color.DKGRAY)
@@ -80,9 +76,7 @@ class MainActivity : Activity() {
                     .setPositiveButton(android.R.string.ok, null)
                     .show()
             }
-        }
-        container.addView(aboutButton, gapTop(12))
-
+        }, gapTop(12))
         setContentView(ScrollView(this).apply {
             fillViewport = true
             addView(container)
@@ -90,52 +84,89 @@ class MainActivity : Activity() {
         render()
     }
 
+    override fun onStart() {
+        super.onStart()
+        started = true
+        observer = VpnRuntime.state.observe { runOnUiThread { if (started && !isFinishing) render() } }
+    }
+
+    override fun onStop() {
+        started = false
+        observer?.close()
+        observer = null
+        super.onStop()
+    }
+
     override fun onResume() {
         super.onResume()
-        if (machine.current().phase == ConnectionPhase.READY && VpnService.prepare(this) != null) {
-            machine.revoked()
+        try {
+            user.reconcileOsPermission(VpnService.prepare(this) == null)
+        } catch (_: SecurityException) {
+            user.reconcileOsPermission(false)
         }
         if (::status.isInitialized) render()
     }
 
-    private fun requestPermission() {
-        val preparation = VpnService.prepare(this)
-        if (preparation == null) {
-            machine.permissionGranted()
-            render()
-            return
-        }
-        machine.requestConsent()
-        render()
-        @Suppress("DEPRECATION")
-        startActivityForResult(preparation, VPN_REQUEST)
+    override fun onSaveInstanceState(outState: Bundle) {
+        pendingAttempt?.let { outState.putLong(KEY_REQUEST, it) }
+        super.onSaveInstanceState(outState)
     }
 
-    @Deprecated("Framework VPN consent callback; avoids an AndroidX dependency in this scaffold.")
+    private fun requestPermission() {
+        val attempt = user.beginConsent() ?: return
+        pendingAttempt = attempt
+        val preparation = try {
+            VpnService.prepare(this)
+        } catch (_: SecurityException) {
+            user.consentLaunchFailed(attempt)
+            pendingAttempt = null
+            return
+        }
+        if (preparation == null) {
+            user.resolveConsent(attempt, true)
+            pendingAttempt = null
+            return
+        }
+        try {
+            @Suppress("DEPRECATION")
+            startActivityForResult(preparation, VPN_REQUEST)
+        } catch (_: ActivityNotFoundException) {
+            user.consentLaunchFailed(attempt)
+            pendingAttempt = null
+        } catch (_: SecurityException) {
+            user.consentLaunchFailed(attempt)
+            pendingAttempt = null
+        }
+    }
+
+    @Deprecated("Android framework VpnService.prepare callback; intentionally avoids AndroidX dependency.")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode != VPN_REQUEST) return
-        if (resultCode == RESULT_OK && VpnService.prepare(this) == null) {
-            machine.permissionGranted()
-        } else {
-            machine.permissionDenied()
+        val attempt = pendingAttempt ?: return
+        pendingAttempt = null
+        val granted = resultCode == RESULT_OK && try {
+            VpnService.prepare(this) == null
+        } catch (_: SecurityException) {
+            false
         }
-        render()
+        user.resolveConsent(attempt, granted)
     }
 
     private fun render() {
-        val phase = machine.current().phase
-        val label = when (phase) {
+        val phase = VpnRuntime.state.current().phase
+        status.setText(when (phase) {
             ConnectionPhase.DISCONNECTED -> R.string.status_disconnected
             ConnectionPhase.AWAITING_CONSENT -> R.string.status_consent
-            ConnectionPhase.READY -> R.string.status_ready
+            ConnectionPhase.PERMISSION_READY -> R.string.status_ready
             ConnectionPhase.CONNECTING -> R.string.status_connecting
             ConnectionPhase.PROTECTED -> R.string.status_protected
             ConnectionPhase.INTERRUPTED -> R.string.status_interrupted
             ConnectionPhase.ERROR -> R.string.status_error
-        }
-        status.setText(label)
-        permissionButton.isEnabled = phase != ConnectionPhase.READY
+        })
+        permissionButton.isEnabled = phase != ConnectionPhase.AWAITING_CONSENT &&
+            phase != ConnectionPhase.PERMISSION_READY && phase != ConnectionPhase.CONNECTING &&
+            phase != ConnectionPhase.PROTECTED
     }
 
     private fun openLanguageSettings() {
@@ -143,7 +174,11 @@ class MainActivity : Activity() {
             val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
                 data = Uri.fromParts("package", packageName, null)
             }
-            startActivity(intent)
+            try {
+                startActivity(intent)
+            } catch (_: ActivityNotFoundException) {
+                Toast.makeText(this, R.string.language_legacy, Toast.LENGTH_LONG).show()
+            }
         } else {
             Toast.makeText(this, R.string.language_legacy, Toast.LENGTH_LONG).show()
         }
@@ -156,13 +191,13 @@ class MainActivity : Activity() {
     }
 
     private fun gapTop(top: Int) = LinearLayout.LayoutParams(
-        ViewGroup.LayoutParams.MATCH_PARENT,
-        ViewGroup.LayoutParams.WRAP_CONTENT,
+        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
     ).apply { topMargin = dp(top) }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density + 0.5f).toInt()
 
     companion object {
         private const val VPN_REQUEST = 100
+        private const val KEY_REQUEST = "consent_attempt"
     }
 }
