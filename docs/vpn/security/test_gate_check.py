@@ -147,6 +147,16 @@ class ReleaseManifestTests(unittest.TestCase):
                 errors, _ = assess(obj)
                 self.assertTrue(any("requires actor and HTTPS URL" in e for e in errors))
 
+    def test_ambiguous_backslash_https_authority_rejected(self):
+        """Backslashes can be parsed differently by URL consumers."""
+        for url in ("https://example.test\\\\@evil.test/proof",
+                    "https://example.test\\\\path/proof"):
+            with self.subTest(url=url):
+                obj = artificial_complete()
+                obj["gates"][0]["evidence"][0]["url"] = url
+                errors, _ = assess(obj)
+                self.assertTrue(any("requires actor and HTTPS URL" in e for e in errors))
+
     def test_release_cli_never_passes_synthetic_attestation(self):
         """Complete but fabricated metadata can never authorize deployment."""
         with TemporaryDirectory() as temp:
