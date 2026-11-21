@@ -58,6 +58,18 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(self.registry.snapshot(now=NOW)[0].status, AvailabilityStatus.UNREPORTED)
         self.assertIsNone(self.registry.select(now=NOW))
 
+    def test_disable_reenable_rejects_old_health_replay(self):
+        self.registry.record_health(observe(), now=NOW)
+        self.registry.set_enabled("test-node-a", False)
+        with self.assertRaises(ValueError):
+            self.registry.record_health(observe(at=NOW + timedelta(seconds=1)), now=NOW + timedelta(seconds=1))
+        self.registry.set_enabled("test-node-a", True)
+        with self.assertRaises(StaleObservationError):
+            self.registry.record_health(observe(), now=NOW + timedelta(seconds=1))
+        self.assertIsNone(self.registry.select(now=NOW + timedelta(seconds=1)))
+        self.registry.record_health(observe(at=NOW + timedelta(seconds=2)), now=NOW + timedelta(seconds=2))
+        self.assertIsNotNone(self.registry.select(now=NOW + timedelta(seconds=2)))
+
     def test_remove_and_duplicate_inventory(self):
         with self.assertRaises(ValueError):
             self.registry.register(node())
