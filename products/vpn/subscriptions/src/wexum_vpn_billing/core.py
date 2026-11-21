@@ -150,7 +150,7 @@ class TestHmacAdapter:
             raise SecurityError("invalid test signature")
         try:
             document = json.loads(body, object_pairs_hook=_unique_json_pairs)
-        except (ValueError, UnicodeDecodeError, TypeError) as exc:
+        except (ValueError, UnicodeDecodeError, TypeError, RecursionError):
             raise SecurityError("invalid webhook JSON") from None
         if not isinstance(document, dict) or set(document) != _FIELDS:
             raise SecurityError("invalid event fields")
