@@ -1,6 +1,6 @@
 # WexumVPN — Network Observability & Operations: HANDOFF
 
-**Last reviewed:** 2026-11-21 (UTC+05, project activity); update this document after material changes.
+**Last reviewed:** 2026-11-21 (UTC+05, project activity). Latest local test evidence recorded below; update after material changes.
 **Repository:** https://github.com/Dimash313/Wexum
 **Owner lane:** `products/vpn/observability/` **only**.
 **Status:** Standalone implementation proposed in Draft PR; not integrated, deployed, or independently approved.
@@ -16,7 +16,7 @@ This lane owns technical health probes, service availability observations, resou
 ## 2. Architecture and technical decisions
 
 - **Independent Python standard-library module** under `products/vpn/observability/`, not dependent on pending Foundation PR #1 contracts.
-- `health.py`: `HealthMonitor` maintains bounded process-local probe observations for five *fixed, operator-defined service categories*: `control_plane`, `node_registry`, `entitlements`, `identity`, `gateway`. Hard-coded label vocabulary protects metric cardinality/PII; arbitrary labels are rejected. Monotonic clock, lock-protected updates, rolling window default 300 seconds, 1000 samples/category default, unknown/stale/degraded/down/healthy states, sampled success ratio and relative SLO error-budget estimate. Process-lifetime counters reset on restart.
+- `health.py`: `HealthMonitor` rejects monotonic clock rollback across all services, snapshots and Prometheus exposition, prevents accumulated duration overflow before committing counters, and maintains bounded process-local probe observations for five *fixed, operator-defined service categories*: `control_plane`, `node_registry`, `entitlements`, `identity`, `gateway`. Hard-coded label vocabulary protects metric cardinality/PII; arbitrary labels are rejected. Monotonic clock, lock-protected updates, rolling window default 300 seconds, 1000 samples/category default, unknown/stale/degraded/down/healthy states, sampled success ratio and relative SLO error-budget estimate. Process-lifetime counters reset on restart.
 - `probes.py`: `ProbeTarget` defines an explicitly operator-configured TCP endpoint; `tcp_probe` records only connect success/failure and local elapsed time. **TCP reachability is not a functional VPN, DNS leak, true user availability or security test**. Probe invocation has no automatic scheduler; no untrusted target values should flow into configuration.
 - `alerts.py`: `AlertEngine` transitions for missing telemetry, repeated probe failures and estimated sample error-budget exhaustion. No notification transport or durable queue.
 - `resources.py`: `read_resources` gathers current **local monitoring process** CPU time, optional Linux RSS and local disk capacity. It does *not* measure remote gateway usage, cloud egress or provider bills. Missing RSS is represented as `None`, not zero.
@@ -29,7 +29,7 @@ This lane owns technical health probes, service availability observations, resou
 - Issue: [#8 — VPN network observability](https://github.com/Dimash313/Wexum/issues/8), open; ownership claimed via issue comment.
 - Working branch: `feat/vpn/8-network-observability`, created from `main`.
 - Draft PR: [#72 — Bounded privacy-safe probe metrics and alerts](https://github.com/Dimash313/Wexum/pull/72), open, draft, targeting `main`. **Do not self-merge.**
-- Head observed when preparing handoff: `98044b6535ab93c44b78b596741b20bd76e759bb` (before this documentation-only commit). Always fetch current head rather than assuming this SHA remains current.
+- Earlier reviewed heads included `bfff09382ab5b11df2366c77b67a9ac224ab1b38`; do not assume a saved SHA is current. Always query live PR head before continuing. This handoff includes fixes and proposal committed after that SHA.
 - Foundation PR [#1](https://github.com/Dimash313/Wexum/pull/1) currently open and unmerged (checked on 2026-11-21).
 - Node Registry Draft PR [#65](https://github.com/Dimash313/Wexum/pull/65) currently open, requires separate CTO-approved telemetry interface/authentication/registration-generation mapping.
 
@@ -44,26 +44,38 @@ This lane owns technical health probes, service availability observations, resou
 - `README.md`: behavior, privacy boundary, usage and restrictions.
 - `OPERATIONS.md`: first-response checks, alert semantics, recovery, rollback and integration gates.
 - `HANDOFF.md`: this continuity document.
+- `INTEGRATION_PROPOSAL.md`: CTO proposal for an authenticated, replay-safe, strictly private technical telemetry boundary; **not an approved shared contract**.
 
 No live node deployment, true tunnel verification, cross-service monitoring integration or production data collection has been performed.
 
-## 5. Test evidence — distinguish historical reports from fresh results
+## 5. Test evidence — distinguish local verification from CI
 
-Evidence reported with initial PR #72 work in the preceding session:
-- `python -X dev -m unittest discover -s products/vpn/observability/tests -v` — reported **15/15 pass locally**, using mocked sockets and a local resource read.
-- `python -m compileall -q products/vpn/observability` — reported pass locally.
-- Tested scenarios reported: unknown/stale samples, successful/failed probes, invalid/PII metric labels, non-finite time, monotonic rollback, memory bounds, concurrency, alerts/deduplication, recovery, invalid targets and nonexistent resource mount.
-- Initial work compared recorded content checksums of tested files with committed GitHub source.
+**Fresh evidence from current continuation (2026-11-21, Python 3.13.5):** The five Python module files and existing test file were reconstructed locally from source text in the working branch and verified **byte-for-byte equivalent using their reported FNV32 content fingerprints and lengths** before test execution. GitHub file re-fetches confirmed original fingerprints. Baseline:
 
-**Independent rerun in this handoff update:** NOT PERFORMED. Container cannot reach github.com directly in this environment; do not turn previous reports into a new test claim. Re-run against the fresh current PR head before merging. No live node, DNS leak, VPN tunnel, load, cloud cost, real-traffic, provider compliance or operational failover test exists.
+- `python -X dev -m unittest discover -s products/vpn/observability/tests -v` — **15/15 passed** against the GitHub-matching original.
+- `python -m compileall -q products/vpn/observability` — **passed** against that original.
 
-**GitHub CI:** On the initial PR head, the GitHub connector returned zero workflow runs and zero combined status checks. Treat this as **no CI evidence**, not as a passing CI signal. CTO controls changes to the shared CI workflow. Recheck statuses on the latest head whenever resuming.
+Reproduced two defects in the original: a backwards fake monotonic clock returned a false `HEALTHY` snapshot, and two individually finite large durations accumulated to an `inf` Prometheus counter.
+
+Fixes pushed in this branch:
+- `health.py`: global backwards-clock guard used by `record`, `snapshot` and `render_prometheus`; reject overflow before recording partial sample/counter; validate maximum sample count before comparing it to minimum sample count.
+- `tests/test_observability.py`: three negative regression tests for clock rollback, atomic duration-overflow rejection and invalid sample-count type.
+
+**Local retest with the corrected exact content committed to PR #72**:
+- `python -X dev -m unittest discover -s products/vpn/observability/tests -v` — **18/18 passed**, Python **3.13.5**.
+- `python -m compileall -q products/vpn/observability` — **passed**.
+- `health.py` length `8537`, FNV32 `9843107e`; `tests/test_observability.py` length `8779`, FNV32 `e7253179`. The transformation applied in GitHub was checked against these locally verified fingerprints before each commit.
+- Test sockets are mocked. One actual local process/disk resource read runs in unit tests. **No live VPN node, true tunnel, DNS leak, cloud egress, production load or operational failover test occurred.**
+- Note: FNV32 matching is a non-cryptographic equality check, not a security attestation; re-fetch and validate current GitHub blobs and rerun under authoritative CI before merge.
+
+**GitHub CI:** No workflow runs or combined status checks were returned on earlier PR heads. CTO owns shared CI; check the **latest head** on every resume. **No CI pass or independent reviewer approval claimed.**
 
 ## 6. Known limitations, threats and blockers
 
 1. **Untrusted inputs:** `HealthMonitor.record` itself does not authenticate producer identity. Never expose it directly to external/client-origin reports. Source authenticity, scope and replay prevention remain future adapter requirements.
 2. **Unverified targets:** `ProbeTarget` only applies syntactic checks; a future privileged scheduler must restrict targets through trusted static allowlisting and prevent server-side request forgery or unrestricted scans.
-3. **Timeout caveat:** `socket.create_connection` timeout does not guarantee an absolute deadline for DNS resolution. A bounded scheduler/hard deadline, concurrency/rate controls, backoff and jitter are still needed.
+3. **Clock and overflow handling:** Local rollback/overflow regressions now reject invalid observations instead of emitting false health or non-finite Prometheus metrics. Future orchestrators must interpret exceptions as unknown/missing measurement, not hide them or claim uptime.
+4. **Timeout caveat:** `socket.create_connection` timeout does not guarantee an absolute deadline for DNS resolution. A bounded scheduler/hard deadline, concurrency/rate controls, backoff and jitter are still needed.
 4. **Single-process memory:** Samples/counters are volatile; no durable distributed ordering or historically valid uptime/SLA accounting.
 5. **Alert delivery missing:** Only deduplicated state changes exist; no paging or reliable notifications.
 6. **No deployed monitoring:** No protected scrape endpoint, network probes against production, remote resource adapters, node egress cost measurement or real-service failure drills.
@@ -74,13 +86,12 @@ Evidence reported with initial PR #72 work in the preceding session:
 
 ## 7. Next concrete tasks (in priority order)
 
-1. On `Продолжаем дальше`, re-read current `AGENTS.md`, this `HANDOFF.md`, `README.md`, `OPERATIONS.md`, issue #8, PR #72 discussions/reviews, Foundation PR #1 and Node Registry PR #65. Inspect current branch/head, conflicting changes, open status checks, and incoming CTO decisions. Do not request task reallocation unless owner-only decisions are required.
-2. Fetch/checkout latest PR head in a testable runtime and **really execute** the test and compile commands in section 5; record exact outcomes, runtime and SHA here and in PR #72. Add missing negative and fault-injection coverage where justified.
-3. Review sampled SLO/error-budget semantics and minimum-sample behavior; ensure unavailable/stale telemetry is never marketed as healthy service uptime. Consider a monotonic aging/recovery/failure injection audit.
-4. Propose (do not unilaterally implement cross-lane interfaces) an authenticated, bounded management-plane probe source contract with Node Registry owner/CTO; include freshness, replay/generation checks, allowlist and permission scope. Link approval in PR.
-5. Within owned path, design bounded probe scheduling and safe metrics/alert adapters only after interface/security approval; specify sample cadence, explicit timeouts, allowed targets, TLS/access and retention.
-6. Request independent audit of current head and address findings in this branch. Never approve or merge own PR. Coordinate any shared CI changes via CTO.
-7. Update this `HANDOFF.md`, PR body and issue comments after every major implementation, test result, discovered blocker, or stage completion. Report what is actually measured, what tests were really executed, gaps and link to the Draft PR.
+1. On `Продолжаем дальше`, re-read current `AGENTS.md`, this `HANDOFF.md`, lane docs, issue #8, PR #72 reviews/discussions/CI, Foundation PR #1 and Node Registry PR #65. Inspect branch HEAD and possible concurrent changes before writing.
+2. On the **latest PR HEAD**, rerun and independently review the 18 unit tests plus compile checks; add tests for more realistic fault injection (frozen/backwards time, worker loss, repeated signals, metric counter bounds) where useful. Check sample SLO/error-budget meaning against explicit traces.
+3. Request CTO feedback on [INTEGRATION_PROPOSAL.md](INTEGRATION_PROPOSAL.md): authenticated probe worker identity, generation/freshness/replay guard against PR #65, private management scopes, static target allowlist and transparent failure mode. Do not integrate across lane boundaries without approval.
+4. Design/implement only approved bounded scheduler, management adapter and secure metrics/alert delivery in owned path. Keep no customer identifiers or browsing history in metrics; request CTO to own CI/workflow and cross-team contracts.
+5. Request independent audit of **new head**; address review findings and verify CI status. No self-approval/merge or production readiness assertion.
+6. Update `HANDOFF.md`, issue #8 and PR #72 after significant changes, with actual commands/results, dependencies, residual risks, and accurate PR link.
 
 ## 8. Links and operating documents
 
@@ -95,6 +106,7 @@ Evidence reported with initial PR #72 work in the preceding session:
 - [Review protocol](https://github.com/Dimash313/Wexum/blob/architecture/foundation-and-agent-operating-system/docs/engineering/REVIEW_PROTOCOL.md)
 - [Religious/ethical policy](https://github.com/Dimash313/Wexum/blob/architecture/foundation-and-agent-operating-system/docs/policy/RELIGIOUS_REVIEW.md)
 - [Lane README](README.md)
+- [CTO integration proposal](INTEGRATION_PROPOSAL.md)
 - [Operational playbook](OPERATIONS.md)
 
 ## Nonnegotiable continuation policy
