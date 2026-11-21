@@ -1,6 +1,7 @@
 """Local contract tests; every name/region/observation in this file is synthetic."""
 
 import threading
+from dataclasses import replace
 import unittest
 from datetime import datetime, timedelta, timezone
 
@@ -211,6 +212,90 @@ class RegistryTests(unittest.TestCase):
             NodeRegistry(max_nodes=0)
         with self.assertRaises(ValueError):
             NodeRegistry(health_ttl_seconds=301)
+
+    def test_revalidate_selection_rejects_expiry_and_health_change(self):
+        self.registry.record_health(self.observe(active=2), now=NOW)
+        choice = self.registry.select(now=NOW)
+        self.assertTrue(self.registry.revalidate_selection(choice, now=NOW + timedelta(seconds=9)))
+        self.assertFalse(self.registry.revalidate_selection(choice, now=NOW + timedelta(seconds=10)))
+        self.assertFalse(self.registry.revalidate_selection(choice, now=NOW - timedelta(seconds=1)))
+        self.registry.record_health(
+            self.observe(at=NOW + timedelta(seconds=1), status=HealthStatus.DOWN),
+            now=NOW + timedelta(seconds=1),
+        )
+        self.assertFalse(self.registry.revalidate_selection(choice, now=NOW + timedelta(seconds=1)))
+        self.registry.record_health(
+            self.observe(at=NOW + timedelta(seconds=2), active=3),
+            now=NOW + timedelta(seconds=2),
+        )
+        self.assertFalse(self.registry.revalidate_selection(choice, now=NOW + timedelta(seconds=2)))
+        fresh = self.registry.select(now=NOW + timedelta(seconds=2))
+        self.assertTrue(self.registry.revalidate_selection(fresh, now=NOW + timedelta(seconds=2)))
+        self.registry.record_health(
+            self.observe(at=NOW + timedelta(seconds=3), active=10),
+            now=NOW + timedelta(seconds=3),
+        )
+        self.assertFalse(self.registry.revalidate_selection(fresh, now=NOW + timedelta(seconds=3)))
+
+    def test_revalidate_selection_rejects_rotation_and_removal(self):
+        self.registry.record_health(self.observe(), now=NOW)
+        old = self.registry.select(now=NOW)
+        self.registry.set_enabled("test-node-a", False)
+        self.assertFalse(self.registry.revalidate_selection(old, now=NOW))
+        new_id = self.registry.set_enabled("test-node-a", True)
+        self.registrations["test-node-a"] = new_id
+        self.assertFalse(self.registry.revalidate_selection(old, now=NOW))
+        self.registry.record_health(self.observe(at=NOW + timedelta(seconds=1)), now=NOW + timedelta(seconds=1))
+        latest = self.registry.select(now=NOW + timedelta(seconds=1))
+        self.assertFalse(self.registry.revalidate_selection(old, now=NOW + timedelta(seconds=1)))
+        self.assertTrue(self.registry.revalidate_selection(latest, now=NOW + timedelta(seconds=1)))
+        self.registry.remove("test-node-a")
+        self.assertFalse(self.registry.revalidate_selection(latest, now=NOW + timedelta(seconds=1)))
+        self.registry.register(node())
+        self.assertFalse(self.registry.revalidate_selection(latest, now=NOW + timedelta(seconds=1)))
+
+    def test_revalidate_selection_rejects_forgery_and_invalid_input(self):
+        self.registry.record_health(self.observe(active=1), now=NOW)
+        choice = self.registry.select(now=NOW)
+        for modified in (
+            replace(choice, registration_id="0" * 32),
+            replace(choice, node_id="test-unknown"),
+            replace(choice, region_id="test-region-b"),
+            replace(choice, observed_at=NOW + timedelta(seconds=1)),
+            replace(choice, active_sessions=0),
+            replace(choice, max_sessions=99),
+        ):
+            with self.subTest(modified=modified):
+                self.assertFalse(self.registry.revalidate_selection(modified, now=NOW))
+        with self.assertRaises(TypeError):
+            self.registry.revalidate_selection(None, now=NOW)
+        with self.assertRaises(ValueError):
+            self.registry.revalidate_selection(choice, now=NOW.replace(tzinfo=None))
+
+    def test_revalidate_selection_after_concurrent_disable(self):
+        self.registry.record_health(self.observe(), now=NOW)
+        old = self.registry.select(now=NOW)
+        disabled = threading.Event()
+        errors = []
+
+        def toggle():
+            self.registry.set_enabled("test-node-a", False)
+            disabled.set()
+
+        def recheck():
+            if not disabled.wait(timeout=5):
+                errors.append("disable timed out")
+                return
+            if self.registry.revalidate_selection(old, now=NOW):
+                errors.append("stale selection was accepted")
+
+        threads = [threading.Thread(target=toggle), threading.Thread(target=recheck)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=5)
+            self.assertFalse(t.is_alive())
+        self.assertFalse(errors)
 
     def test_snapshot_is_immutable_and_sorted(self):
         self.registry.register(node("test-node-c"))
