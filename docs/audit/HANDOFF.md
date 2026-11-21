@@ -1,5 +1,13 @@
 # Wexum — Chief Independent Auditor HANDOFF
 
+## Audit checkpoint — 2026-11-22, PR #73 durable SQLite path guard
+
+- **PR/head:** https://github.com/Dimash313/Wexum/pull/73 at `fe4e8e22e2132d0d3ec123eae5611b0c7c3aa7b0`, base `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`; previous audited `97956bb5d4c6dd2e27f3ef3614616bba33d63085`.
+- **Scope:** Issue #9, current PR diff against base, current billing core/tests, proposed foundation AGENTS and review protocol, existing comments and zero inline threads. `BillingEngine.__init__` now rejects `:memory:`, empty and non-path inputs; regression `test_ephemeral_database_path_is_rejected_before_open` covers four invalid inputs and unchanged ledger state. Prevents silently ephemeral schema with per-operation connections. No new confirmed defect in inspected delta; arbitrary deployment paths still require trust, persistence and filesystem controls.
+- **Decision:** **NOT VERIFIED / integration BLOCKED**. PR-triggered GitHub Actions workflow runs 0; legacy commit statuses 0 (not exhaustive Check Runs). Independent Python unittest **NOT RUN**, compileall **NOT RUN**, production provider / VPN testing **NOT RUN**. Foundation #1, mandatory CI, real provider/entitlement trust chain and non-author review outstanding.
+- **Published conclusion:** https://github.com/Dimash313/Wexum/pull/73#issuecomment-7069642852. **Next:** exact-head tests and CI, inspect rollback/restart and storage failure logs; prioritize Control Plane #55 red negatives and fresh high-risk SHA. No product code changed or merge.
+
+
 ## Audit checkpoint — 2026-11-21, PR #71 security evidence gates (new head)
 
 - **PR:** https://github.com/Dimash313/Wexum/pull/71; **head:** `22d6b78d9daae8fe8080aefb49e09210a37a3332`; base `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`. Previous independent review head `7878608562250e43daeb9299a95758358786a6d5`.
