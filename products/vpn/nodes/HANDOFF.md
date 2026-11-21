@@ -1,6 +1,8 @@
 # WexumVPN Node Registry & Infrastructure — engineering handoff
 
 **Updated:** 2026-11-21 UTC (rechecked in GitHub).
+
+**Backend Engineering checkpoint — 2026-11-21 (CodeQL test clarity):** A narrowly scoped change in this lane updated `test_registry.py` at commit [`4b11492`](https://github.com/Dimash313/Wexum/commit/4b11492f49710df497780f4ec7e82cec8057c554): the expected `StaleObservationError` branch in the delayed-report thread now terminates explicitly with `return` rather than an empty `pass`. This responds to the CodeQL empty-except finding in [integration-only PR #80](https://github.com/Dimash313/Wexum/pull/80#discussion_r4651871168); no registry production logic changed. The old Node Registry source/test blob match with PR #80 is now outdated **for test_registry.py only**. **Current-change tests: NOT RUN** (no GitHub checkout/network in this execution environment); **current-head CI: NOT VERIFIED**; old PR #80 passing CI does not cover this changed test blob. Re-run Node Registry tests, compileall and CodeQL on an approved exact-head integration candidate; ask independent auditor to review the revised test and latest SHA before integration. All PRs remain draft/blocking.
 **Owner lane:** GitHub issue [#4](https://github.com/Dimash313/Wexum/issues/4).
 **Work branch:** `feat/vpn/4-node-registry`.
 **Draft PR:** [#65](https://github.com/Dimash313/Wexum/pull/65) (open, draft, **not merged**).
