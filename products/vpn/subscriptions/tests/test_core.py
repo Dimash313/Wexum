@@ -211,6 +211,19 @@ class BillingTests(unittest.TestCase):
             with self.assertRaises(SecurityError):
                 self.engine.accept_webhook("sandbox-test", body, {"x-test-timestamp":ts,"x-test-signature":sig}, now=NOW)
 
+    def test_deeply_nested_signed_json_fails_closed(self):
+        # A correctly signed but deeply nested payload must not leak RecursionError.
+        body = b"[" * 1200 + b"0" + b"]" * 1200
+        timestamp = str(NOW)
+        signature = hmac.new(
+            SECRET, timestamp.encode("ascii") + b"." + body, hashlib.sha256
+        ).hexdigest()
+        headers = {"X-Test-Timestamp": timestamp, "X-Test-Signature": signature}
+        with self.assertRaisesRegex(SecurityError, "^invalid webhook JSON$"):
+            self.engine.accept_webhook("sandbox-test", body, headers, now=NOW)
+        self.assertEqual(self.snapshot().revision, 0)
+        self.assertFalse(self.snapshot().eligible)
+
     def test_test_webhook_header_bounds_reject_before_ledger_write(self):
         body = self._payload()
         valid = self._headers()
