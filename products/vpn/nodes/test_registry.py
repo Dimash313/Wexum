@@ -21,21 +21,24 @@ def node(name="test-node-a", region="test-region-a", sessions=10, caps=frozenset
     return Node(name, region, caps, sessions)
 
 
-def observe(name="test-node-a", *, at=NOW, status=HealthStatus.HEALTHY, active=0):
-    return HealthObservation(name, status, at, active)
+def observe(name="test-node-a", *, registration_id, at=NOW, status=HealthStatus.HEALTHY, active=0):
+    return HealthObservation(name, registration_id, status, at, active)
 
 
 class RegistryTests(unittest.TestCase):
     def setUp(self):
         self.registry = NodeRegistry(health_ttl_seconds=10, max_nodes=3)
-        self.registry.register(node())
+        self.registrations = {"test-node-a": self.registry.register(node())}
+
+    def observe(self, name="test-node-a", **kwargs):
+        return observe(name, registration_id=self.registrations[name], **kwargs)
 
     def test_unreported_is_never_selected(self):
         self.assertIsNone(self.registry.select(now=NOW))
         self.assertEqual(self.registry.snapshot(now=NOW)[0].status, AvailabilityStatus.UNREPORTED)
 
     def test_fresh_health_and_exact_expiry_boundary(self):
-        self.registry.record_health(observe(active=3), now=NOW)
+        self.registry.record_health(self.observe(active=3), now=NOW)
         result = self.registry.select(now=NOW + timedelta(seconds=9))
         self.assertEqual((result.node_id, result.active_sessions), ("test-node-a", 3))
         self.assertEqual(result.expires_at, NOW + timedelta(seconds=10))
@@ -43,15 +46,15 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(self.registry.snapshot(now=NOW + timedelta(seconds=10))[0].status, AvailabilityStatus.STALE)
 
     def test_down_and_overloaded_fail_closed(self):
-        self.registry.record_health(observe(status=HealthStatus.DOWN), now=NOW)
+        self.registry.record_health(self.observe(status=HealthStatus.DOWN), now=NOW)
         self.assertEqual(self.registry.snapshot(now=NOW)[0].status, AvailabilityStatus.DOWN)
         self.assertIsNone(self.registry.select(now=NOW))
-        self.registry.record_health(observe(at=NOW + timedelta(seconds=1), active=10), now=NOW + timedelta(seconds=1))
+        self.registry.record_health(self.observe(at=NOW + timedelta(seconds=1), active=10), now=NOW + timedelta(seconds=1))
         self.assertEqual(self.registry.snapshot(now=NOW + timedelta(seconds=1))[0].status, AvailabilityStatus.SATURATED)
         self.assertIsNone(self.registry.select(now=NOW + timedelta(seconds=1)))
 
     def test_disable_enable_resets_old_health(self):
-        self.registry.record_health(observe(), now=NOW)
+        self.registry.record_health(self.observe(), now=NOW)
         self.registry.set_enabled("test-node-a", False)
         self.assertEqual(self.registry.snapshot(now=NOW)[0].status, AvailabilityStatus.DISABLED)
         self.registry.set_enabled("test-node-a", True)
@@ -59,53 +62,115 @@ class RegistryTests(unittest.TestCase):
         self.assertIsNone(self.registry.select(now=NOW))
 
     def test_disable_reenable_rejects_old_health_replay(self):
-        self.registry.record_health(observe(), now=NOW)
+        self.registry.record_health(self.observe(), now=NOW)
         self.registry.set_enabled("test-node-a", False)
         with self.assertRaises(ValueError):
-            self.registry.record_health(observe(at=NOW + timedelta(seconds=1)), now=NOW + timedelta(seconds=1))
-        self.registry.set_enabled("test-node-a", True)
+            self.registry.record_health(self.observe(at=NOW + timedelta(seconds=1)), now=NOW + timedelta(seconds=1))
+        previous_registration = self.registrations["test-node-a"]
+        self.registrations["test-node-a"] = self.registry.set_enabled("test-node-a", True)
+        self.assertNotEqual(previous_registration, self.registrations["test-node-a"])
         with self.assertRaises(StaleObservationError):
-            self.registry.record_health(observe(), now=NOW + timedelta(seconds=1))
+            self.registry.record_health(observe(registration_id=previous_registration), now=NOW + timedelta(seconds=1))
         self.assertIsNone(self.registry.select(now=NOW + timedelta(seconds=1)))
-        self.registry.record_health(observe(at=NOW + timedelta(seconds=2)), now=NOW + timedelta(seconds=2))
-        self.assertIsNotNone(self.registry.select(now=NOW + timedelta(seconds=2)))
+        self.registry.record_health(self.observe(at=NOW + timedelta(seconds=2)), now=NOW + timedelta(seconds=2))
+        self.assertEqual(self.registry.select(now=NOW + timedelta(seconds=2)).registration_id, self.registrations["test-node-a"])
+
+    def test_removed_node_old_generation_cannot_reactivate_same_id(self):
+        old_generation = self.registrations["test-node-a"]
+        self.registry.record_health(self.observe(), now=NOW)
+        self.registry.remove("test-node-a")
+        new_generation = self.registry.register(node())
+        self.registrations["test-node-a"] = new_generation
+        self.assertNotEqual(old_generation, new_generation)
+        with self.assertRaises(StaleObservationError):
+            self.registry.record_health(
+                observe(registration_id=old_generation, at=NOW + timedelta(seconds=1)),
+                now=NOW + timedelta(seconds=2),
+            )
+        self.assertIsNone(self.registry.select(now=NOW + timedelta(seconds=2)))
+        self.registry.record_health(self.observe(at=NOW + timedelta(seconds=2)), now=NOW + timedelta(seconds=2))
+        self.assertEqual(self.registry.select(now=NOW + timedelta(seconds=2)).registration_id, new_generation)
+
+    def test_registration_id_is_required_and_validated(self):
+        with self.assertRaises(ValueError):
+            HealthObservation("test-node-a", "test-fake", HealthStatus.HEALTHY, NOW, 0)
+        with self.assertRaises(ValueError):
+            HealthObservation("test-node-a", None, HealthStatus.HEALTHY, NOW, 0)
+        with self.assertRaises(StaleObservationError):
+            self.registry.record_health(
+                observe(registration_id="0" * 32), now=NOW
+            )
+        self.assertIsNone(self.registry.select(now=NOW))
+
+    def test_concurrent_remove_recreate_and_old_report_fails(self):
+        old_generation = self.registrations["test-node-a"]
+        self.registry.record_health(self.observe(), now=NOW)
+        completed = threading.Event()
+        failures = []
+
+        def rotate():
+            self.registry.remove("test-node-a")
+            self.registrations["test-node-a"] = self.registry.register(node())
+            completed.set()
+
+        def delayed_old_report():
+            if not completed.wait(timeout=5):
+                failures.append("rotation timeout")
+                return
+            try:
+                self.registry.record_health(
+                    observe(registration_id=old_generation, at=NOW + timedelta(seconds=1)),
+                    now=NOW + timedelta(seconds=2),
+                )
+                failures.append("old report unexpectedly accepted")
+            except StaleObservationError:
+                pass
+
+        threads = [threading.Thread(target=rotate), threading.Thread(target=delayed_old_report)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+        self.assertFalse(failures)
+        self.assertIsNone(self.registry.select(now=NOW + timedelta(seconds=2)))
 
     def test_remove_and_duplicate_inventory(self):
         with self.assertRaises(ValueError):
             self.registry.register(node())
-        self.registry.record_health(observe(), now=NOW)
+        self.registry.record_health(self.observe(), now=NOW)
         self.registry.remove("test-node-a")
         self.assertEqual(self.registry.snapshot(now=NOW), ())
         with self.assertRaises(KeyError):
-            self.registry.record_health(observe(), now=NOW)
+            self.registry.record_health(self.observe(), now=NOW)
 
     def test_out_of_order_and_replay_rejected(self):
-        self.registry.record_health(observe(at=NOW + timedelta(seconds=2)), now=NOW + timedelta(seconds=2))
+        self.registry.record_health(self.observe(at=NOW + timedelta(seconds=2)), now=NOW + timedelta(seconds=2))
         for at in (NOW + timedelta(seconds=1), NOW + timedelta(seconds=2)):
             with self.assertRaises(StaleObservationError):
-                self.registry.record_health(observe(at=at, status=HealthStatus.DOWN), now=NOW + timedelta(seconds=3))
+                self.registry.record_health(self.observe(at=at, status=HealthStatus.DOWN), now=NOW + timedelta(seconds=3))
         self.assertIsNotNone(self.registry.select(now=NOW + timedelta(seconds=3)))
 
     def test_future_and_expired_reports_fail_closed(self):
         for reported, received in ((NOW + timedelta(seconds=1), NOW), (NOW, NOW + timedelta(seconds=10))):
             with self.assertRaises(StaleObservationError):
-                self.registry.record_health(observe(at=reported), now=received)
+                self.registry.record_health(self.observe(at=reported), now=received)
         self.assertIsNone(self.registry.select(now=NOW))
 
     def test_region_and_capability_are_exact(self):
-        self.registry.record_health(observe(), now=NOW)
+        self.registry.record_health(self.observe(), now=NOW)
         self.assertIsNone(self.registry.select(now=NOW, region_id="test-region-b"))
         self.assertIsNone(self.registry.select(now=NOW, required_capabilities=frozenset({"test-openvpn"})))
         self.assertEqual(self.registry.select(now=NOW, region_id="test-region-a").node_id, "test-node-a")
 
     def test_normalized_capacity_and_stable_tie_break(self):
-        self.registry.register(node("test-node-b", sessions=20))
-        self.registry.register(node("test-node-c", sessions=30))
-        self.registry.record_health(observe(active=5), now=NOW)
-        self.registry.record_health(observe("test-node-b", active=10), now=NOW)
-        self.registry.record_health(observe("test-node-c", active=5), now=NOW)
+        self.registrations["test-node-b"] = self.registry.register(node("test-node-b", sessions=20))
+        self.registrations["test-node-c"] = self.registry.register(node("test-node-c", sessions=30))
+        self.registry.record_health(self.observe(active=5), now=NOW)
+        self.registry.record_health(self.observe("test-node-b", active=10), now=NOW)
+        self.registry.record_health(self.observe("test-node-c", active=5), now=NOW)
         self.assertEqual(self.registry.select(now=NOW).node_id, "test-node-c")
-        self.registry.record_health(observe("test-node-c", at=NOW + timedelta(seconds=1), active=15), now=NOW + timedelta(seconds=1))
+        self.registry.record_health(self.observe("test-node-c", at=NOW + timedelta(seconds=1), active=15), now=NOW + timedelta(seconds=1))
         self.assertEqual(self.registry.select(now=NOW + timedelta(seconds=1)).node_id, "test-node-a")
 
     def test_registry_and_query_resource_bounds(self):
@@ -133,11 +198,11 @@ class RegistryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             Node("test-id", "test-region", frozenset({"TEST"}), 10)
         with self.assertRaises(ValueError):
-            HealthObservation("test-node-a", "healthy", NOW, 0)
+            HealthObservation("test-node-a", "0" * 32, "healthy", NOW, 0)
         with self.assertRaises(ValueError):
-            HealthObservation("test-node-a", HealthStatus.HEALTHY, NOW, -1)
+            HealthObservation("test-node-a", "0" * 32, HealthStatus.HEALTHY, NOW, -1)
         with self.assertRaises(ValueError):
-            HealthObservation("test-node-a", HealthStatus.HEALTHY, NOW.replace(tzinfo=None), 0)
+            HealthObservation("test-node-a", "0" * 32, HealthStatus.HEALTHY, NOW.replace(tzinfo=None), 0)
         with self.assertRaises(ValueError):
             self.registry.select(now=NOW.replace(tzinfo=None))
         with self.assertRaises(ValueError):
@@ -188,7 +253,7 @@ class RegistryTests(unittest.TestCase):
             barrier.wait()
             at = NOW + timedelta(seconds=offset)
             try:
-                self.registry.record_health(observe(at=at, active=offset), now=NOW + timedelta(seconds=3))
+                self.registry.record_health(self.observe(at=at, active=offset), now=NOW + timedelta(seconds=3))
             except StaleObservationError:
                 errors.append(offset)
 
