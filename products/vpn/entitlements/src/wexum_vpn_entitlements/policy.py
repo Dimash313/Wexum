@@ -13,8 +13,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Protocol
 
-_IDENTIFIER = re.compile(r"[A-Za-z0-9_.:-]{1,128}\Z".replace("\\\\", "\\"))
-_SCOPE = re.compile(r"[a-z][a-z0-9:_-]{1,63}\Z".replace("\\\\", "\\"))
+_IDENTIFIER = re.compile(r"[A-Za-z0-9_.:-]{1,128}\Z")
+_SCOPE = re.compile(r"[a-z][a-z0-9:_-]{1,63}\Z")
 
 
 class GrantPrecheckDenied(Exception):
@@ -67,6 +67,7 @@ class DeviceState:
     subject_id: str = field(repr=False)
     device_id: str = field(repr=False)
     active: bool
+    checked_at: datetime
     expires_at: datetime
 
 
@@ -215,6 +216,7 @@ class GrantPrecheck:
             or device.device_id != device_id
             or not _fresh(account.checked_at, now, self._age, self._skew)
             or not _fresh(subscription.checked_at, now, self._age, self._skew)
+            or not _fresh(device.checked_at, now, self._age, self._skew)
             or type(subscription.allowed_scopes) is not frozenset
             or any(not _scope(s) for s in subscription.allowed_scopes)
             or scope not in subscription.allowed_scopes
