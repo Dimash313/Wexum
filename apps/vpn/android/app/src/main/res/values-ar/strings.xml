@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WexumVPN</string>
+    <string name="home_title">WexumVPN</string>
+    <string name="home_subtitle">تطبيق VPN لنظام أندرويد</string>
+    <string name="home_notice">لم يُجهَّز اتصال VPN بعد. هذا التطبيق لا يحمي حركة الإنترنت حاليًا.</string>
+    <string name="status_disconnected">غير متصل</string>
+    <string name="status_consent">بانتظار إذن VPN</string>
+    <string name="status_ready">تم منح الإذن — غير متصل</string>
+    <string name="status_connecting">جارٍ الاتصال — لم تبدأ الحماية</string>
+    <string name="status_protected">تم التحقق من النفق</string>
+    <string name="status_interrupted">انقطع الاتصال</string>
+    <string name="status_error">VPN غير متاح</string>
+    <string name="permission_button">طلب إذن VPN</string>
+    <string name="language_button">لغة التطبيق</string>
+    <string name="language_legacy">يستخدم هذا الجهاز لغة النظام للتطبيق.</string>
+    <string name="about_button">حول أمان الاتصال</string>
+    <string name="about_title">حالة الاتصال</string>
+    <string name="about_message">إذن VPN ليس اتصالًا فعليًا. لن ينشئ WexumVPN نفقًا حتى دمج محرك VPN وخادم تم التحقق منهما. لا ندّعي وجود حماية الآن.</string>
+    <string name="permission_denied">لم يُمنح إذن VPN.</string>
+</resources>

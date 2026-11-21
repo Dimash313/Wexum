@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WexumVPN</string>
+    <string name="home_title">WexumVPN</string>
+    <string name="home_subtitle">Android жүйесіне арналған VPN</string>
+    <string name="home_notice">VPN тасымалдауы бапталмаған. Қолданба әзірге трафикті қорғамайды.</string>
+    <string name="status_disconnected">Қосылмаған</string>
+    <string name="status_consent">VPN рұқсаты күтілуде</string>
+    <string name="status_ready">Рұқсат берілді — қосылмаған</string>
+    <string name="status_connecting">Қосылуда — қорғаныс әлі жоқ</string>
+    <string name="status_protected">Туннель тексерілді</string>
+    <string name="status_interrupted">Байланыс үзілді</string>
+    <string name="status_error">VPN қолжетімсіз</string>
+    <string name="permission_button">VPN рұқсатын сұрау</string>
+    <string name="language_button">Қолданба тілі</string>
+    <string name="language_legacy">Бұл құрылғы жүйе тілін пайдаланады.</string>
+    <string name="about_button">Қосылу қауіпсіздігі туралы</string>
+    <string name="about_title">Қосылу күйі</string>
+    <string name="about_message">VPN рұқсаты жұмыс істеп тұрған қосылымды білдірмейді. Тексерілген VPN қозғалтқышы мен серверлік жүйе қосылмайынша, WexumVPN туннель құрмайды және қорғанысты мәлімдемейді.</string>
+    <string name="permission_denied">VPN рұқсаты берілмеді.</string>
+</resources>
