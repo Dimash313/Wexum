@@ -1,3 +1,12 @@
+## Backend engineering checkpoint — 2026-11-21: malformed webhook provider identifier
+
+- **Scope:** Subscriptions & Billing issue #9, existing Draft PR #73, owned path `products/vpn/subscriptions/` only. Foundation remains unmerged.
+- **Problem:** `accept_webhook(provider, ...)` previously passed an arbitrary provider value directly to `dict.get`; unhashable input such as `[]` or `{}` raised uncontrolled `TypeError` instead of the established `SecurityError` boundary. This is defensive input handling for a synthetic adapter, not proof of a public exploit or real provider integration.
+- **Change:** enforce string provider type before adapter lookup; preserve existing unknown-provider rejection. Regression tests supply `None`, `[]`, `{}`, and integer provider and verify unchanged revision and no eligibility.
+- **Code commit:** [59796b8](https://github.com/Dimash313/Wexum/commit/59796b841a7dae6d7c8cdf3ba2429f3c95ab40c4); **test commit:** [a8cb5fa](https://github.com/Dimash313/Wexum/commit/a8cb5fa71e2078d4c1dff7b40a96685f2a523bcd).
+- **Actual evidence:** GitHub write PASS; Python unittest **NOT RUN**; compileall **NOT RUN**; current-head GitHub Actions **NOT VERIFIED**; independent audit **PENDING**. Direct git clone from container failed DNS resolution (`Could not resolve host: github.com`). No green CI claim.
+- **Next:** execute `PYTHONPATH=products/vpn/subscriptions/src python -m unittest discover -s products/vpn/subscriptions/tests -v` and `python -m compileall -q products/vpn/subscriptions/src products/vpn/subscriptions/tests` on exact source; obtain independent review and final-head CI. No merge; no live payment adapter.
+
 # WexumVPN — Subscriptions & Billing | Agent Handoff
 
 ## Backend engineering checkpoint — 2026-11-21: reject non-mapping webhook headers
