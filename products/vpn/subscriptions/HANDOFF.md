@@ -1,3 +1,11 @@
+## Backend engineering checkpoint — 2026-11-21: bounded synthetic webhook headers
+
+- **Scope:** Subscriptions & Billing #9, Draft PR #73, only `products/vpn/subscriptions/`; no shared contract changes. This remains a test-only HMAC adapter and is not a real payment gateway.
+- **Change:** bound HTTP-header container to at most 32 entries, each key to 128 characters, each value to 256 characters, and reject non-ASCII header names before case normalization. This limits untrusted parsing work and removes Unicode case-fold ambiguity. The existing duplicate-header, type, timestamp and signature checks remain in place.
+- **Code:** [f874187](https://github.com/Dimash313/Wexum/commit/f8741879dc06e5602221e315616169a3fc320372); **regression:** [de42b06](https://github.com/Dimash313/Wexum/commit/de42b06a1573257a2faa238b709b9f65db46ad21), covering excess header count, key/value length, Unicode header name and unchanged ledger/eligibility on rejection.
+- **Verification:** GitHub writes PASS. Python unit tests **NOT RUN**; compileall **NOT RUN**; latest-head CI **NOT VERIFIED**; independent audit **PENDING**. Direct Git clone in local runtime failed DNS resolution for `github.com`. Authored regression assertions are not execution evidence.
+- **Next:** run full billing tests and compileall on exact source, then final-head CI and independent review. Foundation #1 and approved Identity/Entitlements/payment-provider contracts remain blocking; do not merge or deploy.
+
 ## Backend engineering checkpoint — 2026-11-21: malformed webhook provider identifier
 
 - **Scope:** Subscriptions & Billing issue #9, existing Draft PR #73, owned path `products/vpn/subscriptions/` only. Foundation remains unmerged.
