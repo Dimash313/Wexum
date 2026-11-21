@@ -211,6 +211,22 @@ class BillingTests(unittest.TestCase):
             with self.assertRaises(SecurityError):
                 self.engine.accept_webhook("sandbox-test", body, {"x-test-timestamp":ts,"x-test-signature":sig}, now=NOW)
 
+    def test_test_webhook_header_bounds_reject_before_ledger_write(self):
+        body = self._payload()
+        valid = self._headers()
+        invalid_headers = [
+            {**valid, **{f"X-Extra-{i}": "v" for i in range(31)}},
+            {**valid, "X-Long-Name-" + "a" * 120: "v"},
+            {**valid, "X-Extra": "v" * 257},
+            {**valid, "X-Unicode-é": "v"},
+        ]
+        for headers in invalid_headers:
+            with self.subTest(headers=list(headers)[-1]):
+                with self.assertRaises(SecurityError):
+                    self.engine.accept_webhook("sandbox-test", body, headers, now=NOW)
+                self.assertEqual(self.snapshot().revision, 0)
+                self.assertFalse(self.snapshot().eligible)
+
     def test_forbidden_live_adapter(self):
         class NotApproved:
             name = "live"
