@@ -183,6 +183,8 @@ class BillingEngine:
     """Trusted server-side boundary. Caller must authenticate order creation."""
 
     def __init__(self, db_path: str | Path, adapters: Mapping[str, ProviderAdapter], *, allow_test_adapters: bool = False) -> None:
+        if not isinstance(db_path, (str, Path)) or not str(db_path) or str(db_path) == ":memory:":
+            raise SecurityError("durable billing database path required")
         self._path = str(db_path)
         if not adapters:
             raise SecurityError("no approved billing adapters configured")
