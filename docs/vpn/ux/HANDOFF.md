@@ -1,6 +1,6 @@
 # WexumVPN Interfaces & UX — persistent handoff
 
-> **Read this first in every new chat/agent session.** This is the live, issue-owned continuation record, not evidence of product release. Updated: **2026-11-21** (based on GitHub state checked that day). Re-check GitHub before relying on any status below. Do not infer new work from a chat transcript.
+> **Read this first in every new chat/agent session.** This is the live, issue-owned continuation record, not evidence of product release. Updated: **2026-11-21** (GitHub rechecked at start of continued work; PR #75 remains open/draft and foundation PR #1 remains unmerged). Re-check GitHub before relying on any status below. Do not infer new work from a chat transcript.
 
 ## 1. Mission, scope and ownership
 
@@ -14,7 +14,7 @@
 ## 2. Source of truth and operating rules
 
 1. Read latest repo status, PRs, issues, review comments and branch heads; **first** read root `AGENTS.md`, `README.md`, `docs/engineering/STATE.md`, `docs/architecture/SYSTEM.md`, `docs/architecture/BOUNDARIES.md`, `docs/engineering/QUALITY.md`, `docs/engineering/REVIEW_PROTOCOL.md`, `docs/policy/RELIGIOUS_REVIEW.md`.
-2. Then read [issue #39](https://github.com/Dimash313/Wexum/issues/39), this file, [README.md](README.md), [SCREENS.md](SCREENS.md), [NATIVE_HANDOFF.md](NATIVE_HANDOFF.md), [connection_states.json](connection_states.json), [validate_contract.py](validate_contract.py) and [test_contract.py](test_contract.py).
+2. Then read [issue #39](https://github.com/Dimash313/Wexum/issues/39), this file, [README.md](README.md), [SCREENS.md](SCREENS.md), [NATIVE_HANDOFF.md](NATIVE_HANDOFF.md), [connection_states.json](connection_states.json), [validate_contract.py](validate_contract.py) [test_contract.py](test_contract.py), [STATE_COPY.md](STATE_COPY.md) and [ACCESSIBILITY_QA.md](ACCESSIBILITY_QA.md).
 3. Inspect PR #75 head files and comments, PR #1 status, platform drafts and design/i18n prerequisites **again** each session. Don't overwrite another agent's new work; use current blob SHA when editing existing files.
 4. When owner says **«Продолжаем дальше»**, independently select the highest-priority *unblocked* UX task, implement it on the issue branch, actually run available checks, update the existing Draft PR and this handoff, then report results, blockers and exact GitHub URLs. Don't ask owner to allocate routine technical tasks.
 5. **Never** directly push to main, force-push, edit another team's files, self-approve or merge. Ask CTO for cross-boundary decisions. If work is blocked, document the exact blocker and use the smallest safe change inside owned docs; do not pretend integration succeeded.
@@ -29,7 +29,7 @@
 | Draft PR | [#75 — VPN UX: fail-closed cross-platform screen and state specifications](https://github.com/Dimash313/Wexum/pull/75) **open, draft, not merged** |
 | PR target (stacked) | `architecture/foundation-and-agent-operating-system`, the head branch of [foundation PR #1](https://github.com/Dimash313/Wexum/pull/1) |
 | Foundation | PR #1 **open / unmerged**, with independent audit blockers under [#41](https://github.com/Dimash313/Wexum/issues/41). No implication that its files are on main |
-| UX PR known head before this handoff | `7104e8f5727a2db4a03489ca78377a960c1dcad8`; refresh after this commit |
+| UX PR previously verified head (before this continued-work stage) | `505616cfdcca1cb4206b11d8e6bd42f445765d0a`; re-read GitHub for the latest head after commits |
 
 Do not merge/retarget on assumption. Once foundation integrates, CTO decides proper base/rebase and independent CI review; this lane does not alter integration ownership.
 
@@ -54,12 +54,18 @@ Do not merge/retarget on assumption. Once foundation integrates, CTO decides pro
 | `connection_states.json` | Proposed machine-readable states, transitions and anti-deception gates |
 | `validate_contract.py` | Python stdlib static contract validator |
 | `test_contract.py` | 20 drafted Python `unittest` methods for positive and negative contract behavior |
+| `STATE_COPY.md` | Proposed status titles/detail, authority/preconditions, action handling and screen-reader announcement policy for all 17 states |
+| `ACCESSIBILITY_QA.md` | 18 explicit per-platform accessibility/RTL/responsive acceptance cases, evidence format, honest NOT RUN/BLOCKED inventory |
 
 Current artifacts provide no real user-facing VPN connection or status. No native UI, billing, localization catalog or shared components were implemented by this lane.
 
 ## 6. Testing — observed evidence vs not run
 
 **Executed and passed in a previous agent turn:** 205 structural JavaScript assertions over six files freshly fetched from the actual GitHub branch (JSON parse, expected state IDs, counts, transition uniqueness, key naming, protection/evidence flags, file presence). This is a *custom structural consistency check*, **NOT** the Python unit suite, CI, UX/device testing, validated native security or an independent audit.
+
+**Executed in this continued-work stage:** GitHub connector fetched the actual five current branch files (`connection_states.json`, `STATE_COPY.md`, `ACCESSIBILITY_QA.md`, `SCREENS.md`, `README.md`) and JavaScript structural assertions passed: exact 17/17 ID coverage with uniqueness and correct matrix columns, 18 unique accessibility case IDs, 12 referenced base scenarios, truthful revocation/permission semantics, and README links. These checks establish internal document consistency only, not Python runtime execution or UI quality.
+
+**Attempted repository checkout:** `git ls-remote --heads https://github.com/Dimash313/Wexum.git 'docs/vpn/39-interface-specs'` failed because this isolated container could not resolve `github.com`; direct raw-file retrieval was also unavailable. This is a network/tooling blocker, not a Python test result.
 
 **Authored but not confirmed executed:**
 ```sh
@@ -84,9 +90,9 @@ Run from repo root on the **current PR head**. Record real Python interpreter, c
 
 1. **Execute the actual Python checks** above against PR #75 current head; fix all failures within owned files, report exact output and results. If the execution environment cannot run the code, mark *not run* and use other honest static checks; don't fake Python success.
 2. **Get independent review** of `connection_states.json` and `SCREENS.md`: security #11 + native #5/#6/#7 must validate truth-source boundaries, revoke/expire/loss flows, no stale “Protected” display. Issue comment or PR review links are the evidence; don't claim coordination occurred without posting.
-3. Draft proposed **state-to-copy matrix** (including source-authority, disabled actions, screen-reader announcement and recovery behavior) inside `docs/vpn/ux/`; avoid adding translations to `packages/i18n/`. Verify no status, timeout or permission can imply protection without evidence.
+3. **State-to-copy matrix now drafted** in [STATE_COPY.md](STATE_COPY.md). Next: request native/security/i18n review of its 17 proposed statuses, action-gating and announcement policy, resolve any misleading wording, and align any changes with the UX state contract before production adoption.
 4. Confirm CTO-approved **design token and reusable UI boundary** against #42 before any shared component implementation. Seek CTO decision as issue/PR comment; do not create `packages/vpn-design/` prematurely.
-5. Create proposed **screen-by-screen accessibility/RTL verification matrix** for Android/iOS/Desktop (compact/dynamic type, keyboard/focus, landscape/tablet, 200% zoom, AR/KK/RU/EN). Later native teams execute device checks and attach evidence.
+5. **Accessibility/RTL test inventory now drafted** in [ACCESSIBILITY_QA.md](ACCESSIBILITY_QA.md) (18 cases). Next: get platform teams to run available nonoperational shell cases, record actual proof with tested SHA/device, and treat engine-dependent scenarios as BLOCKED.
 6. Coordinate `vpn.status.*`/`vpn.detail.*` key contract with i18n owner #44/#46 and arrange human review of safety-critical strings. Don't mark planned locales published.
 7. After foundation and dependency reviews, retarget/rebase PR only through approved integrator procedure, run mandatory CI on the actual integration head, and keep Draft state until independent acceptance.
 
@@ -97,7 +103,7 @@ Run from repo root on the **current PR head**. Record real Python interpreter, c
 - Localization: [Issue #44](https://github.com/Dimash313/Wexum/issues/44), [PR #45](https://github.com/Dimash313/Wexum/pull/45), [PR #50](https://github.com/Dimash313/Wexum/pull/50).
 - Platforms: [Android #66](https://github.com/Dimash313/Wexum/pull/66), [iOS #69](https://github.com/Dimash313/Wexum/pull/69), [Desktop #70](https://github.com/Dimash313/Wexum/pull/70).
 - Other engineering lanes: [Security #11](https://github.com/Dimash313/Wexum/issues/11), [QA #10](https://github.com/Dimash313/Wexum/issues/10), [Identity #34](https://github.com/Dimash313/Wexum/issues/34), [Entitlements #3](https://github.com/Dimash313/Wexum/issues/3), [Nodes #4](https://github.com/Dimash313/Wexum/issues/4), [Billing #9](https://github.com/Dimash313/Wexum/issues/9).
-- Local artifacts: [README](README.md), [screen flows](SCREENS.md), [native handoff](NATIVE_HANDOFF.md), [state contract](connection_states.json), [validator](validate_contract.py), [tests](test_contract.py).
+- Local artifacts: [README](README.md), [screen flows](SCREENS.md), [state copy](STATE_COPY.md), [accessibility QA](ACCESSIBILITY_QA.md), [native handoff](NATIVE_HANDOFF.md), [state contract](connection_states.json), [validator](validate_contract.py), [tests](test_contract.py).
 - Project entry points: [AGENTS.md](../../../AGENTS.md), [quality gate](../../engineering/QUALITY.md), [VPN architecture](../ARCHITECTURE.md), [review protocol](../../engineering/REVIEW_PROTOCOL.md).
 
 ## 10. Update and reporting protocol
