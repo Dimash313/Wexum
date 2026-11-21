@@ -249,6 +249,72 @@ class GrantPrecheckTests(unittest.IsolatedAsyncioTestCase):
             await check_task
         self.assertTrue(cancelled.is_set())
 
+    async def test_datetime_min_valid_snapshots_do_not_underflow(self):
+        edge = datetime.min.replace(tzinfo=timezone.utc)
+        self.actor = replace(self.actor, expires_at=edge + timedelta(minutes=5))
+        self.accounts.state = replace(self.accounts.state, checked_at=edge)
+        self.subscriptions.state = replace(
+            self.subscriptions.state,
+            checked_at=edge,
+            expires_at=edge + timedelta(minutes=8),
+        )
+        self.devices.state = replace(
+            self.devices.state,
+            checked_at=edge,
+            expires_at=edge + timedelta(minutes=7),
+        )
+        self.clock = lambda: edge
+        self.svc = self.service()
+        candidate = await self.svc.check(actor=self.actor, device_id="dev-A")
+        self.assertEqual(candidate.expires_at, edge + timedelta(seconds=120))
+
+    async def test_datetime_max_expiration_is_capped_without_overflow(self):
+        edge = datetime.max.replace(tzinfo=timezone.utc)
+        now = edge - timedelta(seconds=1)
+        self.actor = replace(self.actor, expires_at=edge)
+        self.accounts.state = replace(self.accounts.state, checked_at=now)
+        self.subscriptions.state = replace(
+            self.subscriptions.state, checked_at=now, expires_at=edge
+        )
+        self.devices.state = replace(self.devices.state, checked_at=now, expires_at=edge)
+        self.clock = lambda: now
+        self.svc = self.service()
+        candidate = await self.svc.check(actor=self.actor, device_id="dev-A")
+        self.assertEqual(candidate.expires_at, edge)
+
+    async def test_future_snapshot_too_far_is_denied_at_datetime_min(self):
+        edge = datetime.min.replace(tzinfo=timezone.utc)
+        self.actor = replace(self.actor, expires_at=edge + timedelta(minutes=5))
+        self.accounts.state = replace(
+            self.accounts.state, checked_at=edge + timedelta(seconds=6)
+        )
+        self.subscriptions.state = replace(
+            self.subscriptions.state, checked_at=edge,
+            expires_at=edge + timedelta(minutes=8),
+        )
+        self.devices.state = replace(
+            self.devices.state, checked_at=edge,
+            expires_at=edge + timedelta(minutes=7),
+        )
+        self.clock = lambda: edge
+        self.svc = self.service()
+        await self._deny()
+
+    async def test_actor_issuer_and_audience_must_be_plain_strings(self):
+        class StringImpersonator:
+            def __eq__(self, other):
+                return True
+            def __ne__(self, other):
+                return False
+
+        for change in (
+            {"issuer": StringImpersonator()},
+            {"audience": StringImpersonator()},
+        ):
+            with self.subTest(change=tuple(change)):
+                await self._deny(actor=replace(self.actor, **change))
+        self.assertEqual(self.accounts.calls, 0)
+
     async def test_backward_clock_beyond_budget_fails_closed(self):
         readings = iter((NOW, NOW - timedelta(seconds=6)))
         self.clock = lambda: next(readings)
