@@ -138,6 +138,15 @@ class ReleaseManifestTests(unittest.TestCase):
         errors, _ = assess(obj)
         self.assertTrue(any("requires actor and HTTPS URL" in item for item in errors))
 
+    def test_https_url_requires_authority_and_no_credentials(self):
+        for url in ("https://", "https:///no-host", "https://user:secret@example.test/proof",
+                    "https://example.test\\nspoofed", "https://[invalid", "https://example.test:0/proof"):
+            with self.subTest(url=url):
+                obj = artificial_complete()
+                obj["gates"][0]["evidence"][0]["url"] = url
+                errors, _ = assess(obj)
+                self.assertTrue(any("requires actor and HTTPS URL" in e for e in errors))
+
     def test_release_cli_never_passes_synthetic_attestation(self):
         """Complete but fabricated metadata can never authorize deployment."""
         with TemporaryDirectory() as temp:
