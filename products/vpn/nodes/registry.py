@@ -263,3 +263,27 @@ class NodeRegistry:
                 observation.active_sessions,
                 selected.max_sessions,
             )
+
+    def revalidate_selection(self, selection: NodeSelection, *, now: datetime) -> bool:
+        """Check that a previous advisory selection is still exactly current.
+
+        This atomic local comparison is not authorization or a capacity lease;
+        the node can change again immediately after the method returns.
+        """
+        if not isinstance(selection, NodeSelection):
+            raise TypeError("selection must be a NodeSelection")
+        _utc(now, "now")
+        with self._lock:
+            node = self._nodes.get(selection.node_id)
+            if node is None or self._availability(node, now).status != AvailabilityStatus.HEALTHY:
+                return False
+            observation = self._observations[node.node_id]
+            return selection == NodeSelection(
+                node.node_id,
+                self._registrations[node.node_id],
+                node.region_id,
+                observation.observed_at,
+                observation.observed_at + self._ttl,
+                observation.active_sessions,
+                node.max_sessions,
+            )
