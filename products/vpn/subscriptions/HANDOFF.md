@@ -96,3 +96,12 @@ Other coverage includes invalid signatures/timestamps, malformed JSON, repeated/
 - [Engineering review protocol](https://github.com/Dimash313/Wexum/blob/architecture/foundation-and-agent-operating-system/docs/engineering/REVIEW_PROTOCOL.md)
 - [Religious review policy](https://github.com/Dimash313/Wexum/blob/architecture/foundation-and-agent-operating-system/docs/policy/RELIGIOUS_REVIEW.md)
 - [Issue #9](https://github.com/Dimash313/Wexum/issues/9), [Draft PR #73](https://github.com/Dimash313/Wexum/pull/73), [Foundation PR #1](https://github.com/Dimash313/Wexum/pull/1), [Entitlements #3](https://github.com/Dimash313/Wexum/issues/3), [Entitlements PR #64](https://github.com/Dimash313/Wexum/pull/64), [Identity #34](https://github.com/Dimash313/Wexum/issues/34).
+
+
+## Backend engineering checkpoint — 2026-11-21 (storage outage)
+
+- Issue #9 / Draft PR #73 / branch `feat/vpn/9-subscription-adapter`: scoped fix in `core.py` wraps SQLite connection/open and SQLite operation failures as generic `BillingError("billing storage unavailable")`, suppressing raw SQLite exception chaining in normal traceback output. No billing state or payment semantics intentionally changed. SQLite transactions remain rollback-protected on write failures.
+- Added two negative tests in `tests/test_core.py` for inaccessible database parent and a database path replaced by a directory after initialization. These verify sanitized, fail-closed storage outage handling and no exposed original exception cause.
+- GitHub commits: core `18df5c669b775e081486b213a6dd07e8bad1b3f5`; tests `401c25a2f4a87b540f56171f52d596460c5be16a`. Before writes, Draft PR #73 head was `a4d4e2f1e0c780f11964c42ec9f52f761e27a089`; fetched exact blob SHAs were `14a1a7e5de8afbb94f0f3a7f5b2fab44ec1392d1` and `a0f33b1341b2032ae68457c8ee878b585217c3a2`.
+- **Tests on these new commits: NOT RUN**; **compileall: NOT RUN**; **GitHub Actions current-head: NOT VERIFIED**. Prior 32/32 local tests covered older source and do not certify this patch. Rerun full 34-test suite and compileall in an executable checkout, then obtain independent review/CI. No production payment adapter, entitlement grant or deployment exists.
+- Remaining blockers: unmerged foundation PR #1, independent audit, approved Identity/Entitlements contracts, provider verification and reconciliation, operational database recovery. Rollback by reverting these two commits on the Draft PR branch; do not merge without review.
