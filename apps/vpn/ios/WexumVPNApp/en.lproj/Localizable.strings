@@ -12,4 +12,4 @@
 "action.connectUnavailable" = "Connect and disconnect are unavailable until the VPN engine and access checks are independently validated.";
 "accessibility.refreshHint" = "Reads the current VPN status from iOS settings";
 "privacy.disclosureTitle" = "Data and privacy";
-"privacy.disclosure" = "This preview makes no API calls and stores no VPN credentials. It reads local system connection and network availability state only. No VPN traffic is routed by this app.";
+"privacy.disclosure" = "This preview makes no requests to Wexum servers and stores no VPN credentials. It reads local system connection and network availability state only. No VPN traffic is routed by this app.";
