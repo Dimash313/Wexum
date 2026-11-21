@@ -24,7 +24,7 @@ Use outcomes: APPROVED FOR INTEGRATION (only with complete evidence), CHANGES RE
 ## 3. Ownership, branch, draft PR
 - Ongoing auditor continuity **Issue:** [#78](https://github.com/Dimash313/Wexum/issues/78).
 - **Branch:** docs/audit/78-independent-handoff, based on main cc805a79b6dfc4e08e6866c1bc0653381755fb83 when created.
-- **Draft PR:** pending creation at initial file commit; inspect the branch/issue to find the live PR, then update this line to its number. Not merged.
+- **Draft PR:** [#79 — Auditor handoff](https://github.com/Dimash313/Wexum/pull/79), targeting main, **not merged**. This is an auditor documentation proposal only and does not itself count as a non-author independent review.
 - Foundation independent review **Issue:** [#41](https://github.com/Dimash313/Wexum/issues/41); [PR #1](https://github.com/Dimash313/Wexum/pull/1). Do **not** use this documentation PR as a substitute for #41.
 - Foundation aggregate CI-only **Draft PR #63**: https://github.com/Dimash313/Wexum/pull/63. Explicitly "DO NOT MERGE".
 
