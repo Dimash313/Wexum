@@ -213,12 +213,18 @@ class BillingEngine:
 
     @contextmanager
     def _connection(self) -> Iterator[sqlite3.Connection]:
-        db = sqlite3.connect(self._path, timeout=5, isolation_level=None)
+        try:
+            db = sqlite3.connect(self._path, timeout=5, isolation_level=None)
+        except sqlite3.Error:
+            raise BillingError("billing storage unavailable") from None
         db.row_factory = sqlite3.Row
         try:
-            db.execute("PRAGMA foreign_keys=ON")
-            db.execute("PRAGMA busy_timeout=5000")
-            yield db
+            try:
+                db.execute("PRAGMA foreign_keys=ON")
+                db.execute("PRAGMA busy_timeout=5000")
+                yield db
+            except sqlite3.Error:
+                raise BillingError("billing storage unavailable") from None
         finally:
             db.close()
 
