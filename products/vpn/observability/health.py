@@ -55,10 +55,10 @@ class HealthMonitor:
             raise ValueError("window_seconds must be positive and finite")
         if not (math.isfinite(stale_after_seconds) and 0 < stale_after_seconds <= window_seconds):
             raise ValueError("stale_after_seconds must be within the window")
-        if not (isinstance(min_samples, int) and not isinstance(min_samples, bool) and 1 <= min_samples <= max_samples_per_service):
-            raise ValueError("invalid min_samples")
         if not (isinstance(max_samples_per_service, int) and not isinstance(max_samples_per_service, bool) and max_samples_per_service > 0):
             raise ValueError("invalid max_samples_per_service")
+        if not (isinstance(min_samples, int) and not isinstance(min_samples, bool) and 1 <= min_samples <= max_samples_per_service):
+            raise ValueError("invalid min_samples")
         if not (isinstance(failure_threshold, int) and not isinstance(failure_threshold, bool) and failure_threshold > 0):
             raise ValueError("invalid failure_threshold")
         if not (math.isfinite(target_slo) and 0 < target_slo < 1):
@@ -70,6 +70,7 @@ class HealthMonitor:
         self.target_slo = target_slo
         self.clock = clock
         self._lock = RLock()
+        self._last_clock_value: float | None = None
         self._window = {name: deque(maxlen=max_samples_per_service) for name in SERVICES}
         self._totals = {name: [0, 0, 0.0] for name in SERVICES}  # ok, fail, elapsed sum
 
@@ -78,6 +79,15 @@ class HealthMonitor:
         if not isinstance(service, str) or service not in SERVICES:
             raise ValueError("service must be a configured, fixed category")
 
+    def _now(self) -> float:
+        now = self.clock()
+        if not math.isfinite(now):
+            raise ValueError("invalid monotonic clock")
+        if self._last_clock_value is not None and now < self._last_clock_value:
+            raise ValueError("monotonic clock moved backwards")
+        self._last_clock_value = now
+        return now
+
     def record(self, service: str, success: bool, duration_seconds: float) -> None:
         self._validate_service(service)
         if type(success) is not bool:
@@ -85,17 +95,15 @@ class HealthMonitor:
         if not isinstance(duration_seconds, (float, int)) or isinstance(duration_seconds, bool) or not math.isfinite(duration_seconds) or duration_seconds < 0:
             raise ValueError("duration_seconds must be finite and nonnegative")
         with self._lock:
-            now = self.clock()
-            if not math.isfinite(now):
-                raise ValueError("invalid monotonic clock")
-            self._evict(service, now)
-            entries = self._window[service]
-            if entries and now < entries[-1][0]:
-                raise ValueError("monotonic clock moved backwards")
-            entries.append((now, success))
+            now = self._now()
             totals = self._totals[service]
+            elapsed_total = totals[2] + float(duration_seconds)
+            if not math.isfinite(elapsed_total):
+                raise ValueError("cumulative duration must remain finite")
+            self._evict(service, now)
+            self._window[service].append((now, success))
             totals[0 if success else 1] += 1
-            totals[2] += float(duration_seconds)
+            totals[2] = elapsed_total
 
     def _evict(self, service: str, now: float) -> None:
         entries = self._window[service]
@@ -132,17 +140,13 @@ class HealthMonitor:
 
     def snapshot(self) -> dict[str, HealthSummary]:
         with self._lock:
-            now = self.clock()
-            if not math.isfinite(now):
-                raise ValueError("invalid monotonic clock")
+            now = self._now()
             return {service: self._summary(service, now) for service in sorted(SERVICES)}
 
     def render_prometheus(self) -> str:
         """Text exposition only. Caller must secure the transport and endpoint."""
         with self._lock:
-            now = self.clock()
-            if not math.isfinite(now):
-                raise ValueError("invalid monotonic clock")
+            now = self._now()
             snapshot = {service: self._summary(service, now) for service in sorted(SERVICES)}
             totals = {key: tuple(values) for key, values in self._totals.items()}
         lines = [
