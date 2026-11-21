@@ -125,7 +125,7 @@ class RegistryTests(unittest.TestCase):
                 )
                 failures.append("old report unexpectedly accepted")
             except StaleObservationError:
-                pass
+                return
 
         threads = [threading.Thread(target=rotate), threading.Thread(target=delayed_old_report)]
         for thread in threads:
