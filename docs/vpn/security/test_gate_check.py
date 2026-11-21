@@ -140,7 +140,8 @@ class ReleaseManifestTests(unittest.TestCase):
 
     def test_https_url_requires_authority_and_no_credentials(self):
         for url in ("https://", "https:///no-host", "https://user:secret@example.test/proof",
-                    "https://example.test\\nspoofed", "https://[invalid", "https://example.test:0/proof"):
+                    "https://example.test\\nspoofed", "https://[invalid", "https://example.test:0/proof",
+                    "https://example.test:/proof"):
             with self.subTest(url=url):
                 obj = artificial_complete()
                 obj["gates"][0]["evidence"][0]["url"] = url
