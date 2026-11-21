@@ -11,7 +11,6 @@ import sys
 import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -190,7 +189,7 @@ class ControlPlaneContractTests(unittest.IsolatedAsyncioTestCase):
     async def test_regression_recent_active_device_not_hidden_by_history(self):
         """Known #2/#56 blocker: PR #55 currently truncates 200 oldest rows."""
         for i in range(200):
-            instant = NOW-timedelta(days=10)+timedelta(seconds=i)
+            instant = NOW-timedelta(days=10)+timedelta(minutes=2*i)
             self.store.enroll(tenant_id='tenant-a', subject_id='subject-a',
                 platform='android', request_key=f'old_request_{i:04d}_key',
                 now=instant, expires_at=instant+timedelta(minutes=1), max_devices=1)
