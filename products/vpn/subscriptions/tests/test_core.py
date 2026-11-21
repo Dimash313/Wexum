@@ -302,9 +302,10 @@ class BillingTests(unittest.TestCase):
         with sqlite3.connect(self.path) as db:
             db.execute("CREATE TRIGGER reject_request BEFORE INSERT ON order_requests "
                        "BEGIN SELECT RAISE(ABORT, 'injected failure'); END")
-        with self.assertRaises(sqlite3.DatabaseError):
+        with self.assertRaisesRegex(BillingError, "^billing storage unavailable$") as caught:
             self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test",
                                      now=NOW, request_id="fault-injection")
+        self.assertIsNone(caught.exception.__cause__)
         with sqlite3.connect(self.path) as db:
             db.execute("DROP TRIGGER reject_request")
             self.assertEqual(db.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 1)
