@@ -1,0 +1,27 @@
+# PROPOSAL ONLY. This file is inert inside apps/vpn/ios/.
+# Only the integrator may review and activate a root .github/workflows entry.
+# Ensure GitHub-hosted macOS costs and an available Xcode 16+ runner are approved.
+name: VPN iOS native checks (integrator proposal)
+
+on:
+  pull_request:
+    paths:
+      - "apps/vpn/ios/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-ios:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Package tests and unsigned simulator build
+        run: bash apps/vpn/ios/ci/ios-check.sh
