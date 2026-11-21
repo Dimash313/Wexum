@@ -4,6 +4,14 @@
 **Last synchronized:** 2026-11-21 (after PR #80 GitHub CI at 09:52 UTC; always refresh live state).  
 **Repository:** https://github.com/Dimash313/Wexum
 
+
+## Audit checkpoint — 2026-11-21, PR #73 billing header hardening
+
+- **Exact PR #73 head:** `eb82e508816555cda3a195f71d1a580ff8aabc81`; base `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`. Incremental review since previous audited `96db0cd934a5add36092bb034a4149487eecefe5`.
+- **Scope:** inspected full current billing `core.py`, new `tests/test_core.py` negative cases, PR diff, issue #9, existing comments, inline review threads, foundation AGENTS/quality/review protocol. `TestHmacAdapter.verify` now rejects case-insensitive duplicate header names and non-string header keys/values before signature selection; tests exercise these cases. No new confirmed source defect in this change. Test adapter is not production authority.
+- **Decision:** **NOT VERIFIED / BLOCKED**. On this head, GitHub Actions PR-triggered runs = **0**, commit statuses = **0**. **No independent executable tests run in this cycle**; author-local counts remain unverified. Still blocked by foundation #1, final CI, non-author review, actual provider/entitlement integrations, legal/store/religious gates.
+- **Published review:** https://github.com/Dimash313/Wexum/pull/73#issuecomment-7065045287. Next: exact-head full billing tests with new negative cases, mandatory integrated CI and actual provider authority review; prioritize unchanged red Control Plane #55 if no billing changes.
+
 ## 1. Mandate and exclusive boundary
 The Chief Independent Auditor examines architecture, source code, authentication and tenant boundaries, VPN/control-plane safety, billing, privacy, resiliency, performance, CI, tests, UX/i18n, integration compatibility, documentation accuracy, and IhsanSoft religious/ethical gates across all Wexum applications. This is an **audit role**, never a product implementation or integration role.
 
