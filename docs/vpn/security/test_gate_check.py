@@ -119,6 +119,25 @@ class ReleaseManifestTests(unittest.TestCase):
         self.assertEqual([], errors)
         self.assertTrue(any("SEC-OPS-003" in x for x in blockers))
 
+    def test_malformed_evidence_payload_rejected(self):
+        obj = artificial_complete()
+        obj["gates"][0]["evidence"][0] = ["not", "a", "record"]
+        errors, _ = assess(obj)
+        self.assertTrue(any("must be object" in item for item in errors))
+
+    def test_duplicate_verification_cannot_replace_independent_review(self):
+        obj = artificial_complete()
+        obj["gates"][0]["evidence"][1]["kind"] = "verification"
+        errors, _ = assess(obj)
+        self.assertTrue(any("evidence kind must be unique" in item for item in errors))
+        self.assertTrue(any("require verification AND independent_review" in item for item in errors))
+
+    def test_non_https_evidence_url_rejected(self):
+        obj = artificial_complete()
+        obj["gates"][0]["evidence"][0]["url"] = "http://example.test/insecure"
+        errors, _ = assess(obj)
+        self.assertTrue(any("requires actor and HTTPS URL" in item for item in errors))
+
     def test_release_cli_never_passes_synthetic_attestation(self):
         """Complete but fabricated metadata can never authorize deployment."""
         with TemporaryDirectory() as temp:
