@@ -5,11 +5,11 @@
 ## Project
 - Open `WexumVPN.xcodeproj` with Xcode 16+ on macOS; set a valid Apple Developer signing team and Network Extensions capability. Intended deployment target: iOS 16+.
 - `WexumVPNApp/`: SwiftUI status view, OS NetworkExtension configuration/status observer, path monitoring, localized strings (en/ru/kk/ar).
-- `Sources/WexumVPNCore/`: dependency-free, testable fail-closed UI reducer. App target references this source directly; Swift package allows non-macOS tests.
-- `Tests/WexumVPNCoreTests/`: pure Swift XCTest state and failure tests.
+- `Sources/WexumVPNCore/`: dependency-free, testable fail-closed UI reducer and observation-epoch gate. Stale configuration results/status after refresh or network changes are rejected. The app target references this source directly; Swift package allows non-macOS tests.
+- `Tests/WexumVPNCoreTests/`: 16 pure Swift XCTest state, stale-callback and failure tests.
 
 ## Verified locally
-`swift test` on Swift 6.2.1 / Linux: 11 tests passed. `plutil -lint` checked Xcode project and entitlements syntax. **No Xcode, Apple signing, iOS Simulator or device test executed.** The Xcode project and Apple framework bindings require macOS validation. No GitHub Actions is activated from this directory.
+2026-11-21, Swift 6.2.1 / Linux: `swift test` — **16/16 pass**; `swiftc -frontend -parse WexumVPNApp/*.swift`, `bash -n ci/ios-check.sh` and `plutil -lint` on Xcode project/entitlements — passed syntax checks. `bash ci/ios-check.sh` executes tests and then correctly **exits 78 (BLOCKED)** without Xcode. **No Xcode, Apple signing, iOS Simulator or device test executed.** The Xcode project and Apple framework bindings require macOS compilation. `ci/macos-workflow.proposal.yml` is an inert proposal for the integrator, not an active GitHub Actions workflow.
 
 ## Deliberate unavailable features
 Connect/disconnect actions, packet tunnel extension, device enrollment, identity, grants, node selection, subscriptions, server calls, secrets and credential storage **are not implemented**. Never add fake nodes, sample production credentials, or an unverified "protected" UI. Network Extensions entitlement in source does not mean the installed app is signed with this capability.
