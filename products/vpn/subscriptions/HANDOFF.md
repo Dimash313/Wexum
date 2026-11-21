@@ -1,3 +1,11 @@
+## Backend checkpoint — 2026-11-21: atomic event-ledger fault regression
+
+- **Scope / priority:** Billing issue #9, existing branch `feat/vpn/9-subscription-adapter`, Draft PR #73. Targeted P1 integrity regression; no production logic or cross-lane contracts changed.
+- **New test:** `test_event_insert_failure_rolls_back_payment_and_allows_retry` injects a SQLite `BEFORE INSERT ON events` abort *after* the transaction row would be inserted. It asserts sanitized `BillingError`, zero event/transaction rows, unchanged order revision, no entitlement, and a successful retry after the trigger is removed. This exercises the all-or-nothing payment/ledger boundary and guards against future transaction refactors.
+- **Commit:** [47e1129](https://github.com/Dimash313/Wexum/commit/47e1129cc1999d9794559ffa6c2c5907d5f18619), `products/vpn/subscriptions/tests/test_core.py` only.
+- **Evidence:** GitHub file update **PASS**; local Python unittest **NOT RUN** and compileall **NOT RUN** because the execution environment could not resolve `github.com` for checkout; GitHub combined statuses on preceding head `97956bb5`: empty, not a CI pass. Exact new-head GitHub CI **NOT VERIFIED**. Independent review **PENDING**.
+- **Next:** run `PYTHONPATH=products/vpn/subscriptions/src python -m unittest discover -s products/vpn/subscriptions/tests -v` and `python -m compileall -q products/vpn/subscriptions/src products/vpn/subscriptions/tests` on this branch, activate/verify CI via integrator-owned workflow, request independent audit. Foundation #1, provider authority, Identity/Entitlements integration remain blocked. Do not merge or deploy.
+
 ## Backend checkpoint — 2026-11-21: signed JSON nesting failure
 
 - **Issue/ownership:** #9, branch `feat/vpn/9-subscription-adapter`, Draft PR #73; only billing-owned `core.py`, `test_core.py`, and this HANDOFF changed. Existing foundation and payment-authority contracts remain unmerged/unapproved.
