@@ -15,6 +15,9 @@ Read in order:
 2. [Authorization and key requirements](ACCESS_AND_KEY_SECURITY.md): trust boundaries, grant authorization, revocation and rotation.
 3. [Privacy and recovery](PRIVACY_AND_OPERATIONS.md): data inventory, collection limits, recovery/incident controls.
 4. [Release gate manifest](release_gates.json) and [gate evaluator](gate_check.py): **metadata-only** completeness linter. Passing it is never proof of real security, legitimate review, or successful network testing.
+5. [Cross-lane security contract proposal](CROSS_LANE_CONTRACT_PROPOSAL.md): specific CTO decisions for authentic principals, signed grants, revocation, probes, payments and trustworthy leak evidence.
+
+**Critical CLI distinction:** `gate_check.py` without flags validates only supplied manifest metadata (exit 0 on valid structure). `--require-attested` intentionally **never returns a release-green success code**, even if the supplied manifest claims all gates are attested, because this offline linter cannot authenticate review/test evidence. External independently verified approval is required before deployment. Three negative CLI regression cases were added to `test_gate_check.py`; see HANDOFF for exact test execution status.
 
 ## Observed implementation defects (not speculation)
 
