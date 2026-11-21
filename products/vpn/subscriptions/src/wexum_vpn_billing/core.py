@@ -315,6 +315,7 @@ class BillingEngine:
         _identifier(order_id)
         _int(now)
         with self._connection() as db:
+            db.execute("BEGIN")  # Read order, transactions and revision from one snapshot.
             order = db.execute("SELECT * FROM orders WHERE tenant_id=? AND account_id=? AND order_id=?",
                                (tenant_id, account_id, order_id)).fetchone()
             if order is None:
@@ -325,6 +326,7 @@ class BillingEngine:
                        SUM(CASE WHEN refunded=1 THEN 1 ELSE 0 END) AS refunds
                 FROM transactions WHERE order_id=?
             """, (order_id,)).fetchone()
+            db.execute("COMMIT")
         paid_until = summary["paid_until"]
         eligible = paid_until is not None and paid_until > now
         if eligible:
