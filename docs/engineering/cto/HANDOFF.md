@@ -25,7 +25,7 @@ Permanent user instruction: when the owner writes **«Продолжаем да�
 | [#76](https://github.com/Dimash313/Wexum/issues/76) | `docs/engineering/76-cto-operating-protocol` / [#77](https://github.com/Dimash313/Wexum/pull/77) | durable CTO rule and this handoff | draft, not merged |
 | [#61](https://github.com/Dimash313/Wexum/issues/61) | `integration/61-foundation-audit-candidate` / [#63](https://github.com/Dimash313/Wexum/pull/63) | CI proof for source proposals #58 + #60 | `core`/CodeQL success on `e28194f`; DO NOT MERGE |
 | [#56](https://github.com/Dimash313/Wexum/issues/56) | `integration/56-vpn-control-ci-candidate` / [#67](https://github.com/Dimash313/Wexum/pull/67) | reproduce two Control Plane SQLite defects | `core` RED on `ea88245`; CodeQL success |
-| [#56](https://github.com/Dimash313/Wexum/issues/56) | `integration/80-node-registry-ci-candidate` / [#80](https://github.com/Dimash313/Wexum/pull/80) | test exact Node Registry #65 head + extra health replay regressions | `core`/CodeQL runs **queued** at initial snapshot, exact head `a1eb50b` |
+| [#56](https://github.com/Dimash313/Wexum/issues/56) | `integration/80-node-registry-ci-candidate` / [#80](https://github.com/Dimash313/Wexum/pull/80) | test exact Node Registry #65 head + extra health replay regressions | `core` 28+22+3 tests and CodeQL **PASS** on candidate head `a1eb50b`; see logs below |
 | [#38](https://github.com/Dimash313/Wexum/issues/38) / [#41](https://github.com/Dimash313/Wexum/issues/41) | foundation [PR #1](https://github.com/Dimash313/Wexum/pull/1) | independent review and governance | BLOCKED |
 
 Repository baseline when this file was created: `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`, unchanged; always refetch.
@@ -46,7 +46,7 @@ Repository baseline when this file was created: `main` `cc805a79b6dfc4e08e6866c1
 | [PR #63 CodeQL #44872931031](https://github.com/Dimash313/Wexum/actions/runs/44872931031), `e28194f` | SUCCESS | security scan ≠ independent signoff |
 | [PR #67 core #44873727876](https://github.com/Dimash313/Wexum/actions/runs/44873727876), `ea88245` | 28/28 foundation + 20/20 existing VPN tests pass; **4 added tests fail** | 1 active device not listed after 200 revoked; 3 raw SQLite opening errors |
 | [PR #67 CodeQL #44873727875](https://github.com/Dimash313/Wexum/actions/runs/44873727875), `ea88245` | SUCCESS | does not waive red core |
-| [PR #80](https://github.com/Dimash313/Wexum/pull/80), initial head `a1eb50b` | core/CodeQL workflows queued when created | **Do not claim pass until exact-head jobs/logs inspected** |
+| [PR #80 core #44891614729](https://github.com/Dimash313/Wexum/actions/runs/44891614729), `a1eb50b` | **SUCCESS:** 28/28 foundation, 22/22 Node Registry, 3/3 independent health-replay regressions; syntax + catalog PASS | Verified full GitHub job log on test-only candidate; all four product files have identical Git blob SHAs to #65 |\n| [PR #80 CodeQL #44891614667](https://github.com/Dimash313/Wexum/actions/runs/44891614667), `a1eb50b` | **SUCCESS** | CodeQL is not external review or proof of real gateway safety |
 | [PR #77](https://github.com/Dimash313/Wexum/pull/77) | docs diff inspected only | stacked draft; zero current-head Actions when previously checked |
 
 Author-reported local tests for #65 and other lane PRs are **not** independent or GitHub Actions evidence. The GitHub reviewer account in prior self-reported audit comments is the same account `Dimash313`; never treat these as distinct formal GitHub Approvals.
@@ -62,7 +62,7 @@ Author-reported local tests for #65 and other lane PRs are **not** independent o
 
 ## 7. Next concrete tasks on «Продолжаем дальше»
 
-1. **First refresh live GitHub**. For current [PR #80](https://github.com/Dimash313/Wexum/pull/80) inspect exact SHA, `core` and CodeQL run logs; if green, communicate evidence to issue #4, #56 and independent auditor #41/#78 without closing security/governance gates. If red, reproduce and isolate any regression before author handoff.
+1. **First refresh live GitHub**. CI for [PR #80](https://github.com/Dimash313/Wexum/pull/80) passed on `a1eb50b` (28+22+3 tests and CodeQL). Send evidence to owner issue #4, CI issue #56 and auditor #78/#41; require a **distinct** review before adopting the Node Registry source. Do not transfer this outcome to later source head changes without new checks.
 2. Check issue #2 / PR #55 for a new repair head. If changed, compare source blobs, incorporate *only approved exact fix* into separate test-only candidate with same four negative regression cases, obtain full required `core` + CodeQL results, request non-author re-review. Otherwise do not spam duplicate comments.
 3. Review audit disposition and reviewer identity for #41, and whether a distinct reviewer has actually been invited and approvals enforced under #38. Never self-approve or merge while blocked.
 4. Keep this HANDOFF synced after material events, update PR #77 and request review; avoid documenting open PRs as integrated state.
