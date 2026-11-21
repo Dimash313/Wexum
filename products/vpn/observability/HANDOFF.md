@@ -50,7 +50,7 @@ No live node deployment, true tunnel verification, cross-service monitoring inte
 
 ## 5. Test evidence — distinguish local verification from CI
 
-**Fresh evidence from current continuation (2026-11-21, Python 3.13.5):** The five Python module files and existing test file were reconstructed locally from source text in the working branch and verified **byte-for-byte equivalent using their reported FNV32 content fingerprints and lengths** before test execution. GitHub file re-fetches confirmed original fingerprints. Baseline:
+**Fresh evidence from current continuation (2026-11-21, Python 3.13.5):** The five Python module files and existing test file were reconstructed locally from source text in the working branch and checked for matching length and FNV32 fingerprint before test execution (non-cryptographic consistency evidence). GitHub file re-fetches confirmed original fingerprints. Baseline:
 
 - `python -X dev -m unittest discover -s products/vpn/observability/tests -v` — **15/15 passed** against the GitHub-matching original.
 - `python -m compileall -q products/vpn/observability` — **passed** against that original.
@@ -76,13 +76,13 @@ Fixes pushed in this branch:
 2. **Unverified targets:** `ProbeTarget` only applies syntactic checks; a future privileged scheduler must restrict targets through trusted static allowlisting and prevent server-side request forgery or unrestricted scans.
 3. **Clock and overflow handling:** Local rollback/overflow regressions now reject invalid observations instead of emitting false health or non-finite Prometheus metrics. Future orchestrators must interpret exceptions as unknown/missing measurement, not hide them or claim uptime.
 4. **Timeout caveat:** `socket.create_connection` timeout does not guarantee an absolute deadline for DNS resolution. A bounded scheduler/hard deadline, concurrency/rate controls, backoff and jitter are still needed.
-4. **Single-process memory:** Samples/counters are volatile; no durable distributed ordering or historically valid uptime/SLA accounting.
-5. **Alert delivery missing:** Only deduplicated state changes exist; no paging or reliable notifications.
-6. **No deployed monitoring:** No protected scrape endpoint, network probes against production, remote resource adapters, node egress cost measurement or real-service failure drills.
-7. **Privacy beyond this code unverified:** Gateway, proxy, cloud, DNS, security and host logging/retention must be audited before making public no-logs assertions.
-8. **Upstream dependencies:** Foundation PR #1 pending; Node Registry PR #65 unmerged. CTO must approve management-plane interface contracts, identity/registration generations, trust/authorization and shared CI modifications.
-9. **Release blockers:** Current-head CI, independent security/privacy review, integration/operational tests, provider/legal/store/religious review where relevant.
-10. **Quality checks:** Existing tests and module do not establish a 10/10 quality rating or production readiness.
+5. **Single-process memory:** Samples/counters are volatile; no durable distributed ordering or historically valid uptime/SLA accounting.
+6. **Alert delivery missing:** Only deduplicated state changes exist; no paging or reliable notifications.
+7. **No deployed monitoring:** No protected scrape endpoint, network probes against production, remote resource adapters, node egress cost measurement or real-service failure drills.
+8. **Privacy beyond this code unverified:** Gateway, proxy, cloud, DNS, security and host logging/retention must be audited before making public no-logs assertions.
+9. **Upstream dependencies:** Foundation PR #1 pending; Node Registry PR #65 unmerged. CTO must approve management-plane interface contracts, identity/registration generations, trust/authorization and shared CI modifications.
+10. **Release blockers:** Current-head CI, independent security/privacy review, integration/operational tests, provider/legal/store/religious review where relevant.
+11. **Quality checks:** Existing tests and module do not establish a 10/10 quality rating or production readiness.
 
 ## 7. Next concrete tasks (in priority order)
 
