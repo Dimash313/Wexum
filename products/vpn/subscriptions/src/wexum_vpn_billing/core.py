@@ -125,7 +125,14 @@ class TestHmacAdapter:
         if not isinstance(body, bytes) or len(body) > 16_384:
             raise SecurityError("invalid webhook size")
         received_at = _int(received_at)
-        normalized = {k.lower(): v for k, v in headers.items()}
+        normalized: dict[str, str] = {}
+        for key, value in headers.items():
+            if not isinstance(key, str) or not isinstance(value, str):
+                raise SecurityError("invalid test signature headers")
+            folded = key.lower()
+            if folded in normalized:
+                raise SecurityError("ambiguous test signature headers")
+            normalized[folded] = value
         timestamp = normalized.get("x-test-timestamp", "")
         signature = normalized.get("x-test-signature", "")
         if not re.fullmatch(r"[0-9]{1,12}", timestamp) or not re.fullmatch(r"[0-9a-f]{64}", signature):
