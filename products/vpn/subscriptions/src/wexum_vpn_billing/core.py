@@ -127,9 +127,13 @@ class TestHmacAdapter:
         received_at = _int(received_at)
         if not isinstance(headers, Mapping):
             raise SecurityError("invalid test signature headers")
+        if len(headers) > 32:
+            raise SecurityError("invalid test signature headers")
         normalized: dict[str, str] = {}
         for key, value in headers.items():
-            if not isinstance(key, str) or not isinstance(value, str):
+            if (not isinstance(key, str) or not isinstance(value, str)
+                    or len(key) > 128 or len(value) > 256
+                    or not key.isascii()):
                 raise SecurityError("invalid test signature headers")
             folded = key.lower()
             if folded in normalized:
