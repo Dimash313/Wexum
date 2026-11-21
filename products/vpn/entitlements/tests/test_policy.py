@@ -181,6 +181,65 @@ class GrantPrecheckTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(GrantPrecheckUnavailable):
             await self.svc.check(actor=self.actor, device_id="dev-A")
 
+    async def test_expired_actor_denied_without_authority_io(self):
+        await self._deny(actor=replace(self.actor, expires_at=NOW))
+        self.assertEqual(self.accounts.calls, 0)
+        self.assertEqual(self.subscriptions.calls, 0)
+        self.assertEqual(self.devices.calls, 0)
+
+    async def test_clock_failure_denies_without_authority_io(self):
+        self.clock = lambda: (_ for _ in ()).throw(RuntimeError("clock failure"))
+        self.svc = self.service()
+        with self.assertRaises(GrantPrecheckUnavailable):
+            await self.svc.check(actor=self.actor, device_id="dev-A")
+        self.assertEqual(self.accounts.calls, 0)
+
+    async def test_authority_failure_cancels_sibling_lookups(self):
+        started = asyncio.Event()
+        cancelled = asyncio.Event()
+
+        class BlockedDevice:
+            async def read_device(self, tenant_id, subject_id, device_id):
+                started.set()
+                try:
+                    await asyncio.Event().wait()
+                except asyncio.CancelledError:
+                    cancelled.set()
+                    raise
+
+        async def fail_account(tenant_id, subject_id):
+            await started.wait()
+            raise OSError("simulated authority failure")
+
+        self.accounts.read_account = fail_account
+        self.svc = self.service(devices=BlockedDevice(), timeout_seconds=0.5)
+        with self.assertRaises(GrantPrecheckUnavailable):
+            await self.svc.check(actor=self.actor, device_id="dev-A")
+        self.assertTrue(cancelled.is_set(), "sibling lookup must be cancelled before return")
+
+    async def test_caller_cancellation_propagates_to_authorities(self):
+        started = asyncio.Event()
+        cancelled = asyncio.Event()
+
+        class BlockedDevice:
+            async def read_device(self, tenant_id, subject_id, device_id):
+                started.set()
+                try:
+                    await asyncio.Event().wait()
+                except asyncio.CancelledError:
+                    cancelled.set()
+                    raise
+
+        self.svc = self.service(devices=BlockedDevice())
+        check_task = asyncio.create_task(
+            self.svc.check(actor=self.actor, device_id="dev-A")
+        )
+        await asyncio.wait_for(started.wait(), timeout=0.5)
+        check_task.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await check_task
+        self.assertTrue(cancelled.is_set())
+
     async def test_actor_expiring_during_lookup_denied(self):
         self.accounts.delay = 0.001
         self.clock = lambda: NOW + timedelta(minutes=5)
