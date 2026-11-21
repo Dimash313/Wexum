@@ -77,6 +77,14 @@ Author-reported local tests for #65 and other lane PRs are **not** independent o
 - Re-fetched current source heads: Control Plane [#55](https://github.com/Dimash313/Wexum/pull/55) `66532b4` (unchanged, P1 blockers), Node Registry [#65](https://github.com/Dimash313/Wexum/pull/65) `95145b5` (byte-identical to tested #80 product copy), QA [#74](https://github.com/Dimash313/Wexum/pull/74) `df1c9f9`, CI candidate [#67](https://github.com/Dimash313/Wexum/pull/67) `ea88245` (red core), Node candidate [#80](https://github.com/Dimash313/Wexum/pull/80) `a1eb50b` (core and CodeQL green). No code merges or VPN runtime tests performed in this CTO cycle.
 - Priority order: **P1 #2 Control Plane blocker fixes** by code owner → rerun red #67 with exact corrected source; in parallel **P1 #38/#41** non-author approval and true foundation integration. **P2** cross-lane trusted health-probe/registration contracts for #4. Do not add duplicate comments while the source head is unchanged.
 
+
+### CTO scheduled verification — 2026-11-21 12:55 UTC
+
+- Read live AGENTS.md, architecture/quality/review/ethics contracts and this handoff; checked open PRs/issues and Control Plane/Node Registry heads. Control Plane PR #55 still `66532b4` with P1 failures reproduced by red PR #67; no owner fix or waiver.
+- Node Registry source PR #65 advanced to `e91d734ac5306bf3605962078730f7746d235e3a`: owner replaced one test-only `except StaleObservationError: pass` with explicit `return` and refreshed its lane handoff. Source test blob is now `9279b96c26580ef0cd148082a3bad40d09bddf2e`; prior CI-only #80 had obsolete blob `b33c87ac9f12e775a0d6c7993fddf83d7e5aacb9`. No source PR #65 current-head CI statuses were reported.
+- **Actual integration action:** synchronized exactly that one-line, owner-authored test cleanup into CI-only PR #80 branch `integration/80-node-registry-ci-candidate` via commit [`7e39bac`](https://github.com/Dimash313/Wexum/commit/7e39bacb19797f525deffcde65a505d931dc07bf). Product `registry.py` and all other files were untouched; candidate `test_registry.py` blob now equals #65 (`9279b96c`). **Do not merge #80**: duplicated foundation test candidate only.
+- **Next:** check new PR #80 head Actions `core` (28 foundation + 22 Node Registry + 3 independent replay tests) and CodeQL, inspect actual logs, verify source blob identity and independent review at exact updated head. Old green runs #44891614729/#44891614667 were on earlier `a1eb50b` and do **not** certify the new test blob. Keep foundation #1 / #38 / #41 and Control Plane #2 blocked.
+
 ## 8. Related references
 
 - [CTO operating protocol](../CTO_OPERATING_PROTOCOL.md), [Issue #76](https://github.com/Dimash313/Wexum/issues/76), [Draft PR #77](https://github.com/Dimash313/Wexum/pull/77)
