@@ -16,6 +16,34 @@ _SLUG = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*\Z")
 # a documented schema decision before catalog producers can publish them.
 _PLANNING_STATES = frozenset({"planned"})
 
+# Reviewed, immutable pre-release product identity baseline; adding, renaming or
+# repurposing IDs requires an explicit architecture decision and a reviewed
+# schema change, never an incidental catalog edit.
+_APPROVED_PRODUCT_IDENTITIES = {
+    "vpn": "WexumVPN",
+    "secure": "Wexum Secure",
+    "cloud": "Wexum Cloud",
+    "work": "Wexum Work",
+    "plan": "Wexum Plan",
+    "knowledge": "Wexum Knowledge",
+    "mail": "Wexum Mail",
+    "connect": "Wexum Connect",
+    "create": "Wexum Create",
+    "learn": "Wexum Learn",
+    "translate": "Wexum Translate",
+    "web": "Wexum Web",
+    "publish": "Wexum Publish",
+    "ai": "Wexum AI",
+    "search": "Wexum Search",
+    "data": "Wexum Data",
+    "flow": "Wexum Flow",
+    "dev": "Wexum Dev",
+    "build": "Wexum Build",
+    "business": "Wexum Business",
+    "deploy": "Wexum Deploy",
+    "personal": "Wexum Personal",
+}
+
 
 def _object(value: object, required: frozenset[str], location: str) -> dict:
     if type(value) is not dict:
@@ -64,14 +92,16 @@ def validate_catalog(catalog: object) -> None:
         seen.add(product_id)
 
         name = _text(product["name"], f"{location}.name")
-        if not name.startswith("Wexum"):
-            raise ValueError(f"{location}.name must use the Wexum product identity")
+        if _APPROVED_PRODUCT_IDENTITIES.get(product_id) != name:
+            raise ValueError(f"{location} has an unapproved or reassigned product identity")
         for field in ("category", "summary", "code_owner"):
             _text(product[field], f"{location}.{field}")
         if product["standalone"] is not True:
             raise ValueError(f"{location}.standalone must be boolean true")
         _planned(product["status"], f"{location}.status")
         _planned(product["hub_integration"], f"{location}.hub_integration")
+    if seen != set(_APPROVED_PRODUCT_IDENTITIES):
+        raise ValueError("catalog is missing approved product IDs")
 
 
 def validate() -> None:
