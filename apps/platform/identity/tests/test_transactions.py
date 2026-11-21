@@ -90,6 +90,12 @@ class OAuthTransactionTests(unittest.TestCase):
         with self.assertRaises(AuthorizationRejected):
             self.consume(start)
 
+    def test_small_global_capacity_gets_safe_default_per_session_cap(self):
+        registry = AuthorizationTransactions(clock=lambda: self.now[0], max_pending=1)
+        registry.begin(**CONFIG)
+        with self.assertRaises(AuthorizationCapacityExceeded):
+            registry.begin(**CONFIG)
+
     def test_expiry_frees_bounded_capacity(self):
         registry = AuthorizationTransactions(clock=lambda: self.now[0], max_pending=1, ttl_seconds=3)
         registry.begin(**CONFIG)
@@ -148,6 +154,70 @@ class OAuthTransactionTests(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=count) as pool:
             outcomes = list(pool.map(try_begin, range(count)))
         self.assertEqual(sum(outcomes), 3)
+
+    def test_repr_redacts_sensitive_authorization_fields(self):
+        start = self.start()
+        self.assertNotIn(start.state, repr(start))
+        self.assertNotIn(start.nonce, repr(start))
+        context = self.consume(start)
+        self.assertNotIn(context.code_verifier, repr(context))
+        self.assertNotIn(context.expected_nonce, repr(context))
+        self.assertEqual(context.expected_nonce, start.nonce)
+
+    def test_discard_is_scoped_to_original_browser_session(self):
+        first = self.start()
+        second = self.start()
+        another_session = {**CONFIG, "browser_session": "a-different-server-session"}
+        unrelated = self.transactions.begin(**another_session)
+        self.assertEqual(
+            self.transactions.discard_pending_for_session(browser_session=CONFIG["browser_session"]),
+            2,
+        )
+        self.assertEqual(
+            self.transactions.discard_pending_for_session(browser_session=CONFIG["browser_session"]),
+            0,
+        )
+        for start in (first, second):
+            with self.assertRaises(AuthorizationRejected):
+                self.consume(start)
+        self.transactions.consume(**{
+            **another_session, "state": unrelated.state, "response_issuer": CONFIG["issuer"]
+        })
+        # Upstream must revoke the actual browser session; this store alone cannot.
+        self.start()
+
+    def test_discard_rejects_invalid_session_without_mutation(self):
+        start = self.start()
+        for bad in (None, 17, "", " ", " invalid "):
+            with self.assertRaises(ValueError):
+                self.transactions.discard_pending_for_session(browser_session=bad)
+        self.consume(start)
+
+    def test_discard_and_consume_race_never_replays(self):
+        start = self.start()
+        gate = threading.Barrier(2)
+
+        def consume():
+            gate.wait(timeout=5)
+            try:
+                self.consume(start)
+                return True
+            except AuthorizationRejected:
+                return False
+
+        def discard():
+            gate.wait(timeout=5)
+            return self.transactions.discard_pending_for_session(
+                browser_session=CONFIG["browser_session"]
+            )
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            a = pool.submit(consume)
+            b = pool.submit(discard)
+            won, discarded = a.result(), b.result()
+        self.assertEqual(int(won) + discarded, 1)
+        with self.assertRaises(AuthorizationRejected):
+            self.consume(start)
 
     def test_malformed_untrusted_callback_denied(self):
         start = self.start()

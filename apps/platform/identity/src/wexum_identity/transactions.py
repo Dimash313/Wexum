@@ -11,7 +11,7 @@ import hmac
 import secrets
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable
 
 
@@ -25,9 +25,9 @@ class AuthorizationCapacityExceeded(Exception):
 
 @dataclass(frozen=True, slots=True)
 class AuthorizationStart:
-    state: str
+    state: str = field(repr=False)
     code_challenge: str
-    nonce: str
+    nonce: str = field(repr=False)
     code_challenge_method: str = "S256"
 
 
@@ -35,18 +35,18 @@ class AuthorizationStart:
 class ExchangeContext:
     """Server-only parameters for the next token-exchange and ID-token checks."""
 
-    code_verifier: str
-    expected_nonce: str
+    code_verifier: str = field(repr=False)
+    expected_nonce: str = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
 class _Pending:
-    binding_digest: bytes
+    binding_digest: bytes = field(repr=False)
     issuer: str
     client_id: str
     redirect_uri: str
-    code_verifier: str
-    nonce: str
+    code_verifier: str = field(repr=False)
+    nonce: str = field(repr=False)
     expires_at: float
 
 
@@ -73,13 +73,15 @@ class AuthorizationTransactions:
         *,
         ttl_seconds: int = 300,
         max_pending: int = 1024,
-        max_pending_per_session: int = 4,
+        max_pending_per_session: int | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         if type(ttl_seconds) is not int or not 1 <= ttl_seconds <= 900:
             raise ValueError("ttl_seconds must be between 1 and 900")
         if type(max_pending) is not int or max_pending < 1:
             raise ValueError("max_pending must be positive")
+        if max_pending_per_session is None:
+            max_pending_per_session = min(4, max_pending)
         if type(max_pending_per_session) is not int or not 1 <= max_pending_per_session <= max_pending:
             raise ValueError("max_pending_per_session must be between 1 and max_pending")
         self._max_pending_per_session = max_pending_per_session
@@ -137,6 +139,24 @@ class AuthorizationTransactions:
                 expires_at=now + self._ttl_seconds,
             )
             return AuthorizationStart(state=state, code_challenge=challenge, nonce=nonce)
+
+    def discard_pending_for_session(self, *, browser_session: str) -> int:
+        """Atomically discard pending attempts for a trusted browser-session binding.
+
+        The upstream session manager MUST independently revoke/rotate the real
+        session credential and refuse further begin() calls with a stale session;
+        this method does not revoke or authenticate any browser session.
+        """
+        _require_config(browser_session, "browser_session")
+        binding_digest = _digest(browser_session)
+        with self._lock:
+            matching_states = [
+                key for key, pending in self._pending.items()
+                if hmac.compare_digest(pending.binding_digest, binding_digest)
+            ]
+            for key in matching_states:
+                del self._pending[key]
+            return len(matching_states)
 
     def consume(
         self,
