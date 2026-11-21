@@ -148,6 +148,17 @@ class ReleaseManifestTests(unittest.TestCase):
                 errors, _ = assess(obj)
                 self.assertTrue(any("requires actor and HTTPS URL" in e for e in errors))
 
+    def test_c1_control_characters_in_evidence_urls_rejected(self):
+        """Unicode C1 control bytes must not be accepted as evidence URLs."""
+        for char in ("\\u0085", "\\u009f"):
+            with self.subTest(codepoint=ord(char)):
+                obj = artificial_complete()
+                obj["gates"][0]["evidence"][0]["url"] = (
+                    "https://example.test/proof" + char
+                )
+                errors, _ = assess(obj)
+                self.assertTrue(any("requires actor and HTTPS URL" in e for e in errors))
+
     def test_whitespace_padded_https_evidence_url_rejected(self):
         """URL consumers may normalize leading/trailing whitespace differently."""
         for url in (" https://example.test/proof", "https://example.test/proof ",
