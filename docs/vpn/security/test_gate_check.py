@@ -150,7 +150,7 @@ class ReleaseManifestTests(unittest.TestCase):
 
     def test_c1_control_characters_in_evidence_urls_rejected(self):
         """Unicode C1 control bytes must not be accepted as evidence URLs."""
-        for char in ("\\u0085", "\\u009f"):
+        for char in (chr(0x85), chr(0x9F)):
             with self.subTest(codepoint=ord(char)):
                 obj = artificial_complete()
                 obj["gates"][0]["evidence"][0]["url"] = (
