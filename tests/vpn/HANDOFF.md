@@ -37,7 +37,7 @@ Send cross-boundary findings to their responsible owner via CTO.
   injected entitlement result is synthetic; no real Identity, HTTP, provider,
   VPN node, production database or data-plane access is tested.
 - With no Control Plane source, 16 tests **skip** by default. This is an
-  integration blocker, not a pass. Set \`WEXUM_VPN_REQUIRE_CONTRACTS=1\` for
+  integration blocker, not a pass. Set `WEXUM_VPN_REQUIRE_CONTRACTS=1` for
   mandatory integration CI to fail if the real package is absent; explicitly
   invalid source paths also error.
 - Shared CI is exclusively owned by integration/CTO. Do not silently edit
