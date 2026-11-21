@@ -8,24 +8,9 @@ from scripts.validate_catalog import validate_catalog
 
 
 def planned_catalog():
-    return {
-        "organization": "IhsanSoft",
-        "ecosystem": "Wexum",
-        "hub": {"name": "Wexum Hub", "status": "planned"},
-        "products": [
-            {
-                "id": f"app-{i}",
-                "name": f"Wexum App {i}",
-                "category": "Productivity",
-                "summary": "A standalone product",
-                "status": "planned",
-                "standalone": True,
-                "hub_integration": "planned",
-                "code_owner": "unassigned",
-            }
-            for i in range(22)
-        ],
-    }
+    """Fresh mutable copy of the approved 22-product catalog fixture."""
+    root = Path(__file__).resolve().parents[1]
+    return loads((root / "docs/catalog/products.json").read_text(encoding="utf-8"))
 
 
 class CatalogValidationTests(unittest.TestCase):
@@ -35,7 +20,9 @@ class CatalogValidationTests(unittest.TestCase):
         validate_catalog(catalog)
 
     def test_valid_planning_catalog(self):
-        validate_catalog(planned_catalog())
+        catalog = planned_catalog()
+        catalog["products"].reverse()  # Reordering catalog entries is compatible.
+        validate_catalog(catalog)
 
     def test_bad_ids_are_rejected(self):
         for invalid in ("", " ", "VPN", "bad/id", "_vpn", None, 99, []):
@@ -50,6 +37,24 @@ class CatalogValidationTests(unittest.TestCase):
         catalog["products"][0]["id"] = catalog["products"][1]["id"]
         with self.assertRaises(ValueError):
             validate_catalog(catalog)
+
+    def test_existing_product_id_cannot_be_renamed(self):
+        catalog = planned_catalog()
+        catalog["products"][0]["id"] = "renamed-product"
+        with self.assertRaises(ValueError):
+            validate_catalog(catalog)
+
+    def test_existing_product_ids_cannot_be_swapped(self):
+        catalog = planned_catalog()
+        first, second = catalog["products"][:2]
+        first["id"], second["id"] = second["id"], first["id"]
+        with self.assertRaises(ValueError):
+            validate_catalog(catalog)
+
+    def test_non_identity_metadata_can_change(self):
+        catalog = planned_catalog()
+        catalog["products"][0]["summary"] = "Updated planning description"
+        validate_catalog(catalog)
 
     def test_invalid_lifecycle_states_are_rejected(self):
         for field in ("status", "hub_integration"):
