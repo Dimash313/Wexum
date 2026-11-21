@@ -6,6 +6,7 @@ Owned scope: issue #8. Standalone Python management-plane module, not a deployed
 
 - The monitor accepts aggregate success/failure and elapsed seconds of trusted technical probes for five fixed service categories.
 - A bounded 300-second rolling sample window with up to 1,000 outcomes per category calculates sampled success ratio, relative SLO error-budget consumption, and unknown / healthy / degraded / down / stale states.
+- Global monotonic-clock rollback is rejected for recording, snapshots and exposition rather than silently yielding a healthy state. Non-finite accumulated probe duration is rejected before updating sample/counters; invalid sample limits are rejected at construction.
 - A TCP probe performs only a socket connect to an operator-configured endpoint. Success proves no more than that TCP handshake; it does not prove VPN tunnel operation, user experience, DNS leak prevention, location or anonymity.
 - Resource readings are this monitoring process's CPU seconds, optional Linux process RSS, and disk capacity for a specified local mount. They are NOT remote gateway resource use, user traffic or cloud costs.
 - AlertEngine emits deduplicated state transitions for explicitly watched service categories. Prometheus exporter only returns formatted text. Neither network scheduler nor HTTP endpoint is started.
