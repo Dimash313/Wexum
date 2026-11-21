@@ -317,6 +317,16 @@ class BillingTests(unittest.TestCase):
         self.assertEqual(sum(result.changed for result in results), 1)
         self.assertEqual(self.snapshot().access_until, NOW+2592000)
 
+    def test_ephemeral_database_path_is_rejected_before_open(self):
+        # A new SQLite connection is opened per operation; :memory: would
+        # silently discard the schema and every billing event on close.
+        for bad in (":memory:", "", None, 42):
+            with self.subTest(path=bad):
+                with self.assertRaisesRegex(SecurityError, "durable billing database path required"):
+                    BillingEngine(bad, {"sandbox-test": TestHmacAdapter(SECRET)},
+                                  allow_test_adapters=True)
+        self.assertFalse(self.snapshot().eligible)
+
     def test_order_retry_returns_same_order(self):
         original = self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test",
                                             now=NOW + 1, request_id="checkout-retry")
