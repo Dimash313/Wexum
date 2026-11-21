@@ -58,10 +58,9 @@ class VPNUXContractTests(unittest.TestCase):
             validate(self.data)
 
     def test_no_faked_success_from_permission(self):
-        self.data["transitions"].append({
-            "from": "permission_required", "event": "permission_granted",
-            "to": "verified_connected", "source": "native_os",
-        })
+        edge = next(t for t in self.data["transitions"]
+                    if t["from"] == "permission_required" and t["event"] == "permission_granted")
+        edge["to"] = "verified_connected"
         with self.assertRaises(ValueError):
             validate(self.data)
 
