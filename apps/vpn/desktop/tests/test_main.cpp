@@ -38,7 +38,7 @@ void test_fail_closed_and_full_cycle() {
   CHECK(m.state() == ConnectionState::Disconnecting);
   CHECK(!m.observe_verified_engine_event({EngineEventKind::Connected, 1, 2}));
   CHECK(m.request_disconnect().action == EngineAction::None);
-  CHECK(m.observe_verified_engine_event({EngineEventKind::Disconnected, 1, 2}));
+  CHECK(m.observe_verified_engine_event({EngineEventKind::Disconnected, 1, 3}));
   CHECK(m.state() == ConnectionState::Disconnected);
   CHECK(m.request_connect().attempt == 2);
   CHECK(!m.observe_verified_engine_event({EngineEventKind::Connected, 1, 100}));
@@ -147,6 +147,21 @@ void test_invalid_policy_in_error_requires_stop() {
   CHECK(m.can_connect());
 }
 
+void test_rejected_newer_event_blocks_stale_disconnect() {
+  ConnectionMachine m;
+  (void)m.update_trusted_policy({true, true, true});
+  (void)m.request_connect();
+  CHECK(m.observe_verified_engine_event({EngineEventKind::Connected, 1, 1}));
+  CHECK(m.update_trusted_policy({false, true, true}).action == EngineAction::Stop);
+  (void)m.update_trusted_policy({true, true, true});
+  CHECK(!m.observe_verified_engine_event({EngineEventKind::Connected, 1, 5}));
+  CHECK(!m.observe_verified_engine_event({EngineEventKind::Disconnected, 1, 4}));
+  CHECK(m.state() == ConnectionState::Interrupted);
+  CHECK(m.observe_verified_engine_event({EngineEventKind::Disconnected, 1, 6}));
+  CHECK(m.state() == ConnectionState::Disconnected);
+  CHECK(m.can_connect());
+}
+
 void test_locales_only_published() {
   CHECK(resolve_locale({"ru-KZ", "en-US"}) == UiLocale::Russian);
   CHECK(resolve_locale({"kk-KZ", "ru-RU"}) == UiLocale::Russian);
@@ -167,6 +182,7 @@ int main() {
   test_reauthenticated_channel_must_confirm_old_tunnel_stopped();
   test_revocation_during_interruption_must_stop();
   test_invalid_policy_in_error_requires_stop();
+  test_rejected_newer_event_blocks_stale_disconnect();
   test_locales_only_published();
   std::cout << "WexumVPN Desktop core: " << checks << " checks passed\n";
 }

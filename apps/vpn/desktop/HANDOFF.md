@@ -102,3 +102,10 @@
 - Corrected code: GCC ASan + UBSan (`-fsanitize=address,undefined`), Linux CMake/CTest **PASS**.
 - Executed in an isolated local container with Qt UI OFF and reconstructed source from the GitHub branch. No GitHub Actions, Qt GUI, OS VPN, real tunnel, Windows or macOS validation.
 - Next action: independent security review of confirmation semantics; add actual authenticated native helper interface and crash/reconnect replay tests only with CTO-approved contracts and test infrastructure.
+
+
+### Follow-up: monotonicity of rejected authenticated events (2026-11-21)
+- Fixed a second regression where a *rejected* newer authenticated engine event did not advance `last_sequence_`, potentially letting an older `Disconnected` event clear the stop-confirmation latch.
+- The core now consumes sequence numbers for structurally valid, matching-attempt, authenticated events **even when their state transition is rejected**. Unknown event enumerators are rejected. A strictly newer verified `Disconnected` is required to clear the latch.
+- Reproduced regression **FAIL** against pre-fix source; after correction **101 assertions PASS** locally under Linux GCC 14.2.0 and Clang 17, and GCC ASan/UBSan CTest **PASS**.
+- These events are only as trustworthy as a future, not-yet-implemented authenticated IPC adapter. No product OS, GUI, tunnel or leak validation is implied; code still requires independent security review.

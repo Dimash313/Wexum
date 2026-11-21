@@ -46,6 +46,9 @@ bool ConnectionMachine::observe_verified_engine_event(
       event.attempt != attempt_ || !event.sequence ||
       event.sequence <= last_sequence_) return false;
 
+  // Verified but disallowed events still consume sequence numbers: older events
+  // must not later confirm that a tunnel is down after a newer Connected report.
+  last_sequence_ = event.sequence;
   ConnectionState next = state_;
   switch (event.kind) {
     case EngineEventKind::Connected:
@@ -69,8 +72,9 @@ bool ConnectionMachine::observe_verified_engine_event(
       if (state_ == ConnectionState::Disconnected) return false;
       next = ConnectionState::Error;
       break;
+    default:
+      return false;
   }
-  last_sequence_ = event.sequence;
   state_ = next;
   return true;
 }
