@@ -203,6 +203,8 @@ class GrantPrecheck:
                     device_task = tasks.create_task(
                         self._devices.read_device(actor.tenant_id, actor.subject_id, device_id)
                     )
+                if any(task.cancelled() for task in (account_task, subscription_task, device_task)):
+                    raise GrantPrecheckUnavailable("authoritative VPN state unavailable")
                 account, subscription, device = (
                     account_task.result(), subscription_task.result(), device_task.result()
                 )
