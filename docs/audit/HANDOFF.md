@@ -1,5 +1,13 @@
 # Wexum — Chief Independent Auditor HANDOFF
 
+## Audit checkpoint — 2026-11-22, PR #73 conflicting concurrent checkout regression
+
+- **Exact PR/head:** https://github.com/Dimash313/Wexum/pull/73 at `fbdab4ead52529ed97b0333a382357e633b32708`; previous audited `fe4e8e22e2132d0d3ec123eae5611b0c7c3aa7b0`. Base main `cc805a79b6dfc4e08e6866c1bc0653381755fb83`.
+- **Changed delta:** `products/vpn/subscriptions/tests/test_core.py` (+33), `products/vpn/subscriptions/HANDOFF.md` (+7); source `core.py::create_order` reviewed for BEGIN IMMEDIATE, idempotency and rollback. New two-thread conflicting-plan test expects one success/one ConflictError and unchanged entitlement. No confirmed new code defect; race scheduling not exhaustive.
+- **Evidence:** exact-head Check Runs 0; exact-head Actions runs 0; independent unittest NOT RUN, compileall NOT RUN, CI logs unavailable; live provider/entitlement/VPN NOT VERIFIED. **Decision NOT VERIFIED; integration BLOCKED.** Foundation #1 and Control Plane #55 remain dependencies.
+- **Published conclusion:** https://github.com/Dimash313/Wexum/pull/73#issuecomment-7070317751. **Next:** execute exact-head negative/concurrency suite and compileall, collect CI logs, stress/restart persistence and audit production trust chain. No product edits, self-approval or merge.
+
+
 ## Audit checkpoint — 2026-11-22, PR #73 durable SQLite path guard
 
 - **PR/head:** https://github.com/Dimash313/Wexum/pull/73 at `fe4e8e22e2132d0d3ec123eae5611b0c7c3aa7b0`, base `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`; previous audited `97956bb5d4c6dd2e27f3ef3614616bba33d63085`.
