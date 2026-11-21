@@ -1,5 +1,7 @@
 # WexumVPN — interface and UX workstream
 
+**New agent / new chat:** start with [HANDOFF.md](HANDOFF.md), then read the current GitHub Issue #39, Draft PR #75, project AGENTS.md and the files linked in the handoff. On «Продолжаем дальше», inspect current GitHub and autonomously continue the highest-priority unblocked work inside `docs/vpn/ux/`; update HANDOFF.md after meaningful changes. Do not edit other teams' documentation or merge without CTO/integrator approval.
+
 **Status: proposed specification, not an operational VPN or an approved design.** Owner: [issue #39](https://github.com/Dimash313/Wexum/issues/39). This directory owns product-facing UX flows, safe state copy, acceptance cases and native handoff only. No shared UI package or native app implementation is authorized here.
 
 ## Sources and precedence
