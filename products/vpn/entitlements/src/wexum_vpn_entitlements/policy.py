@@ -186,8 +186,8 @@ class GrantPrecheck:
                 raise GrantPrecheckDenied("VPN access denied")
         except (GrantPrecheckDenied, GrantPrecheckUnavailable):
             raise
-        except Exception as exc:
-            raise GrantPrecheckUnavailable("trusted clock unavailable") from exc
+        except Exception:
+            raise GrantPrecheckUnavailable("trusted clock unavailable") from None
 
         try:
             # TaskGroup cancels and joins sibling lookups when one authority fails.
@@ -209,11 +209,15 @@ class GrantPrecheck:
                     account_task.result(), subscription_task.result(), device_task.result()
                 )
             now = self._clock()
-        except Exception as exc:
-            raise GrantPrecheckUnavailable("authoritative VPN state unavailable") from exc
+        except Exception:
+            raise GrantPrecheckUnavailable("authoritative VPN state unavailable") from None
 
         if not _instant(now):
             raise GrantPrecheckUnavailable("trusted clock unavailable")
+        if now < started_at - self._skew:
+            raise GrantPrecheckUnavailable("trusted clock moved backwards")
+        # Never extend a decision lifetime if wall-clock time moved backwards.
+        now = max(now, started_at)
         tenant, subject = actor.tenant_id, actor.subject_id
         if (
             type(account) is not AccountState
