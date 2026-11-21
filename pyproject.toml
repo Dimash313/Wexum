@@ -1,0 +1,16 @@
+[project]
+name = "wexum-core-contracts"
+requires-python = ">=3.12"
+description = "Minimal foundation contracts for Wexum — not a deployed service"
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "wexum_core.__build_revision__"}
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
