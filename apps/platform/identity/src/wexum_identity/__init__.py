@@ -8,6 +8,8 @@ from .callback import (
 
 from .exchange import UnverifiedCodeExchange, prepare_code_exchange
 
+from .transport import decode_callback_pairs
+
 from .transactions import (
     AuthorizationCapacityExceeded,
     AuthorizationRejected,
@@ -27,4 +29,5 @@ __all__ = [
     "ExchangeContext",
     "UnverifiedCodeExchange",
     "prepare_code_exchange",
+    "decode_callback_pairs",
 ]
