@@ -150,9 +150,15 @@ def main() -> int:
         return 2
     print(f"SCHEMA OK; {len(blockers)} unresolved metadata blockers; "
           "this tool does NOT verify security evidence or grant release.")
-    if args.require_attested and blockers:
+    if args.require_attested:
         for item in blockers:
             print(f"BLOCKED: {item}")
+        # No offline self-attestation can verify real artifacts, reviewer
+        # independence or production safety. Never return a release-green
+        # exit code from this metadata-only tool, even for a fully populated
+        # manifest. External verified evidence needs a separate approval gate.
+        if not blockers:
+            print("BLOCKED: independent, externally verified release evidence is required")
         return 1
     if not blockers:
         print("METADATA COMPLETE ONLY — independent verification still mandatory.")
