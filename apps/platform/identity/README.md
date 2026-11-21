@@ -1,5 +1,7 @@
 # Wexum Identity: isolated OAuth transaction building block
 
+**For new agents and every 'Continue' session:** read [`docs/platform/identity/HANDOFF.md`](../../../docs/platform/identity/HANDOFF.md), then refresh live issue #34, Draft PR #62, AGENTS.md, architecture docs and the latest GitHub CI/review state. The handoff is a progress index, not an approval or an integrated-state claim.
+
 **Prototype only.** No login service, token acceptance, organization membership, HTTP endpoint or production security assurance. Issue #34; independent of Wexum Core/VPN code and of the unmerged foundation integration.
 
 Python 3.12+ / stdlib only. Run the local tests from the repository root:
