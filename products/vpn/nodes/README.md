@@ -19,8 +19,15 @@ This is a **standalone, in-memory, standard-library-only implementation** for th
 | NodeSelection | immutable node_id, region_id, observed/expiry timestamps and sampled active/max sessions; not a reservation or permission |
 | record_health | rejects future/expired reports and repeated/older timestamps; thread-safe |
 | select | deterministic lowest active_sessions/max_sessions, then lexicographically smallest node_id; returns None without an eligible fresh, healthy node |
+| revalidate_selection | local, lock-protected equality check of previously selected registration/observation/capacity and current health; returns false on stale, changed or disabled node. It is not an entitlement check or capacity reservation |
 
 An operator-declared region label does **not** prove physical geography or legal eligibility. No country, latency, or uptime claims are made.
+
+### Selection freshness and concurrency limits
+
+`select(...)` returns a snapshot; its state can become obsolete before Control Plane acts on it. `revalidate_selection(selection, now=trusted_utc)` atomically checks the same registration ID, region, max session cap, observed timestamp, sample load and expiry against current in-memory healthy status. It fails closed when the node has been disabled, removed, recreated, expired, reported DOWN/saturated, or received a newer observation. Invalid input types are rejected.
+
+**This is not a guarantee of available capacity at connection time:** revalidation may race with a later change after its lock is released, and it does not reserve sessions or authenticate clients. The future Control Plane must check authorization, node eligibility and capacity in an approved atomic/grant allocation workflow. The method is only an internal proposal and its cross-lane use requires CTO approval.
 
 ### Registration lifecycle and replay protection
 
