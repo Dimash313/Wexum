@@ -1,7 +1,8 @@
 """Catalog contract negative tests (no external dependencies)."""
 
-import copy
 import unittest
+from json import loads
+from pathlib import Path
 
 from scripts.validate_catalog import validate_catalog
 
@@ -28,6 +29,11 @@ def planned_catalog():
 
 
 class CatalogValidationTests(unittest.TestCase):
+    def test_repository_catalog_is_valid(self):
+        root = Path(__file__).resolve().parents[1]
+        catalog = loads((root / "docs/catalog/products.json").read_text(encoding="utf-8"))
+        validate_catalog(catalog)
+
     def test_valid_planning_catalog(self):
         validate_catalog(planned_catalog())
 
