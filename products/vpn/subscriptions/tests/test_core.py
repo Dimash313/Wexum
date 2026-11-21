@@ -176,6 +176,15 @@ class BillingTests(unittest.TestCase):
                 self.engine.accept_webhook("sandbox-test", body, invalid, now=NOW)
         self.assertEqual(self.snapshot().revision, 0)
 
+    def test_signature_headers_reject_non_mapping_containers(self):
+        body = self._payload()
+        for invalid in (None, [], [("X-Test-Timestamp", str(NOW))], "headers"):
+            with self.subTest(container=type(invalid).__name__):
+                with self.assertRaisesRegex(SecurityError, "^invalid test signature headers$"):
+                    self.engine.accept_webhook("sandbox-test", body, invalid, now=NOW)
+        self.assertEqual(self.snapshot().revision, 0)
+        self.assertFalse(self.snapshot().eligible)
+
     def test_old_signature_time(self):
         payload = dict(event_id="evt1", order_id=self.order, transaction_id="txn1", kind="paid",
                        occurred_at=NOW, period_end=NOW+300, currency="KZT", amount_minor=179000)
