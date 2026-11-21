@@ -176,6 +176,57 @@ class BillingTests(unittest.TestCase):
         self.assertEqual(sum(not o.duplicate_event for o in outcomes), 1)
         self.assertEqual(self.snapshot().revision, 1)
 
+    def test_conflicting_period_for_existing_receipt_rolls_back(self):
+        self.send()
+        with self.assertRaises(ConflictError):
+            self.send(event_id="evt-other", period_end=NOW+9999999)
+        self.assertEqual(self.snapshot().revision, 1)
+        self.assertEqual(self.snapshot().access_until, NOW+2592000)
+
+    def test_expired_cancelled_period_stays_expired(self):
+        self.send()
+        self.send("cancelled", event_id="cancel1")
+        self.assertEqual(self.snapshot(now=NOW+2592000).state, "expired")
+
+    def test_recovery_after_chargeback_and_distinct_new_purchase(self):
+        self.send()
+        self.send("chargeback", event_id="charge1")
+        self.assertFalse(self.snapshot().eligible)
+        self.send("renewed", event_id="new-purchase", transaction_id="txn2", period_end=NOW+2592001)
+        self.assertTrue(self.snapshot().eligible)
+
+    def test_stored_sqlite_does_not_contain_raw_webhook(self):
+        self.send()
+        data = self.path.read_bytes()
+        self.assertNotIn(b'"event_id":', data)
+        self.assertNotIn(SECRET, data)
+
+    def test_input_validation_rejects_bool_and_sql_fragments(self):
+        with self.assertRaises(SecurityError):
+            Plan("demo", "KZT", True)
+        with self.assertRaises(SecurityError):
+            self.engine.create_order("tenant_A;DROP TABLE orders", "account_A", PLAN, "sandbox-test", now=NOW)
+        with self.assertRaises(SecurityError):
+            self.send(event_id="evt-bool", amount_minor=True)
+        self.assertFalse(self.snapshot().eligible)
+
+    def test_two_different_event_ids_for_same_receipt_concurrently(self):
+        results = []
+        errors = []
+        barrier = threading.Barrier(2)
+        def worker(event_id):
+            try:
+                barrier.wait(timeout=3)
+                results.append(self.send(event_id=event_id))
+            except Exception as exc:
+                errors.append(exc)
+        threads = [threading.Thread(target=worker, args=(name,)) for name in ("evtA", "evtB")]
+        for t in threads: t.start()
+        for t in threads: t.join(timeout=6)
+        self.assertFalse(errors, errors)
+        self.assertEqual(sum(result.changed for result in results), 1)
+        self.assertEqual(self.snapshot().access_until, NOW+2592000)
+
     def test_restart_preserves_ledger(self):
         self.send()
         restarted = BillingEngine(self.path, {"sandbox-test":TestHmacAdapter(SECRET)}, allow_test_adapters=True)
