@@ -1,3 +1,11 @@
+## Backend checkpoint — 2026-11-21: signed JSON nesting failure
+
+- **Issue/ownership:** #9, branch `feat/vpn/9-subscription-adapter`, Draft PR #73; only billing-owned `core.py`, `test_core.py`, and this HANDOFF changed. Existing foundation and payment-authority contracts remain unmerged/unapproved.
+- **Defect and correction:** A correctly HMAC-signed but deeply nested JSON body can raise Python `RecursionError` in `json.loads`, escaping the intended sanitized `SecurityError` boundary. The test-only adapter now catches `RecursionError` alongside JSON parse errors, returning `SecurityError("invalid webhook JSON")` without changing ledger state. No change to accepted events or production integrations.
+- **Code:** [e5ad60b](https://github.com/Dimash313/Wexum/commit/e5ad60b5486cd51b0bcd92ea80577adce5ba7d71). **Regression:** [d896d58](https://github.com/Dimash313/Wexum/commit/d896d5820cdc6000f29db8cf6bb213e7cb7cacb4), signs a 1200-level nested JSON array and checks sanitized rejection, unchanged revision and no eligibility.
+- **Evidence:** GitHub code/test writes PASS. Python billing unit tests **NOT RUN**; compileall **NOT RUN**; GitHub Actions latest-head **NOT VERIFIED**; independent review **PENDING**. Local `git ls-remote` failed with `Could not resolve host: github.com`; authored test is not evidence of execution.
+- **Next:** run `PYTHONPATH=products/vpn/subscriptions/src python -m unittest discover -s products/vpn/subscriptions/tests -v` and `python -m compileall -q products/vpn/subscriptions/src products/vpn/subscriptions/tests` on exact head; coordinate final-head CI with integrator and independent audit. PR remains Draft, no merge, no real payments.
+
 ## Backend engineering checkpoint — 2026-11-21: bounded synthetic webhook headers
 
 - **Scope:** Subscriptions & Billing #9, Draft PR #73, only `products/vpn/subscriptions/`; no shared contract changes. This remains a test-only HMAC adapter and is not a real payment gateway.
