@@ -6,6 +6,8 @@ from .callback import (
     parse_authorization_callback,
 )
 
+from .exchange import UnverifiedCodeExchange, prepare_code_exchange
+
 from .transactions import (
     AuthorizationCapacityExceeded,
     AuthorizationRejected,
@@ -23,4 +25,6 @@ __all__ = [
     "AuthorizationStart",
     "AuthorizationTransactions",
     "ExchangeContext",
+    "UnverifiedCodeExchange",
+    "prepare_code_exchange",
 ]
