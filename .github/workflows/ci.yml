@@ -30,4 +30,12 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Catalog contract
         run: python scripts/validate_catalog.py
+      - name: VPN node registry syntax
+        run: python -m compileall -q products/vpn/nodes tests/integration
+      - name: VPN node registry tests
+        run: python -m unittest discover -s products/vpn/nodes -p 'test_*.py' -v
+      - name: Independent VPN node replay regressions
+        env:
+          PYTHONPATH: products/vpn/nodes
+        run: python -m unittest discover -s tests/integration -p 'test_node_generation.py' -v
 
