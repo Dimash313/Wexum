@@ -72,3 +72,43 @@ public struct ConnectionState: Equatable, Sendable {
     /// Protection is intentionally unavailable until an audited engine/verifier exists.
     public var isProtectionVerified: Bool { false }
 }
+
+/// Rejects callbacks originating before a newer configuration refresh or path change.
+/// The caller serializes all mutations (the iOS store uses MainActor).
+public struct ObservationEpoch: Sendable {
+    public struct Ticket: Equatable, Sendable {
+        fileprivate let revision: UInt64
+    }
+
+    private var revision: UInt64 = 0
+    private var activeTicket: Ticket?
+
+    public init() {}
+
+    public mutating func beginRefresh() -> Ticket {
+        revision &+= 1
+        activeTicket = nil
+        return Ticket(revision: revision)
+    }
+
+    public func isCurrent(_ ticket: Ticket) -> Bool {
+        ticket.revision == revision
+    }
+
+    @discardableResult
+    public mutating func activate(_ ticket: Ticket) -> Bool {
+        guard isCurrent(ticket) else { return false }
+        activeTicket = ticket
+        return true
+    }
+
+    public func permitsStatus(for ticket: Ticket?) -> Bool {
+        guard let ticket else { return false }
+        return isCurrent(ticket) && activeTicket == ticket
+    }
+
+    public mutating func invalidate() {
+        revision &+= 1
+        activeTicket = nil
+    }
+}
