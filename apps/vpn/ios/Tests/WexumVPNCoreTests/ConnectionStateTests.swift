@@ -94,6 +94,59 @@ final class ConnectionStateTests: XCTestCase {
         XCTAssertFalse(state.isProtectionVerified)
     }
 
+    func testObservationRejectsStatusBeforeActivation() {
+        var epoch = ObservationEpoch()
+        let ticket = epoch.beginRefresh()
+        XCTAssertFalse(epoch.permitsStatus(for: ticket))
+        XCTAssertFalse(epoch.permitsStatus(for: nil))
+        XCTAssertTrue(epoch.activate(ticket))
+        XCTAssertTrue(epoch.permitsStatus(for: ticket))
+    }
+
+    func testSupersededConfigurationResponseCannotActivate() {
+        var epoch = ObservationEpoch()
+        let oldTicket = epoch.beginRefresh()
+        let latestTicket = epoch.beginRefresh()
+        XCTAssertFalse(epoch.isCurrent(oldTicket))
+        XCTAssertFalse(epoch.activate(oldTicket))
+        XCTAssertFalse(epoch.permitsStatus(for: oldTicket))
+        XCTAssertTrue(epoch.activate(latestTicket))
+        XCTAssertTrue(epoch.permitsStatus(for: latestTicket))
+    }
+
+    func testNetworkSwitchInvalidatesStatusAndPendingResponse() {
+        var epoch = ObservationEpoch()
+        let previous = epoch.beginRefresh()
+        XCTAssertTrue(epoch.activate(previous))
+        epoch.invalidate()
+        XCTAssertFalse(epoch.permitsStatus(for: previous))
+        XCTAssertFalse(epoch.activate(previous))
+        let onNewPath = epoch.beginRefresh()
+        XCTAssertTrue(epoch.activate(onNewPath))
+        XCTAssertFalse(epoch.permitsStatus(for: previous))
+        XCTAssertTrue(epoch.permitsStatus(for: onNewPath))
+    }
+
+    func testFailedReloadDoesNotReuseOldStatusTicket() {
+        var epoch = ObservationEpoch()
+        let oldTicket = epoch.beginRefresh()
+        XCTAssertTrue(epoch.activate(oldTicket))
+        _ = epoch.beginRefresh()
+        XCTAssertFalse(epoch.permitsStatus(for: oldTicket))
+        epoch.invalidate() // loader failure or missing configuration
+        XCTAssertFalse(epoch.permitsStatus(for: oldTicket))
+    }
+
+    func testRepeatedInvalidateNeverRestoresStatus() {
+        var epoch = ObservationEpoch()
+        let ticket = epoch.beginRefresh()
+        XCTAssertTrue(epoch.activate(ticket))
+        for _ in 0..<100 {
+            epoch.invalidate()
+            XCTAssertFalse(epoch.permitsStatus(for: ticket))
+        }
+    }
+
     func testOfflineWithoutConfigurationDoesNotClaimInterruption() {
         var state = ConnectionState()
         state.apply(.networkLost)
