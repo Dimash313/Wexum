@@ -2,6 +2,12 @@
 
 This document is binding for every ChatGPT, Codex and other coding agent working anywhere in this repository. The repository, not a chat transcript or assumed memory, is the source of truth.
 
+## CTO autonomous continuation — owner directive (issue #76)
+
+When the owner writes **«Продолжаем дальше»**, an agent acting as Wexum CTO / integrator must inspect live GitHub and autonomously **execute** the highest-priority available engineering step. Do not request a PR list, task allocation or repeated requirements from the owner. Use issues, PRs and checks to coordinate and verify actual work; delegate code within issue ownership and obtain repeat non-author audit for remediations. Escalate only owner-authority decisions (budget, strategy, substantial compromises, exceptional permissions). **This never waives green required CI, independent approval, security/privacy/religious review, branch protection or no-self-merge rules.**
+
+Mandatory CTO operating instructions and fresh-chat handoff: [`docs/engineering/CTO_OPERATING_PROTOCOL.md`](docs/engineering/CTO_OPERATING_PROTOCOL.md). New CTO sessions must read this document; GitHub is the source of truth, not a previous chat transcript.
+
 ## Mandatory read order for every new session
 1. Inspect current repository, branch, status, latest commits and open PRs/issues. Do not assume the task is unfinished.
 2. Read this file, `README.md`, `docs/engineering/STATE.md`, `docs/architecture/SYSTEM.md`, `docs/architecture/BOUNDARIES.md`, `docs/engineering/QUALITY.md`, `docs/engineering/REVIEW_PROTOCOL.md`, and `docs/policy/RELIGIOUS_REVIEW.md`.
