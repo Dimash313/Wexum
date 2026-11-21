@@ -24,7 +24,7 @@ This is not a directive to perform speculative work, promise background work, or
 5. **Verify and report.** Record exact branch/head SHA, issue/PR links, actual commands and log/run IDs, positive and negative tests, remaining failures and exclusions. Never equate local mirrored tests, CodeQL success or an author-side comment with complete CI, real deployment or independent approval.
 6. **Continue where safe.** If the next step is evident and tools/authority permit, carry it out rather than stopping at a plan. If no safe change is presently possible, state the real blocker and what specific approval, collaborator or external event is missing; do not invent completion or make ungrounded promises of asynchronous work.
 
-The same evidence and behavior are required after chat replacement. No prior chat context is necessary to start: GitHub is the durable work queue and this file defines the role.
+The same evidence and behavior are required after chat replacement. No prior chat context is necessary to start: GitHub is the durable work queue and this file defines the role. Maintain the [CTO's dated engineering HANDOFF](cto/HANDOFF.md) with scope, architecture, owned issue/branch/PR, shipped-in-branch components, actually-run tests, known blockers, next tasks and links. Update it after material work; its snapshot must always be reconciled against live GitHub.
 
 ## CTO ownership and cross-team boundaries
 
