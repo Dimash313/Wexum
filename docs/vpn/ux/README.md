@@ -34,7 +34,7 @@ These are **untested** assumptions. Validate with consenting participants before
 - **Settings:** language via approved i18n adapter, appearance via approved Experience design tokens, privacy and diagnostics disclosure.
 - **Help:** explain permissions, interruptions, privacy limitations and support; never dump raw errors/secrets.
 
-Read [SCREENS.md](SCREENS.md), [NATIVE_HANDOFF.md](NATIVE_HANDOFF.md) and the [machine-readable state contract](connection_states.json). The state contract is a UX **proposal**, not an executable VPN engine or API schema.
+Read [SCREENS.md](SCREENS.md), [STATE_COPY.md](STATE_COPY.md), [ACCESSIBILITY_QA.md](ACCESSIBILITY_QA.md), [NATIVE_HANDOFF.md](NATIVE_HANDOFF.md) and the [machine-readable state contract](connection_states.json). The state contract is a UX **proposal**, not an executable VPN engine or API schema.
 
 ## Core safety rules
 
