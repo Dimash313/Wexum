@@ -327,6 +327,39 @@ class BillingTests(unittest.TestCase):
                                   allow_test_adapters=True)
         self.assertFalse(self.snapshot().eligible)
 
+    def test_concurrent_conflicting_checkout_terms_create_only_one_order(self):
+        # Two authenticated retries with the same scoped key but different
+        # server-approved terms must never produce two durable orders.
+        barrier = threading.Barrier(2)
+        results = []
+        errors = []
+
+        def worker(plan):
+            try:
+                barrier.wait(timeout=5)
+                results.append(self.engine.create_order(
+                    "tenant_A", "account_A", plan, "sandbox-test",
+                    now=NOW, request_id="conflicting-concurrent-checkout"))
+            except Exception as exc:
+                errors.append(exc)
+
+        plans = (PLAN, Plan("annual", "KZT", 500000))
+        threads = [threading.Thread(target=worker, args=(plan,)) for plan in plans]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=8)
+        self.assertFalse(any(thread.is_alive() for thread in threads))
+        self.assertEqual(len(results), 1)
+        self.assertEqual(len(errors), 1)
+        self.assertIsInstance(errors[0], ConflictError)
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute(
+                "SELECT COUNT(*) FROM order_requests WHERE order_id=?",
+                (results[0],)).fetchone()[0], 1)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 2)
+        self.assertFalse(self.snapshot().eligible)
+
     def test_order_retry_returns_same_order(self):
         original = self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test",
                                             now=NOW + 1, request_id="checkout-retry")
