@@ -1,3 +1,12 @@
+## Backend checkpoint — 2026-11-22: reject ephemeral SQLite storage
+
+- **Scope:** Issue #9, existing Draft PR #73, billing-owned source/tests/HANDOFF only. P2 reliability and integrity guard; no cross-lane API, payment integration, deployment or migration.
+- **Defect:** BillingEngine uses separate SQLite connections for schema creation, checkout, ledger updates and reads. Accepting `:memory:` silently creates an independent empty database on each call, breaking the durable-ledger contract. Empty or non-path inputs could also reach sqlite3 with uncontrolled errors.
+- **Fix:** reject `:memory:`, empty strings and non-`str`/`Path` values with sanitized `SecurityError("durable billing database path required")` before connecting. This does not claim to guarantee durable disk or forbid caller-provided special filesystem paths; the deployment adapter must still supply and protect an approved persistent path.
+- **Source commit:** [bc5aeb1](https://github.com/Dimash313/Wexum/commit/bc5aeb15bed6f123721df7eceba93af98a3dfb2c). **Regression commit:** [f4a69d8](https://github.com/Dimash313/Wexum/commit/f4a69d82c111401d4725d9cb84d7b58da1fcae57), four invalid path values and unchanged existing ledger state.
+- **Evidence:** GitHub writes **PASS**. Python unit tests **NOT RUN**, compileall **NOT RUN**, exact-head CI **NOT VERIFIED**, independent audit **PENDING**. No successful runtime tests are claimed.
+- **Next:** execute `PYTHONPATH=products/vpn/subscriptions/src python -m unittest discover -s products/vpn/subscriptions/tests -v` and `python -m compileall -q products/vpn/subscriptions/src products/vpn/subscriptions/tests` on latest exact source; coordinate final-head CI with integrator and independent audit. PR remains Draft; no merge or real payments.
+
 ## Backend checkpoint — 2026-11-21: atomic event-ledger fault regression
 
 - **Scope / priority:** Billing issue #9, existing branch `feat/vpn/9-subscription-adapter`, Draft PR #73. Targeted P1 integrity regression; no production logic or cross-lane contracts changed.
