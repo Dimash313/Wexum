@@ -185,6 +185,16 @@ class BillingTests(unittest.TestCase):
         self.assertEqual(self.snapshot().revision, 0)
         self.assertFalse(self.snapshot().eligible)
 
+    def test_unhashable_webhook_provider_rejected_without_ledger_mutation(self):
+        body = self._payload()
+        headers = self._headers()
+        for provider in (None, [], {}, 123):
+            with self.subTest(provider=type(provider).__name__):
+                with self.assertRaisesRegex(SecurityError, "^unknown provider$"):
+                    self.engine.accept_webhook(provider, body, headers, now=NOW)
+        self.assertEqual(self.snapshot().revision, 0)
+        self.assertFalse(self.snapshot().eligible)
+
     def test_old_signature_time(self):
         payload = dict(event_id="evt1", order_id=self.order, transaction_id="txn1", kind="paid",
                        occurred_at=NOW, period_end=NOW+300, currency="KZT", amount_minor=179000)
