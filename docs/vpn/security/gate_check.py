@@ -10,6 +10,7 @@ import json
 import re
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 REQUIRED_GATES = frozenset({
     "G-FOUNDATION", "G-IDENTITY", "G-TENANCY", "G-BILLING",
@@ -27,6 +28,19 @@ FINDING_RE = re.compile(r"SEC-[A-Z]+-[0-9]{3}\Z")
 
 def _nonempty(value: Any) -> bool:
     return type(value) is str and bool(value.strip())
+
+
+def _valid_evidence_url(value: Any) -> bool:
+    """Require a real HTTPS authority; reject credentials and control characters."""
+    if not _nonempty(value) or any(ord(ch) < 32 or ord(ch) == 127 for ch in value):
+        return False
+    try:
+        parsed = urlsplit(value)
+        return (parsed.scheme == "https" and bool(parsed.hostname)
+                and parsed.username is None and parsed.password is None
+                and parsed.port != 0 and not value.startswith("https:///"))
+    except ValueError:
+        return False
 
 
 def assess(manifest: Any) -> tuple[list[str], list[str]]:
@@ -92,7 +106,7 @@ def assess(manifest: Any) -> tuple[list[str], list[str]]:
             seen_kinds.add(kind)
             actor = record.get("actor")
             uri = record.get("url")
-            if not _nonempty(actor) or not _nonempty(uri) or not uri.startswith("https://"):
+            if not _nonempty(actor) or not _valid_evidence_url(uri):
                 errors.append(f"{ident}: evidence requires actor and HTTPS URL")
             else:
                 actors[kind] = actor
