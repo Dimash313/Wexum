@@ -179,14 +179,33 @@ class GrantPrecheck:
             raise GrantPrecheckDenied("VPN access denied")
 
         try:
-            account, subscription, device = await asyncio.wait_for(
-                asyncio.gather(
-                    self._accounts.read_account(actor.tenant_id, actor.subject_id),
-                    self._subscriptions.read_subscription(actor.tenant_id, actor.subject_id),
-                    self._devices.read_device(actor.tenant_id, actor.subject_id, device_id),
-                ),
-                timeout=self._timeout,
-            )
+            started_at = self._clock()
+            if not _instant(started_at):
+                raise GrantPrecheckUnavailable("trusted clock unavailable")
+            if actor.expires_at <= started_at:
+                raise GrantPrecheckDenied("VPN access denied")
+        except (GrantPrecheckDenied, GrantPrecheckUnavailable):
+            raise
+        except Exception as exc:
+            raise GrantPrecheckUnavailable("trusted clock unavailable") from exc
+
+        try:
+            # TaskGroup cancels and joins sibling lookups when one authority fails.
+            # gather() can otherwise leave background lookups running on early error.
+            async with asyncio.timeout(self._timeout):
+                async with asyncio.TaskGroup() as tasks:
+                    account_task = tasks.create_task(
+                        self._accounts.read_account(actor.tenant_id, actor.subject_id)
+                    )
+                    subscription_task = tasks.create_task(
+                        self._subscriptions.read_subscription(actor.tenant_id, actor.subject_id)
+                    )
+                    device_task = tasks.create_task(
+                        self._devices.read_device(actor.tenant_id, actor.subject_id, device_id)
+                    )
+                account, subscription, device = (
+                    account_task.result(), subscription_task.result(), device_task.result()
+                )
             now = self._clock()
         except Exception as exc:
             raise GrantPrecheckUnavailable("authoritative VPN state unavailable") from exc
