@@ -1,5 +1,13 @@
 # Wexum — Chief Independent Auditor HANDOFF
 
+## Audit checkpoint — 2026-11-22, PR #71 evidence URL hardening
+
+- **Exact head:** https://github.com/Dimash313/Wexum/pull/71 at `8cf1e079eb5ae4c4110efd66b5c3d78ced53c14c`, previous audited `22d6b78d9daae8fe8080aefb49e09210a37a3332`. Seven commits, three changed paths: `docs/vpn/security/HANDOFF.md`, `gate_check.py`, `test_gate_check.py`. PR base `main`.
+- **Evidence:** inspected current PR diff, foundation AGENTS/REVIEW_PROTOCOL, previous comments, zero review threads, SHA delta. New evidence URL restrictions reject C1 controls, whitespace padding and backslashes; `--require-attested` remains always blocking. Syntactic HTTPS checks are not independent artifact verification. Thirteen gates blocked; Control #55 known negative regressions unresolved.
+- **Decision: NOT VERIFIED / integration BLOCKED.** PR-triggered workflow runs 0 on exact head; no independent executable Python/compileall (container git fetch failed: DNS resolution for github.com), no actual VPN leak/provider/node tests. Prior red Control CI: https://github.com/Dimash313/Wexum/actions/runs/44873727876 on a *different* candidate SHA.
+- **Published:** https://github.com/Dimash313/Wexum/pull/71#issuecomment-7070994290. **Next:** mandatory exact-combined-SHA CI with security tests/compileall/negative attestation exit, external evidence validation and non-author approval; fix Control #55. No product code, merges or approvals.
+
+
 ## Audit checkpoint — 2026-11-22, PR #73 conflicting concurrent checkout regression
 
 - **Exact PR/head:** https://github.com/Dimash313/Wexum/pull/73 at `fbdab4ead52529ed97b0333a382357e633b32708`; previous audited `fe4e8e22e2132d0d3ec123eae5611b0c7c3aa7b0`. Base main `cc805a79b6dfc4e08e6866c1bc0653381755fb83`.
