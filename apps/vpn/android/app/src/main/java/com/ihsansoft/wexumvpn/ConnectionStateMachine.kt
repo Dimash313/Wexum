@@ -2,7 +2,7 @@ package com.ihsansoft.wexumvpn
 
 import java.util.concurrent.atomic.AtomicLong
 
-/** The UI may read these phases. PROTECTED is intentionally unreachable in this scaffold. */
+/** PROTECTED has no authorized transition until a reviewed tunnel verifier exists. */
 enum class ConnectionPhase {
     DISCONNECTED, AWAITING_CONSENT, PERMISSION_READY, CONNECTING, PROTECTED, INTERRUPTED, ERROR
 }
@@ -17,19 +17,23 @@ data class ConnectionSnapshot(
     val revision: Long = 0L,
 )
 
-/** No CONNECTED/VERIFIED event until independently reviewed tunnel verification exists. */
 internal enum class EngineSignal { STARTING, INTERRUPTED, STOPPED, FAILED }
 
 /**
- * Thread-safe process-local state. A UI actor cannot send engine events via UserPort.
- * Engine session identity is only a stale-callback guard, NEVER server-side authorization.
+ * Process-local, fail-closed state. Session/lease numbers reject stale callbacks; they are
+ * not OS permission, VPN verification, or server authorization. No tunnel is implemented.
  */
-class ConnectionStateMachine {
+class ConnectionStateMachine(
+    private val onObserverFailure: (Exception) -> Unit = { exception ->
+        System.err.println("WexumVPN state observer failed: ${exception.javaClass.simpleName}")
+    },
+) {
     private val lock = Any()
     private var snapshot = ConnectionSnapshot()
     private var pendingConsent: Long? = null
+    private var serviceLease: Long? = null
     private var activeEngineSession: Long? = null
-    private val counter = AtomicLong(0L)
+    private val counter = AtomicLong()
     private val listeners = LinkedHashMap<Long, () -> Unit>()
 
     val user: UserPort = UserPort()
@@ -37,11 +41,16 @@ class ConnectionStateMachine {
 
     fun current(): ConnectionSnapshot = synchronized(lock) { snapshot }
 
-    /** Immediate notification and notifications on later state changes. Read current() when invoked. */
+    /** Observer receives the latest snapshot, never an authoritative tunnel event. */
     fun observe(listener: () -> Unit): AutoCloseable {
         val key = counter.incrementAndGet()
         synchronized(lock) { listeners[key] = listener }
-        listener()
+        try {
+            listener()
+        } catch (exception: Exception) {
+            synchronized(lock) { listeners.remove(key) }
+            throw exception
+        }
         return AutoCloseable { synchronized(lock) { listeners.remove(key) } }
     }
 
@@ -49,12 +58,22 @@ class ConnectionStateMachine {
         val result: T
         val notifications: List<() -> Unit>
         synchronized(lock) {
-            val previous = snapshot
+            val before = snapshot
             result = block()
-            notifications = if (previous != snapshot) listeners.values.toList() else emptyList()
+            notifications = if (before != snapshot) listeners.values.toList() else emptyList()
         }
-        // Do not run listeners under the lock. Subscribers read the latest state.
-        notifications.forEach { it() }
+        // A broken UI listener must not abort a security-critical revocation or block peers.
+        notifications.forEach { listener ->
+            try {
+                listener()
+            } catch (exception: Exception) {
+                try {
+                    onObserverFailure(exception)
+                } catch (handlerError: Exception) {
+                    System.err.println("WexumVPN observer error handler failed: ${handlerError.javaClass.simpleName}")
+                }
+            }
+        }
         return result
     }
 
@@ -64,12 +83,13 @@ class ConnectionStateMachine {
         }
     }
 
-    /** Only OS-consent bookkeeping is accessible to the Activity. */
+    /** The Activity can request/record OS consent but cannot emit engine events. */
     inner class UserPort internal constructor() {
         fun beginConsent(): Long? = update {
-            if (snapshot.phase == ConnectionPhase.AWAITING_CONSENT ||
-                snapshot.phase == ConnectionPhase.CONNECTING ||
-                snapshot.phase == ConnectionPhase.PROTECTED
+            if (snapshot.phase in setOf(
+                    ConnectionPhase.AWAITING_CONSENT, ConnectionPhase.CONNECTING,
+                    ConnectionPhase.PROTECTED, ConnectionPhase.INTERRUPTED,
+                )
             ) return@update null
             val attempt = counter.incrementAndGet()
             pendingConsent = attempt
@@ -78,7 +98,7 @@ class ConnectionStateMachine {
             attempt
         }
 
-        /** Caller MUST independently recheck VpnService.prepare(context) before reporting granted. */
+        /** OS must be checked by the Android Activity before passing grantedByOs=true. */
         fun resolveConsent(attempt: Long, grantedByOs: Boolean): Boolean = update {
             if (snapshot.phase != ConnectionPhase.AWAITING_CONSENT || pendingConsent != attempt) {
                 return@update false
@@ -98,11 +118,10 @@ class ConnectionStateMachine {
             true
         }
 
-        /** On resume, a revoked OS grant invalidates any previously observed ready/active state. */
         fun reconcileOsPermission(grantedByOs: Boolean) = update {
             if (!grantedByOs && snapshot.phase in setOf(
                     ConnectionPhase.PERMISSION_READY, ConnectionPhase.CONNECTING,
-                    ConnectionPhase.PROTECTED, ConnectionPhase.INTERRUPTED
+                    ConnectionPhase.PROTECTED, ConnectionPhase.INTERRUPTED,
                 )
             ) {
                 activeEngineSession = null
@@ -112,48 +131,88 @@ class ConnectionStateMachine {
         }
     }
 
-    /** Only VpnService and a future reviewed engine adapter should call these methods. */
+    /** Only the platform VpnService and a future audited engine adapter may call this port. */
     internal inner class ServicePort internal constructor() {
+        /** Each Android Service instance owns a lease, not shared across recreation. */
+        fun attach(): Long = update {
+            if (serviceLease != null) {
+                activeEngineSession = null
+                if (snapshot.phase in setOf(ConnectionPhase.CONNECTING, ConnectionPhase.INTERRUPTED)) {
+                    change(ConnectionPhase.DISCONNECTED)
+                }
+            }
+            val lease = counter.incrementAndGet()
+            serviceLease = lease
+            lease
+        }
+
+        /** OS revocation invalidates all attempts, including a still-open consent dialog. */
         fun permissionRevoked() = update {
             pendingConsent = null
             activeEngineSession = null
+            serviceLease = null
             change(ConnectionPhase.DISCONNECTED, ConnectionFailure.PERMISSION_REVOKED)
         }
 
-        fun engineUnavailable() = update {
-            pendingConsent = null
+        fun engineUnavailable(lease: Long): Boolean = update {
+            if (serviceLease != lease || snapshot.phase !in setOf(
+                    ConnectionPhase.PERMISSION_READY, ConnectionPhase.CONNECTING,
+                    ConnectionPhase.INTERRUPTED,
+                )
+            ) return@update false
             activeEngineSession = null
             change(ConnectionPhase.ERROR, ConnectionFailure.ENGINE_UNAVAILABLE)
+            true
         }
 
-        fun serviceStopped() = update {
-            pendingConsent = null
+        /** A late onDestroy from a replaced/revoked service cannot erase newer state. */
+        fun serviceStopped(lease: Long): Boolean = update {
+            if (serviceLease != lease) return@update false
+            serviceLease = null
             activeEngineSession = null
-            change(ConnectionPhase.DISCONNECTED)
+            if (snapshot.phase != ConnectionPhase.ERROR &&
+                snapshot.failure != ConnectionFailure.PERMISSION_REVOKED
+            ) change(ConnectionPhase.DISCONNECTED)
+            true
         }
 
-        /** Internal only; no production engine calls this path yet. */
-        fun openEngineSession(): Long? = update {
-            if (snapshot.phase != ConnectionPhase.PERMISSION_READY) return@update null
+        /** Requires a live service lease and an OS-approved permission state. */
+        fun openEngineSession(lease: Long): Long? = update {
+            if (serviceLease != lease || snapshot.phase != ConnectionPhase.PERMISSION_READY ||
+                activeEngineSession != null
+            ) return@update null
             val session = counter.incrementAndGet()
             activeEngineSession = session
             session
         }
 
+        /** True means a legal transition occurred, not merely a matching session ID. */
         fun onEngineSignal(session: Long, event: EngineSignal): Boolean = update {
-            if (session != activeEngineSession) return@update false
+            if (serviceLease == null || session != activeEngineSession) return@update false
             when (event) {
-                EngineSignal.STARTING -> if (snapshot.phase == ConnectionPhase.PERMISSION_READY) {
+                EngineSignal.STARTING -> {
+                    if (snapshot.phase != ConnectionPhase.PERMISSION_READY) return@update false
                     change(ConnectionPhase.CONNECTING)
                 }
-                EngineSignal.INTERRUPTED -> if (snapshot.phase == ConnectionPhase.CONNECTING) {
+                EngineSignal.INTERRUPTED -> {
+                    if (snapshot.phase != ConnectionPhase.CONNECTING) return@update false
                     change(ConnectionPhase.INTERRUPTED)
                 }
                 EngineSignal.FAILED -> {
+                    if (snapshot.phase !in setOf(
+                            ConnectionPhase.PERMISSION_READY, ConnectionPhase.CONNECTING,
+                            ConnectionPhase.INTERRUPTED,
+                        )
+                    ) return@update false
                     activeEngineSession = null
                     change(ConnectionPhase.ERROR, ConnectionFailure.ENGINE_FAILED)
                 }
                 EngineSignal.STOPPED -> {
+                    if (snapshot.phase !in setOf(
+                            ConnectionPhase.PERMISSION_READY, ConnectionPhase.CONNECTING,
+                            ConnectionPhase.INTERRUPTED,
+                        )
+                    ) return@update false
                     activeEngineSession = null
                     change(ConnectionPhase.DISCONNECTED)
                 }

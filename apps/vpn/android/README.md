@@ -5,11 +5,11 @@ This is **not a working VPN**. No tunnel, authentication handshake, gateway, DNS
 ## Scope
 - Native Kotlin + Android SDK shell: AGP 8.9.2, Kotlin plugin 2.0.21, compile/target SDK 35 and min SDK 26.
 - User-driven `VpnService.prepare(context)` permission flow. Explicit OS permission recheck after callback and on Activity resume; failed consent intent and invalid results never report protection.
-- Thread-safe process-local state with a separate Activity `UserPort` and internal `ServicePort`. Pending consent IDs and engine-session IDs reject stale messages after revoke/crash. The future engine interface has no event that can claim a verified tunnel.
+- Thread-safe process-local state with a separate Activity `UserPort` and internal `ServicePort`. Pending consent IDs, per-VpnService-instance leases and engine-session IDs reject stale callbacks after revocation, replacement or shutdown. Invalid engine signal order is rejected, and one failing UI observer cannot block revocation or healthy listeners. The future engine interface has no event that can claim a verified tunnel.
 - Lifecycle-bound UI observer subscribes onStart and unsubscribes onStop, rendering current service state on the UI thread. Status is never persisted.
 - Placeholder `VpnService` immediately stops without starting TUN or modifying routes. Always-on VPN is disabled in the manifest for this nonfunctional scaffold.
 - Simple black-and-white UI, EN/RU/KK/AR Android resource catalogs, Android 13+ OS app language preferences and RTL.
-- Pure JVM negative tests cover permission replay, grant/revoke races, engine callback replay, failure recovery, observer lifetimes and process reset. No runtime third-party libraries, analytics, traffic inspection or credentials.
+- Pure JVM negative tests cover permission replay, grant/revoke races, engine callback replay, failure recovery, stale service instances, observer exception isolation, and process reset. The JUnit source now has **23 methods**; Android Gradle JUnit is NOT run. No runtime third-party libraries, analytics, traffic inspection or credentials.
 
 ## Reproducible build proposal
 
@@ -32,6 +32,14 @@ java -jar /tmp/wexumvpn-state-tests.jar
 **GitHub Actions is not active.** The proposed minimal-permission SHA-pinned workflow is under `ci/android-workflow.proposal.yml`, which GitHub will not execute at that path. Only the integrator may create a workflow at repository-root `.github/workflows/android.yml`, via a separate independently reviewed PR. No binary Gradle wrapper is included because its provenance could not be verified; the pinned `setup-gradle` action installs Gradle 8.11.1 in the proposed runner.
 
 Without local Android SDK + Gradle, Android compilation, JUnit execution, lint and runtime/emulator verification remain **NOT VERIFIED**. Smoke tests are not equivalent to Android tests or a CI result.
+
+## Latest isolated verification (2026-11-21)
+
+- Kotlin 1.9.0 / Java 21 pure JVM smoke: **PASS**, including 100 consent/revoke race iterations, stale service instance protection, invalid engine orders and observer error isolation.
+- 23/23 methods from the JUnit source executed with **temporary local JUnit API Java stubs**: PASS. **Not actual Gradle/JUnit execution.**
+- One `VpnService` lifecycle check with temporary Android API stubs: PASS. **Not emulator/Android runtime evidence.**
+- Source SHA parity against GitHub candidate: state machine `87c4b1dc4d134aad8df5c7e2ad27bb16b424aab2`, standalone smoke `f2fcffffa1268740fa092d5788f4bbb1fdb3786a`, JUnit source `30061a854ebc3e824ec69c84d96cd8e4bf78265a`, service `34d7892d2281a7948e7410b60eda8229f0534126`.
+- Android SDK, Gradle, emulator and GitHub Actions on the current candidate remain unavailable/unexecuted. Root-level CI activation is tracked by #68.
 
 ## Trust boundaries and blockers
 

@@ -5,8 +5,15 @@ import android.net.VpnService
 
 /** Placeholder OS service only. Never starts a tunnel and never announces protection. */
 class WexumVpnService : VpnService() {
+    private var lease: Long? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        lease = VpnRuntime.state.service.attach()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        VpnRuntime.state.service.engineUnavailable()
+        lease?.let { VpnRuntime.state.service.engineUnavailable(it) }
         stopSelf(startId)
         return START_NOT_STICKY
     }
@@ -17,7 +24,8 @@ class WexumVpnService : VpnService() {
     }
 
     override fun onDestroy() {
-        VpnRuntime.state.service.serviceStopped()
+        lease?.let { VpnRuntime.state.service.serviceStopped(it) }
+        lease = null
         super.onDestroy()
     }
 }

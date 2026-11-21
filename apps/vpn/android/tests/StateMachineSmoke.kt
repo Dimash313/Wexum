@@ -4,52 +4,63 @@ import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 
 fun main() {
-    val s = ConnectionStateMachine()
-    check(s.current().phase == ConnectionPhase.DISCONNECTED)
-    val initial = s.user.beginConsent()!!
-    check(s.user.beginConsent() == null)
-    check(s.user.resolveConsent(initial, false))
-    check(s.current().failure == ConnectionFailure.PERMISSION_DENIED)
-    check(s.service.openEngineSession() == null)
-    val attempt = s.user.beginConsent()!!
-    check(!s.user.resolveConsent(initial, true))
-    check(s.user.resolveConsent(attempt, true))
-    check(s.current().phase == ConnectionPhase.PERMISSION_READY)
-    val session = s.service.openEngineSession()!!
-    check(s.service.onEngineSignal(session, EngineSignal.STARTING))
-    check(s.current().phase == ConnectionPhase.CONNECTING)
-    check(s.service.onEngineSignal(session, EngineSignal.INTERRUPTED))
-    check(s.current().phase == ConnectionPhase.INTERRUPTED)
-    check(s.current().phase != ConnectionPhase.PROTECTED)
-    s.service.permissionRevoked()
-    check(!s.service.onEngineSignal(session, EngineSignal.STARTING))
-    check(s.current().phase == ConnectionPhase.DISCONNECTED)
-    check(s.current().failure == ConnectionFailure.PERMISSION_REVOKED)
-    val second = s.user.beginConsent()!!
-    s.service.serviceStopped()
-    check(!s.user.resolveConsent(second, true))
-    check(s.current().phase == ConnectionPhase.DISCONNECTED)
-    val fresh = ConnectionStateMachine()
-    var notifications = 0
-    val subscription = fresh.observe { notifications++ }
-    fresh.service.engineUnavailable()
-    check(notifications == 2)
-    subscription.close()
-    fresh.service.permissionRevoked()
-    check(notifications == 2)
-    // Permission grant and revoke from separate threads: final state must be safe.
+    val model = ConnectionStateMachine()
+    check(model.current().phase == ConnectionPhase.DISCONNECTED)
+    val first = model.user.beginConsent()!!
+    check(model.user.beginConsent() == null)
+    check(model.user.resolveConsent(first, false))
+    check(model.current().failure == ConnectionFailure.PERMISSION_DENIED)
+    val lease = model.service.attach()
+    check(model.service.openEngineSession(lease) == null)
+    val retry = model.user.beginConsent()!!
+    check(!model.user.resolveConsent(first, true))
+    check(model.user.resolveConsent(retry, true))
+    check(model.current().phase == ConnectionPhase.PERMISSION_READY)
+    check(model.service.openEngineSession(lease + 100) == null)
+    val session = model.service.openEngineSession(lease)!!
+    check(model.service.openEngineSession(lease) == null)
+    check(!model.service.onEngineSignal(session, EngineSignal.INTERRUPTED))
+    check(model.service.onEngineSignal(session, EngineSignal.STARTING))
+    check(!model.service.onEngineSignal(session, EngineSignal.STARTING))
+    check(model.service.onEngineSignal(session, EngineSignal.INTERRUPTED))
+    check(!model.service.onEngineSignal(session, EngineSignal.STARTING))
+    check(model.current().phase == ConnectionPhase.INTERRUPTED)
+    model.service.permissionRevoked()
+    check(!model.service.serviceStopped(lease))
+    check(!model.service.engineUnavailable(lease))
+    check(!model.service.onEngineSignal(session, EngineSignal.FAILED))
+    check(model.current().phase == ConnectionPhase.DISCONNECTED)
+    check(model.current().failure == ConnectionFailure.PERMISSION_REVOKED)
+    val oldConsent = model.user.beginConsent()!!
+    val oldLease = model.service.attach()
+    check(model.service.serviceStopped(oldLease))
+    check(!model.user.resolveConsent(oldConsent, true))
+    check(model.current().phase == ConnectionPhase.DISCONNECTED)
+
+    val errors = mutableListOf<String>()
+    val observed = ConnectionStateMachine { exception -> errors += exception.javaClass.simpleName }
+    val broken = observed.observe { if (observed.current().revision > 0) throw IllegalStateException("observer") }
+    var goodCount = 0
+    val healthy = observed.observe { goodCount++ }
+    observed.service.permissionRevoked()
+    check(errors == listOf("IllegalStateException"))
+    check(goodCount == 2)
+    broken.close()
+    healthy.close()
+    observed.service.permissionRevoked()
+    check(goodCount == 2)
+
     repeat(100) {
         val race = ConnectionStateMachine()
         val id = race.user.beginConsent()!!
-        val ready = CountDownLatch(1)
-        val t = thread { ready.await(); race.user.resolveConsent(id, true) }
-        val t2 = thread { ready.await(); race.service.permissionRevoked() }
-        ready.countDown()
-        t.join(); t2.join()
-        check(race.current().phase != ConnectionPhase.PROTECTED)
-        // The OS permission recheck at resume is authoritative for the local UI.
+        val gate = CountDownLatch(1)
+        val a = thread { gate.await(); race.user.resolveConsent(id, true) }
+        val b = thread { gate.await(); race.service.permissionRevoked() }
+        gate.countDown()
+        a.join(); b.join()
         race.user.reconcileOsPermission(false)
         check(race.current().phase == ConnectionPhase.DISCONNECTED)
+        check(race.current().phase != ConnectionPhase.PROTECTED)
     }
-    println("PASS: permission, service, observer, stale-callback and concurrency smoke")
+    println("PASS: stale service, illegal transitions, listener failures, permission races (100)")
 }

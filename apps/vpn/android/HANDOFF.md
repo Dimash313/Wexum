@@ -28,12 +28,14 @@ The current Android project is an **honest permission-only scaffold**, not a usa
 
 **Trust caveat:** Kotlin `internal`/`UserPort`/`ServicePort` is an organizational boundary inside one application, **not** security isolation between processes. A future tunnel adapter must enforce authoritative, service-owned evidence and undergo review. An actual verified protected state and associated transition rules are **not implemented**.
 
+**Engineering checkpoint (2026-11-21):** `ServicePort.attach()` now grants a unique lease per actual Android `VpnService` instance; `onStartCommand` and `onDestroy` must supply it. An old service cannot erase a newer state, and an OS permission revocation invalidates all leases. Invalid or out-of-order engine signals return false, rather than reporting success. Observer failures are isolated and report only the exception class; other observers and revocations continue. Local-only leases are stale-callback guards, not trust credentials. Current logic does not produce PROTECTED.
+
 ## 3. GitHub coordination
 
 - Primary issue: **#5** — https://github.com/Dimash313/Wexum/issues/5
 - Dedicated branch: **`feat/vpn/5-client-android`**
 - Existing Draft PR: **#66** — https://github.com/Dimash313/Wexum/pull/66
-- PR base: `main`; at this handoff, PR #66 remained open/draft. Pre-handoff code head: `96ce997976d69f2a4b6523cb3d5dbefa638f0524`. This handoff commit will advance the branch; always re-fetch current head.
+- PR base: `main`; at this handoff, PR #66 remained open/draft. Previous code baseline: `fc1f7129bce5d29a7c1eae2a4974899010c1fec4` (HANDOFF creation). The current pending hardening commit advances this; always re-fetch the latest branch head.
 - CI integration blocker: **#68** — https://github.com/Dimash313/Wexum/issues/68
 - Foundation dependency: **PR #1** — https://github.com/Dimash313/Wexum/pull/1 (still unmerged at handoff).
 - Do not start another PR for the same issue unless integrator explicitly requests it; continue #66.
@@ -45,7 +47,7 @@ The current Android project is an **honest permission-only scaffold**, not a usa
 - Separate UI-consent versus service-engine state ports and process-local reactive state: `ConnectionStateMachine.kt`, `VpnRuntime.kt`.
 - Future-only transport interface: `VpnEngineContract.kt`.
 - Minimalist translated resources: English, Russian, Kazakh and Arabic.
-- Negative unit tests: `app/src/test/java/com/ihsansoft/wexumvpn/ConnectionStateMachineTest.kt` (16 JUnit methods written).
+- Negative unit tests: `app/src/test/java/com/ihsansoft/wexumvpn/ConnectionStateMachineTest.kt` (23 JUnit test methods written; actual Android Gradle JUnit not yet run).
 - Kotlin-only standalone smoke: `tests/StateMachineSmoke.kt` (includes 100 consent/revoke race iterations).
 - Local Android build gate: `ci/android-check.sh`.
 - SHA-pinned *proposal only*, **NOT an active GitHub workflow**: `ci/android-workflow.proposal.yml`.
@@ -79,6 +81,13 @@ java -jar /tmp/wexumvpn-state-tests.jar
 
 Do not substitute a Kotlin smoke PASS for Android build, JUnit, emulator or VPN evidence.
 
+**Current locally rerun candidate checks (2026-11-21):**
+- `kotlinc-jvm 1.9.0` and Java 21: compiled and ran pure Kotlin `ConnectionStateMachine.kt` + `StateMachineSmoke.kt`: **PASS**, including 100 concurrent consent/revoke iterations, invalid transitions, expired service leases and observer error isolation.
+- Kotlin JUnit-source methods were compiled and invoked with **temporary local Java stubs of JUnit annotations and assertions**: **23/23 PASS**. This does *not* mean Android Gradle `testDebugUnitTest` or real JUnit was executed.
+- `WexumVpnService.kt` and `VpnRuntime.kt` compiled and ran one lifecycle test with a **temporary Android API stub**: **PASS** (stopSelf, onRevoke followed by onDestroy). This is not an emulator/OS test.
+- Verified Git blob SHA parity on candidate tree: model `87c4b1dc4d134aad8df5c7e2ad27bb16b424aab2`, smoke `f2fcffffa1268740fa092d5788f4bbb1fdb3786a`, JUnit source `30061a854ebc3e824ec69c84d96cd8e4bf78265a`, service `34d7892d2281a7948e7410b60eda8229f0534126`.
+- **Still unverified:** Gradle/Android SDK build, lint, actual JUnit runner, emulator/real device behavior, real VPN connection, CI on this head, full independent review.
+
 ## 6. Known problems, limitations and blockers
 
 1. **No real VPN engine, verified tunnel, gateway transport, route/DNS setup, protected sockets, or connection lifecycle**. `PROTECTED` is purposely unreachable from existing engine events.
@@ -94,7 +103,7 @@ Do not substitute a Kotlin smoke PASS for Android build, JUnit, emulator or VPN 
 1. **On any "Продолжаем дальше"**: read the repository's *current* `AGENTS.md` (if still absent on main, read from foundation PR #1), `README.md`, `docs/engineering/STATE.md`, `docs/engineering/QUALITY.md`, `docs/engineering/REVIEW_PROTOCOL.md`, `docs/vpn/ARCHITECTURE.md`, `docs/vpn/PRODUCT_REQUIREMENTS.md`, `docs/policy/RELIGIOUS_REVIEW.md`, **this `HANDOFF.md`**, issue #5, PR #66 discussion/reviews, related open PRs and current branch head. Inspect all changed Android source before editing. Do not assume previous state is still current.
 2. Coordinate #68 with integrator to activate required Android CI in shared `.github/workflows/` under an authorized **separate** integration PR; demand exact PR-head/merge-candidate GitHub Actions logs, JUnit, lint and debug build. Never move or duplicate shared workflows unilaterally.
 3. On a machine with Android SDK, reproduce `ci/android-check.sh`, fix any compiler/manifest/resources/lint/test errors within the Android-owned path; add tests for OS consent cancel/failure, Activity recreation, service onRevoke/onDestroy, observer teardown and stale callbacks.
-4. Review and strengthen the state machine/observer implementation with negative and concurrency tests: reject out-of-order engine and permission events, ensure callbacks cannot resurrect revoked sessions, document semantics on process death, guard listener exceptions if warranted.
+4. Continue negative and concurrency testing of the stricter service-lease state model on Android; prove OS consent cancellation, Activity recreation, service callbacks and observer failure isolation on an emulator. The pure-JVM lease/transition/observer tests are complete only as narrow local evidence.
 5. Under CTO/security agreement, define an interface contract for authoritative tunnel verification without claiming booleans are proof. Obtain approved protocol, entitlement, node and identity contracts **before** connecting any real engine.
 6. Implement tested service-owned engine integration, correct foreground notifications, socket protection, network lifecycle, cancellation and cleanup only after the approved architecture exists. Add instrumentation tests, real device handover/revocation and DNS/IP leak testing. Do not show "protected" before real end-to-end verification.
 7. Request independent audit of PR #66 on the latest head; close findings with tests, refresh PR description and **update this HANDOFF.md** on every substantive change or before stage handoff. Never self-approve or merge.
