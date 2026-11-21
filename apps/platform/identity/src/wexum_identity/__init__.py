@@ -9,6 +9,7 @@ from .callback import (
 from .exchange import UnverifiedCodeExchange, prepare_code_exchange
 
 from .transport import decode_callback_pairs
+from .webclient import ConfiguredWebOAuthClient
 
 from .transactions import (
     AuthorizationCapacityExceeded,
@@ -30,4 +31,5 @@ __all__ = [
     "UnverifiedCodeExchange",
     "prepare_code_exchange",
     "decode_callback_pairs",
+    "ConfiguredWebOAuthClient",
 ]
