@@ -149,6 +149,33 @@ class BillingTests(unittest.TestCase):
             self.send(secret=b"invalid-but-long-enough-test-key-123456789")
         self.assertFalse(self.snapshot().eligible)
 
+    def test_duplicate_case_insensitive_signature_headers_fail_closed(self):
+        body = self._payload()
+        headers = self._headers()
+        # Different HTTP stacks may choose the first or last case variant.
+        for duplicate in (
+            {"x-test-signature": headers["X-Test-Signature"]},
+            {"x-test-signature": "0" * 64},
+            {"x-test-timestamp": str(NOW)},
+            {"x-test-timestamp": str(NOW + 1)},
+        ):
+            with self.subTest(duplicate=duplicate):
+                with self.assertRaises(SecurityError):
+                    self.engine.accept_webhook(
+                        "sandbox-test", body, {**headers, **duplicate}, now=NOW
+                    )
+        self.assertEqual(self.snapshot().revision, 0)
+        self.assertFalse(self.snapshot().eligible)
+
+    def test_signature_headers_reject_non_string_values(self):
+        body = self._payload()
+        headers = self._headers()
+        for invalid in ({**headers, "X-Test-Signature": None},
+                        {**headers, 123: "irrelevant"}):
+            with self.assertRaises(SecurityError):
+                self.engine.accept_webhook("sandbox-test", body, invalid, now=NOW)
+        self.assertEqual(self.snapshot().revision, 0)
+
     def test_old_signature_time(self):
         payload = dict(event_id="evt1", order_id=self.order, transaction_id="txn1", kind="paid",
                        occurred_at=NOW, period_end=NOW+300, currency="KZT", amount_minor=179000)
