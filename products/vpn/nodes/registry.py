@@ -7,6 +7,7 @@ Only a trusted management-plane adapter may supply inventory and observations.
 from __future__ import annotations
 
 import re
+from secrets import token_hex
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
@@ -16,6 +17,7 @@ from threading import RLock
 
 _IDENTIFIER = re.compile(r"[a-z][a-z0-9-]{0,63}\Z", re.ASCII)
 _MAX_CAPABILITIES = 16
+_REGISTRATION_ID = re.compile(r"[0-9a-f]{32}\Z", re.ASCII)
 
 
 def _identifier(value: object, field: str) -> None:
@@ -78,12 +80,15 @@ class Node:
 @dataclass(frozen=True, slots=True)
 class HealthObservation:
     node_id: str
+    registration_id: str
     status: HealthStatus
     observed_at: datetime
     active_sessions: int
 
     def __post_init__(self) -> None:
         _identifier(self.node_id, "node_id")
+        if not isinstance(self.registration_id, str) or _REGISTRATION_ID.fullmatch(self.registration_id) is None:
+            raise ValueError("registration_id must be 32 lowercase hex characters")
         if not isinstance(self.status, HealthStatus):
             raise ValueError("status must be a HealthStatus")
         _utc(self.observed_at, "observed_at")
@@ -102,6 +107,7 @@ class NodeAvailability:
 @dataclass(frozen=True, slots=True)
 class NodeSelection:
     node_id: str
+    registration_id: str
     region_id: str
     observed_at: datetime
     expires_at: datetime
@@ -127,10 +133,11 @@ class NodeRegistry:
         self._max_nodes = max_nodes
         self._nodes: dict[str, Node] = {}
         self._observations: dict[str, HealthObservation] = {}
+        self._registrations: dict[str, str] = {}
         self._last_observed_at: dict[str, datetime] = {}
         self._lock = RLock()
 
-    def register(self, node: Node) -> None:
+    def register(self, node: Node) -> str:
         if not isinstance(node, Node):
             raise TypeError("node must be a Node")
         with self._lock:
@@ -138,9 +145,12 @@ class NodeRegistry:
                 raise ValueError("node_id is already registered")
             if len(self._nodes) >= self._max_nodes:
                 raise ValueError("node registry capacity exceeded")
+            registration_id = token_hex(16)
             self._nodes[node.node_id] = node
+            self._registrations[node.node_id] = registration_id
+            return registration_id
 
-    def set_enabled(self, node_id: str, enabled: bool) -> None:
+    def set_enabled(self, node_id: str, enabled: bool) -> str | None:
         _identifier(node_id, "node_id")
         if type(enabled) is not bool:
             raise ValueError("enabled must be a boolean")
@@ -154,8 +164,12 @@ class NodeRegistry:
                     previous.max_sessions,
                     enabled,
                 )
-                # A previously healthy snapshot cannot reactivate a toggled node.
+                # A new generation is required for a disabled node to become eligible.
                 self._observations.pop(node_id, None)
+                self._last_observed_at.pop(node_id, None)
+                if enabled:
+                    self._registrations[node_id] = token_hex(16)
+            return self._registrations[node_id] if enabled else None
 
     def remove(self, node_id: str) -> None:
         _identifier(node_id, "node_id")
@@ -163,6 +177,7 @@ class NodeRegistry:
             del self._nodes[node_id]
             self._observations.pop(node_id, None)
             self._last_observed_at.pop(node_id, None)
+            self._registrations.pop(node_id, None)
 
     def record_health(self, observation: HealthObservation, *, now: datetime) -> None:
         if not isinstance(observation, HealthObservation):
@@ -177,6 +192,8 @@ class NodeRegistry:
                 raise KeyError("unregistered node")
             if not node.enabled:
                 raise ValueError("disabled node cannot receive health reports")
+            if observation.registration_id != self._registrations[observation.node_id]:
+                raise StaleObservationError("observation registration mismatch")
             last_at = self._last_observed_at.get(observation.node_id)
             if last_at is not None and observation.observed_at <= last_at:
                 raise StaleObservationError("replayed or older observation")
@@ -239,6 +256,7 @@ class NodeRegistry:
             _, _, selected, observation = min(eligible)
             return NodeSelection(
                 selected.node_id,
+                self._registrations[selected.node_id],
                 selected.region_id,
                 observation.observed_at,
                 observation.observed_at + self._ttl,
