@@ -38,7 +38,8 @@ def _valid_evidence_url(value: Any) -> bool:
         parsed = urlsplit(value)
         return (parsed.scheme == "https" and bool(parsed.hostname)
                 and parsed.username is None and parsed.password is None
-                and parsed.port != 0 and not value.startswith("https:///"))
+                and parsed.port != 0 and not parsed.netloc.endswith(":")
+                and not value.startswith("https:///"))
     except ValueError:
         return False
 
