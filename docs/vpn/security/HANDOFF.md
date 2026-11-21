@@ -63,6 +63,14 @@
 
 The linter's `attested` state is NOT an external verification; even a structurally passing manifest must not be interpreted as authorization to deploy.
 
+### Current-head CI evidence checkpoint — 2026-11-21 (22:25 Moscow)
+
+- **Single P1 verification task:** queried GitHub PR #71 live: head `c0983a50fe484af17c76cb587e175e8665596570`, Draft/open, base `main`. GitHub connector returned **0 PR-triggered workflow runs** and **0 legacy combined commit statuses** on that exact SHA. The workflow-run API is PR-event filtered and the combined-status API does not cover every Check Runs API result; therefore this is **not proof that every possible GitHub check is absent**, and is certainly not test PASS.
+- **PASS:** connected GitHub read, exact PR head retrieval, source blob read of `gate_check.py` (`c162393e40c2743b48afbdce758363bf6ad3a5cb`), `test_gate_check.py` (`c54f653ec3921873b3d95025e4327a3e7d094d8d`), manifest (`c6410b7b238989039a9501e466fe59d0a1cc1da1`); reviewed proposed `AGENTS.md` on unmerged PR #1 and QA #74 / Observability #72 HANDOFFs.
+- **NOT RUN:** all **24 authored Python unittest methods**, Python `compileall`, actual VPN/DNS/IP tests, independent evidence verification. Source read is not execution. **SKIP:** merge, self-approval, and edits to integration-owned workflows.
+- **Blocker and action:** #56 / CTO must create an exact-source, mandatory CI candidate for Security PR #71 with `python -m unittest discover -s docs/vpn/security -p 'test_*.py' -v`, `python -m compileall -q docs/vpn/security`, and negative `python docs/vpn/security/gate_check.py --require-attested` (expected nonzero). Attach full job URLs, source SHA and counts; independent reviewer #41 must evaluate before integration. Existing #56 escalation already covers this; do not spam duplicate comments.
+- No changes to code or release-gate status. 13 gates remain `blocked`; `SEC-CTRL-001` HIGH and `SEC-CTRL-002` MEDIUM remain `open` in manifest. No operational VPN or release clearance.
+
 ## 5. Test and review evidence — distinguish observed from reported
 
 **Security negative-test expansion — 2026-11-21 (subsequent cycle):**
