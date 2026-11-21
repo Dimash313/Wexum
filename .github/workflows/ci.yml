@@ -38,4 +38,8 @@ jobs:
         env:
           PYTHONPATH: products/vpn/control/src
         run: python -m unittest discover -s products/vpn/control/tests -v
+      - name: VPN audit blocker regressions
+        env:
+          PYTHONPATH: products/vpn/control/src
+        run: python -m unittest discover -s tests/integration -v
 
