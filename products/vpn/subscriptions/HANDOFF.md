@@ -1,3 +1,10 @@
+## Backend checkpoint — 2026-11-22: concurrent conflicting checkout idempotency regression
+
+- **Scope/priority:** Issue #9, branch `feat/vpn/9-subscription-adapter`, Draft PR #73; billing-owned test and HANDOFF only. P2 concurrency integrity regression, not a production change.
+- **Test:** `test_concurrent_conflicting_checkout_terms_create_only_one_order` starts two synchronized checkout attempts using the same tenant/account/request key but different server-approved plan terms. Exactly one must create an order, the other must raise `ConflictError`; one request mapping must remain, no second new order and no access grant. This complements existing same-key/same-terms concurrency and sequential conflicting-terms tests.
+- **Test commit:** [69ae135](https://github.com/Dimash313/Wexum/commit/69ae13561dbd90d4215a521e910d7d9171ace64b). **Evidence:** GitHub file write PASS; local checkout blocked by DNS (`Could not resolve host: github.com`); Python unittest NOT RUN, compileall NOT RUN. Prior PR head `fe4e8e22` had zero commit statuses and zero PR workflow runs; latest HEAD CI NOT VERIFIED; independent audit PENDING.
+- **Next:** run `PYTHONPATH=products/vpn/subscriptions/src python -m unittest discover -s products/vpn/subscriptions/tests -v` and `python -m compileall -q products/vpn/subscriptions/src products/vpn/subscriptions/tests` against the exact latest branch head, inspect CI and request independent audit. Keep PR Draft; do not merge or activate real payments.
+
 ## Backend checkpoint — 2026-11-22: reject ephemeral SQLite storage
 
 - **Scope:** Issue #9, existing Draft PR #73, billing-owned source/tests/HANDOFF only. P2 reliability and integrity guard; no cross-lane API, payment integration, deployment or migration.
