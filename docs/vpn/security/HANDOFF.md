@@ -206,3 +206,12 @@ Do not publish sensitive exploit detail, live secrets or user IPs in public PR c
 - Regression commit: [3f6f3018](https://github.com/Dimash313/Wexum/commit/3f6f30184723a760045f46531c4cd9ada3aac7fb), blob `c54f653ec3921873b3d95025e4327a3e7d094d8d`. Added one negative unittest method with three whitespace-padded HTTPS inputs; **24 authored test methods** total.
 - **PASS:** GitHub SHA-guarded writes and exact-file re-fetch; **NOT RUN:** Python unittest, compileall, Actions at new HEAD; **SKIP:** real VPN leak testing and merge. No CI or independent review claimed.
 - **Issue/branch/PR:** [#11](https://github.com/Dimash313/Wexum/issues/11), `feat/vpn/11-security-review`, [Draft #71](https://github.com/Dimash313/Wexum/pull/71). Existing findings SEC-CTRL-001/002 and all 13 release gates remain unresolved. Next: obtain current-head CI with all 24 methods and external independent review; integration workflow owned by CTO.
+
+
+### CI evidence recheck — 2026-11-21 23:25 Europe/Moscow
+
+- **One P1 verification cycle:** GitHub Actions commit-run query for previously recorded PR #71 head `edfe4c23f980c1a5f7c87bc926a4aa3db4698509` returned **zero PR-triggered workflow runs**. The API is PR-event filtered and first-page limited; it does not prove the absence of all check runs or other event types. No test PASS is inferred.
+- **PASS:** connected GitHub read of Security validator and its 24 authored tests; GitHub commit-run query completed; existing integration blocker [#56](https://github.com/Dimash313/Wexum/issues/56) checked open, with 5 comments, so no duplicate issue or repeated escalation created.
+- **NOT RUN:** 24 Python tests, compileall, exact-source runtime checks, VPN/DNS/IP leak tests, independent review. **SKIP:** merge and modifications to integration-owned workflows.
+- **Blocker:** mandatory exact-candidate CI evidence remains unavailable for the queried commit. Integration owner #56 must supply job URLs, tested SHA and results; verify the actual current PR head and all check types before release decisions. This checkpoint does not claim that the previously recorded SHA is still current.
+- **Repository visibility limitation:** root `AGENTS.md` returned 404 on default branch; QA and Observability HANDOFF paths attempted in this cycle were not found on the Security branch, and guessed independent branch refs returned 404. Their exact PR head refs must be resolved live before claiming a complete cross-lane review.
