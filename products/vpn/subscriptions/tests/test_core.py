@@ -373,6 +373,27 @@ class BillingTests(unittest.TestCase):
         with sqlite3.connect(self.path) as db:
             self.assertEqual(db.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 2)
 
+    def test_event_insert_failure_rolls_back_payment_and_allows_retry(self):
+        # A transaction row is written before the event ledger insert.
+        # If the latter fails, the whole payment must roll back atomically.
+        with sqlite3.connect(self.path) as db:
+            db.execute(
+                "CREATE TRIGGER reject_event BEFORE INSERT ON events "
+                "BEGIN SELECT RAISE(ABORT, 'injected event failure'); END"
+            )
+        with self.assertRaisesRegex(BillingError, "^billing storage unavailable$") as caught:
+            self.send()
+        self.assertIsNone(caught.exception.__cause__)
+        self.assertEqual(self.snapshot().revision, 0)
+        self.assertFalse(self.snapshot().eligible)
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM transactions").fetchone()[0], 0)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM events").fetchone()[0], 0)
+            db.execute("DROP TRIGGER reject_event")
+        self.assertTrue(self.send().changed)
+        self.assertEqual(self.snapshot().revision, 1)
+        self.assertTrue(self.snapshot().eligible)
+
     def test_order_request_insert_failure_rolls_back(self):
         with sqlite3.connect(self.path) as db:
             db.execute("CREATE TRIGGER reject_request BEFORE INSERT ON order_requests "
