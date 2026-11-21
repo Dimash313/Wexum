@@ -63,7 +63,7 @@ class GrantPrecheckTests(unittest.IsolatedAsyncioTestCase):
         self.actor = AuthenticatedActor("t-A", "user-A", "issuer", "vpn-control", frozenset({"vpn:grant:create"}), NOW + timedelta(minutes=5))
         self.accounts = Accounts(AccountState("t-A", "user-A", True, NOW))
         self.subscriptions = Subscriptions(SubscriptionState("t-A", "user-A", True, NOW, NOW + timedelta(minutes=8), frozenset({"vpn:connect"})))
-        self.devices = Devices(DeviceState("t-A", "user-A", "dev-A", True, NOW + timedelta(minutes=7)))
+        self.devices = Devices(DeviceState("t-A", "user-A", "dev-A", True, NOW, NOW + timedelta(minutes=7)))
         self.clock = lambda: NOW
         self.svc = self.service()
 
@@ -135,6 +135,10 @@ class GrantPrecheckTests(unittest.IsolatedAsyncioTestCase):
         await self._deny()
         self.accounts.state = replace(self.accounts.state, checked_at=NOW)
         self.subscriptions.state = replace(self.subscriptions.state, checked_at=NOW - timedelta(seconds=11))
+        await self._deny()
+
+    async def test_stale_device_snapshot_denied(self):
+        self.devices.state = replace(self.devices.state, checked_at=NOW - timedelta(seconds=11))
         await self._deny()
 
     async def test_clock_skew_over_budget_denied(self):
