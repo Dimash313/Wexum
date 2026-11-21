@@ -89,7 +89,7 @@ Run from repo root on the **current PR head**. Record real Python interpreter, c
 ## 8. Next specific tasks — autonomous priority order
 
 1. **Execute the actual Python checks** above against PR #75 current head; fix all failures within owned files, report exact output and results. If the execution environment cannot run the code, mark *not run* and use other honest static checks; don't fake Python success.
-2. **Get independent review** of `connection_states.json` and `SCREENS.md`: security #11 + native #5/#6/#7 must validate truth-source boundaries, revoke/expire/loss flows, no stale “Protected” display. Issue comment or PR review links are the evidence; don't claim coordination occurred without posting.
+2. **Independent review requested** in [PR #75 review coordination comment](https://github.com/Dimash313/Wexum/pull/75#issuecomment-7060827763) on 2026-11-21. **No responses/approval verified yet.** Next: inspect actual reviewer feedback from security #11, QA #10, native #5/#6/#7, Experience #40 and i18n #44/#46; repair UX issues within owned files, require CTO for shared API/package decisions.
 3. **State-to-copy matrix now drafted** in [STATE_COPY.md](STATE_COPY.md). Next: request native/security/i18n review of its 17 proposed statuses, action-gating and announcement policy, resolve any misleading wording, and align any changes with the UX state contract before production adoption.
 4. Confirm CTO-approved **design token and reusable UI boundary** against #42 before any shared component implementation. Seek CTO decision as issue/PR comment; do not create `packages/vpn-design/` prematurely.
 5. **Accessibility/RTL test inventory now drafted** in [ACCESSIBILITY_QA.md](ACCESSIBILITY_QA.md) (18 cases). Next: get platform teams to run available nonoperational shell cases, record actual proof with tested SHA/device, and treat engine-dependent scenarios as BLOCKED.
@@ -98,6 +98,7 @@ Run from repo root on the **current PR head**. Record real Python interpreter, c
 
 ## 9. Reference index
 
+- Review coordination: [PR #75 cross-lane requested reviews](https://github.com/Dimash313/Wexum/pull/75#issuecomment-7060827763) — posted, acceptance pending.
 - Core: [Issue #39](https://github.com/Dimash313/Wexum/issues/39), [Draft PR #75](https://github.com/Dimash313/Wexum/pull/75), [Foundation PR #1](https://github.com/Dimash313/Wexum/pull/1), [Independent audit #41](https://github.com/Dimash313/Wexum/issues/41), [CTO continuity/governance #76](https://github.com/Dimash313/Wexum/issues/76).
 - Design: [Issue #40](https://github.com/Dimash313/Wexum/issues/40), [PR #42](https://github.com/Dimash313/Wexum/pull/42).
 - Localization: [Issue #44](https://github.com/Dimash313/Wexum/issues/44), [PR #45](https://github.com/Dimash313/Wexum/pull/45), [PR #50](https://github.com/Dimash313/Wexum/pull/50).
