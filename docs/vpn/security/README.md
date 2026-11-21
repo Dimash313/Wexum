@@ -8,6 +8,8 @@
 
 As inspected on 2026-11-21, `main` contains only repository bootstrap files and does **not** contain the architecture, production VPN or CI assumed by the proposed [foundation PR #1](https://github.com/Dimash313/Wexum/pull/1). Source documents read from PR #1 are **proposals** until independently reviewed and integrated. Security reviews of other draft PRs refer to their exact heads, not to `main` implementation. Nothing here grants permission to modify shared API contracts, platform code or other lanes.
 
+**Agent continuity:** always begin with [HANDOFF.md](HANDOFF.md), verify its GitHub references and update it after each significant change.
+
 Read in order:
 1. [Threat model](THREAT_MODEL.md): assets, STRIDE, confirmed findings, unresolved design threats.
 2. [Authorization and key requirements](ACCESS_AND_KEY_SECURITY.md): trust boundaries, grant authorization, revocation and rotation.
