@@ -98,6 +98,57 @@ class OAuthTransactionTests(unittest.TestCase):
         self.now[0] += 3
         registry.begin(**CONFIG)
 
+    def test_per_browser_capacity_isolated_from_other_sessions(self):
+        registry = AuthorizationTransactions(
+            clock=lambda: self.now[0], max_pending=5, max_pending_per_session=2
+        )
+        first = registry.begin(**CONFIG)
+        second = registry.begin(**CONFIG)
+        with self.assertRaises(AuthorizationCapacityExceeded):
+            registry.begin(**CONFIG)
+        other = {**CONFIG, "browser_session": "other-server-issued-session"}
+        registry.begin(**other)
+        registry.consume(**{**CONFIG, "state": first.state, "response_issuer": CONFIG["issuer"]})
+        registry.begin(**CONFIG)
+        with self.assertRaises(AuthorizationCapacityExceeded):
+            registry.begin(**CONFIG)
+        self.assertNotEqual(first.state, second.state)
+
+    def test_session_capacity_frees_on_expiry(self):
+        registry = AuthorizationTransactions(
+            clock=lambda: self.now[0], ttl_seconds=2,
+            max_pending=10, max_pending_per_session=1
+        )
+        registry.begin(**CONFIG)
+        with self.assertRaises(AuthorizationCapacityExceeded):
+            registry.begin(**CONFIG)
+        self.now[0] += 2
+        registry.begin(**CONFIG)
+
+    def test_session_limit_configuration_rejected_when_invalid(self):
+        for invalid in (0, -1, True, 4, 1.0):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                AuthorizationTransactions(max_pending=3, max_pending_per_session=invalid)
+
+    def test_parallel_begin_respects_session_capacity(self):
+        registry = AuthorizationTransactions(
+            clock=lambda: self.now[0], max_pending=100, max_pending_per_session=3
+        )
+        count = 12
+        gate = threading.Barrier(count)
+
+        def try_begin(_):
+            gate.wait(timeout=5)
+            try:
+                registry.begin(**CONFIG)
+                return True
+            except AuthorizationCapacityExceeded:
+                return False
+
+        with ThreadPoolExecutor(max_workers=count) as pool:
+            outcomes = list(pool.map(try_begin, range(count)))
+        self.assertEqual(sum(outcomes), 3)
+
     def test_malformed_untrusted_callback_denied(self):
         start = self.start()
         for bad in (None, 23, "", " ", "state invalid "):

@@ -73,12 +73,16 @@ class AuthorizationTransactions:
         *,
         ttl_seconds: int = 300,
         max_pending: int = 1024,
+        max_pending_per_session: int = 4,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         if type(ttl_seconds) is not int or not 1 <= ttl_seconds <= 900:
             raise ValueError("ttl_seconds must be between 1 and 900")
         if type(max_pending) is not int or max_pending < 1:
             raise ValueError("max_pending must be positive")
+        if type(max_pending_per_session) is not int or not 1 <= max_pending_per_session <= max_pending:
+            raise ValueError("max_pending_per_session must be between 1 and max_pending")
+        self._max_pending_per_session = max_pending_per_session
         self._ttl_seconds = ttl_seconds
         self._max_pending = max_pending
         self._clock = clock
@@ -108,6 +112,13 @@ class AuthorizationTransactions:
             self._expire(now)
             if len(self._pending) >= self._max_pending:
                 raise AuthorizationCapacityExceeded("pending authorization capacity reached")
+            binding_digest = _digest(browser_session)
+            session_count = sum(
+                hmac.compare_digest(pending.binding_digest, binding_digest)
+                for pending in self._pending.values()
+            )
+            if session_count >= self._max_pending_per_session:
+                raise AuthorizationCapacityExceeded("browser session authorization capacity reached")
 
             state = secrets.token_urlsafe(32)
             state_key = _digest(state)
@@ -117,7 +128,7 @@ class AuthorizationTransactions:
             nonce = secrets.token_urlsafe(32)
             challenge = base64.urlsafe_b64encode(_digest(verifier)).rstrip(b"=").decode("ascii")
             self._pending[state_key] = _Pending(
-                binding_digest=_digest(browser_session),
+                binding_digest=binding_digest,
                 issuer=issuer,
                 client_id=client_id,
                 redirect_uri=redirect_uri,
