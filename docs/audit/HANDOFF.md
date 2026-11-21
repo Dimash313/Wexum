@@ -1,5 +1,13 @@
 # Wexum — Chief Independent Auditor HANDOFF
 
+## Audit checkpoint — 2026-11-21, PR #73 signed nested JSON parser hardening
+
+- **Exact head:** [PR #73](https://github.com/Dimash313/Wexum/pull/73) `97956bb5d4c6dd2e27f3ef3614616bba33d63085`; base `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`; previous reviewed `fa11e887385ed3c359f356f757138c16ba702e9e`.
+- **Scope/evidence:** reviewed issue #9, current PR diff, full `products/vpn/subscriptions/src/wexum_vpn_billing/core.py`, `tests/test_core.py`, prior comments, empty review threads, proposed AGENTS/QUALITY/REVIEW_PROTOCOL. `TestHmacAdapter.verify` catches `RecursionError` from signed deeply nested JSON and maps it to sanitized `SecurityError`. Regression `test_deeply_nested_signed_json_fails_closed` asserts unchanged ledger revision and no eligibility. No new confirmed bypass in inspected delta; synthetic HMAC remains test-only.
+- **Decision:** **NOT VERIFIED / integration BLOCKED**. Exact-head PR-triggered GitHub Actions runs **0**, commit statuses **0**; independent Python tests **NOT RUN**, `compileall` **NOT RUN**. Missing integrated CI, real provider/entitlement chain, external non-author review and upstream foundation #1. No production VPN or payment authority claimed.
+- **Published conclusion:** https://github.com/Dimash313/Wexum/pull/73#issuecomment-7068253340. Next: exact-head full Python negative tests and mandatory CI, independent review of real payment authority; then revisit Control Plane #55 negative CI failures. No developer code modified or merge performed.
+
+
 ## Audit checkpoint — 2026-11-21, PR #73 test webhook header resource bounds
 
 - **PR/head:** [#73](https://github.com/Dimash313/Wexum/pull/73), `fa11e887385ed3c359f356f757138c16ba702e9e`; base `main`; previous reviewed `8cc2a29c8c13e346cfc7577e3e1bf54c42ca0b6f`.
