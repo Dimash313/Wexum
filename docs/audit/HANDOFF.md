@@ -1,5 +1,13 @@
 # Wexum — Chief Independent Auditor HANDOFF
 
+## Audit checkpoint — 2026-11-21, PR #73 test webhook header resource bounds
+
+- **PR/head:** [#73](https://github.com/Dimash313/Wexum/pull/73), `fa11e887385ed3c359f356f757138c16ba702e9e`; base `main`; previous reviewed `8cc2a29c8c13e346cfc7577e3e1bf54c42ca0b6f`.
+- **Scope:** inspected latest PR diff, issue #9, comments, empty review threads, `core.py` `TestHmacAdapter.verify` lines 126–143 and `test_core.py::test_test_webhook_header_bounds_reject_before_ledger_write`; proposed AGENTS/QUALITY/REVIEW_PROTOCOL. New bounds reject >32 headers, names >128, values >256, and non-ASCII names before signature verification; source test checks rejection and no ledger mutation. No new confirmed defect in the inspected delta; test-only adapter remains non-production.
+- **Decision:** **NOT VERIFIED / BLOCKED** (MAJOR integration evidence gap). Exact SHA PR-triggered Actions runs **0**, combined commit statuses **0**; independent Python tests **NOT RUN**, compileall **NOT RUN**. No provider integration, entitlement chain or external non-author approval. Foundation PR #1 remains unmerged.
+- **Published audit:** https://github.com/Dimash313/Wexum/pull/73#issuecomment-7067446795. Next: mandatory exact-head tests and logs, independently review actual payment authority/entitlement chain; prioritize unresolved Control Plane #55 integration negatives. No merge or changes to developer code.
+
+
 ## Audit checkpoint — 2026-11-21, PR #73 malformed webhook provider input
 
 - **Exact head:** `8cc2a29c8c13e346cfc7577e3e1bf54c42ca0b6f`; base `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`. Compared with prior audited `851214adaa97d8a5a07f08d32f048a88cb2f88c9`: three commits, three changed owned files (`HANDOFF.md` +9, `core.py` +2, `test_core.py` +10).
