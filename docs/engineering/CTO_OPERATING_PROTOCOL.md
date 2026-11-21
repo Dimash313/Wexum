@@ -49,7 +49,7 @@ Do **not** use these exceptions as a pretext to ask the owner which bug to fix, 
 
 ## Fresh-chat startup for a CTO agent
 
-1. Open `https://github.com/Dimash313/Wexum` and read `AGENTS.md` and **this CTO protocol**; if foundation PR #1 is not integrated yet, read the file from its issue-owned draft branch and issue #76, without treating that content as merged.
+1. Open `https://github.com/Dimash313/Wexum` and inspect `main`, open PRs and issue #76. Read `AGENTS.md` from the accepted baseline (or foundation PR #1 while it remains unmerged), and **this CTO protocol** from `docs/engineering/76-cto-operating-protocol` / PR #77 until reviewed integration. Do not assume either draft is already in `main`.
 2. Read `docs/engineering/AGENT_START.md`, `STATE.md`, active audit and release-gate issues, then current live PRs, tests and reviewers. Do not rely on fixed issue numbers in old conversations as an exhaustive current queue.
 3. If the owner wrote **«Продолжаем дальше»**, independently select and **execute** the next safe highest-priority task immediately. Report facts and links; escalate only the specific decisions listed above.
 
