@@ -55,7 +55,14 @@ def authorize(principal: Principal, resource: Resource, action: Action) -> Decis
 
     Unknown kinds/actions/roles and missing IDs are denied; no implicit superuser.
     """
-    if not principal.user_id or not resource.tenant_id:
+    if not isinstance(principal, Principal) or not isinstance(resource, Resource):
+        return Decision(False, "invalid_request")
+    if (
+        not isinstance(principal.user_id, str)
+        or not principal.user_id.strip()
+        or not isinstance(resource.tenant_id, str)
+        or not resource.tenant_id.strip()
+    ):
         return Decision(False, "invalid_identity")
     if not isinstance(action, Action) or not isinstance(resource.kind, ResourceKind):
         return Decision(False, "invalid_request")
