@@ -46,7 +46,8 @@ Repository baseline when this file was created: `main` `cc805a79b6dfc4e08e6866c1
 | [PR #63 CodeQL #44872931031](https://github.com/Dimash313/Wexum/actions/runs/44872931031), `e28194f` | SUCCESS | security scan ≠ independent signoff |
 | [PR #67 core #44873727876](https://github.com/Dimash313/Wexum/actions/runs/44873727876), `ea88245` | 28/28 foundation + 20/20 existing VPN tests pass; **4 added tests fail** | 1 active device not listed after 200 revoked; 3 raw SQLite opening errors |
 | [PR #67 CodeQL #44873727875](https://github.com/Dimash313/Wexum/actions/runs/44873727875), `ea88245` | SUCCESS | does not waive red core |
-| [PR #80 core #44891614729](https://github.com/Dimash313/Wexum/actions/runs/44891614729), `a1eb50b` | **SUCCESS:** 28/28 foundation, 22/22 Node Registry, 3/3 independent health-replay regressions; syntax + catalog PASS | Verified full GitHub job log on test-only candidate; all four product files have identical Git blob SHAs to #65 |\n| [PR #80 CodeQL #44891614667](https://github.com/Dimash313/Wexum/actions/runs/44891614667), `a1eb50b` | **SUCCESS** | CodeQL is not external review or proof of real gateway safety |
+| [PR #80 core #44891614729](https://github.com/Dimash313/Wexum/actions/runs/44891614729), `a1eb50b` | **SUCCESS:** 28/28 foundation, 22/22 Node Registry, 3/3 independent health-replay regressions; syntax + catalog PASS | Verified full GitHub job log on test-only candidate; all four product files have identical Git blob SHAs to #65 |
+| [PR #80 CodeQL #44891614667](https://github.com/Dimash313/Wexum/actions/runs/44891614667), `a1eb50b` | **SUCCESS** | CodeQL is not external review or proof of real gateway safety |
 | [PR #77](https://github.com/Dimash313/Wexum/pull/77) | docs diff inspected only | stacked draft; zero current-head Actions when previously checked |
 
 Author-reported local tests for #65 and other lane PRs are **not** independent or GitHub Actions evidence. The GitHub reviewer account in prior self-reported audit comments is the same account `Dimash313`; never treat these as distinct formal GitHub Approvals.
@@ -67,6 +68,14 @@ Author-reported local tests for #65 and other lane PRs are **not** independent o
 3. Review audit disposition and reviewer identity for #41, and whether a distinct reviewer has actually been invited and approvals enforced under #38. Never self-approve or merge while blocked.
 4. Track the newly reported Node Registry test-only CodeQL diagnostic and source owner #4 action, then request re-audit after revised #65 head. Keep this HANDOFF synced after material events, update PR #77 and request review; avoid documenting open PRs as integrated state.
 5. Only then extend CI to other priority lane heads. No paid services or scope changes without owner authorization.
+
+
+### CTO live verification at 2026-11-21 12:17 UTC
+
+- New **active** hourly CTO automation was created from the current CTO chat, scheduled at minute **:55 Europe/Moscow** (first scheduled run 2026-11-21 15:55 +03:00). This is an external ChatGPT scheduler, not a GitHub Actions workflow; re-check actual automation state separately before relying on it.
+- Live GitHub access confirmed with repository admin/write permission. Ruleset #27754912 remains active, but has **zero required approving reviews**. CTO clarified owner/admin acceptance criteria directly in [issue #38](https://github.com/Dimash313/Wexum/issues/38); adding an independent reviewer or changing saved ruleset remains uncompleted.
+- Re-fetched current source heads: Control Plane [#55](https://github.com/Dimash313/Wexum/pull/55) `66532b4` (unchanged, P1 blockers), Node Registry [#65](https://github.com/Dimash313/Wexum/pull/65) `95145b5` (byte-identical to tested #80 product copy), QA [#74](https://github.com/Dimash313/Wexum/pull/74) `df1c9f9`, CI candidate [#67](https://github.com/Dimash313/Wexum/pull/67) `ea88245` (red core), Node candidate [#80](https://github.com/Dimash313/Wexum/pull/80) `a1eb50b` (core and CodeQL green). No code merges or VPN runtime tests performed in this CTO cycle.
+- Priority order: **P1 #2 Control Plane blocker fixes** by code owner → rerun red #67 with exact corrected source; in parallel **P1 #38/#41** non-author approval and true foundation integration. **P2** cross-lane trusted health-probe/registration contracts for #4. Do not add duplicate comments while the source head is unchanged.
 
 ## 8. Related references
 
