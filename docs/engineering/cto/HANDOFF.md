@@ -1,9 +1,16 @@
 # Wexum CTO / Integrator — HANDOFF
 
-**Snapshot:** 2026-11-21 UTC (refresh GitHub before using).  
+**Snapshot:** 2026-11-21 20:50 UTC (refresh GitHub before using).  
 **Role:** CTO / integrator; **Issue:** [#76](https://github.com/Dimash313/Wexum/issues/76).  
 **Branch:** `docs/engineering/76-cto-operating-protocol`.  
 **Draft PR:** [#77](https://github.com/Dimash313/Wexum/pull/77), stacked on unmerged foundation PR #1. **Do not merge or assume this file is in main.**
+
+## Current decision checkpoint (2026-11-21 20:50 UTC)
+
+- **P1 Control Plane:** source [#55](https://github.com/Dimash313/Wexum/pull/55) remains at `66532b4`; four negative cases fail on separate CI-only [#67](https://github.com/Dimash313/Wexum/pull/67), [core run #44873727876](https://github.com/Dimash313/Wexum/actions/runs/44873727876). Do not attribute that run to #55's own SHA. Wait for an owner-authored fix, then compare exact blobs and rerun required tests before re-audit.
+- **P1 Foundation/governance:** [#1](https://github.com/Dimash313/Wexum/pull/1) remains at `6b072ca`, without adopting remediation #58/#60. Independent review [#41](https://github.com/Dimash313/Wexum/issues/41) and approval enforcement [#38](https://github.com/Dimash313/Wexum/issues/38) block integration. The earlier finding of zero required approving reviews must be rechecked against live rules before any merge.
+- **P2 Nodes:** source [#65](https://github.com/Dimash313/Wexum/pull/65) `e91d734`; CI-only [#80](https://github.com/Dimash313/Wexum/pull/80) `7e39bac`. Latest candidate's [foundation-checks](https://github.com/Dimash313/Wexum/actions/runs/44906218376) and [CodeQL](https://github.com/Dimash313/Wexum/actions/runs/44906218399) are both completed SUCCESS. Exact 53/53 test-log counts were inspected for an **older** candidate SHA `a1eb50b`; do not reuse those counts as a fresh log inspection. A distinct non-author approval and trusted health-probe/selection contract are missing. Neither CI-only candidate is mergeable by policy.
+- **No new source repair or independent exact-head approval** found in inspected #55/#65/#80 discussions. No new tests, product edits, deployment, payment, or merge occurred in this checkpoint. This draft handoff remains stacked under #77 and is **not** integrated in `main`.
 
 ## 1. Responsibility and boundaries
 
@@ -25,7 +32,7 @@ Permanent user instruction: when the owner writes **«Продолжаем да�
 | [#76](https://github.com/Dimash313/Wexum/issues/76) | `docs/engineering/76-cto-operating-protocol` / [#77](https://github.com/Dimash313/Wexum/pull/77) | durable CTO rule and this handoff | draft, not merged |
 | [#61](https://github.com/Dimash313/Wexum/issues/61) | `integration/61-foundation-audit-candidate` / [#63](https://github.com/Dimash313/Wexum/pull/63) | CI proof for source proposals #58 + #60 | `core`/CodeQL success on `e28194f`; DO NOT MERGE |
 | [#56](https://github.com/Dimash313/Wexum/issues/56) | `integration/56-vpn-control-ci-candidate` / [#67](https://github.com/Dimash313/Wexum/pull/67) | reproduce two Control Plane SQLite defects | `core` RED on `ea88245`; CodeQL success |
-| [#56](https://github.com/Dimash313/Wexum/issues/56) | `integration/80-node-registry-ci-candidate` / [#80](https://github.com/Dimash313/Wexum/pull/80) | test exact Node Registry #65 head + extra health replay regressions | `core` 28+22+3 tests and CodeQL **PASS** on candidate head `a1eb50b`; see logs below |
+| [#56](https://github.com/Dimash313/Wexum/issues/56) | `integration/80-node-registry-ci-candidate` / [#80](https://github.com/Dimash313/Wexum/pull/80) | test exact Node Registry #65 head + extra health replay regressions | `core` and CodeQL **SUCCESS** on current candidate head `7e39bac` (runs #44906218376/#44906218399); exact 53-test count was independently inspected on earlier `a1eb50b`, not re-established from new logs |
 | [#38](https://github.com/Dimash313/Wexum/issues/38) / [#41](https://github.com/Dimash313/Wexum/issues/41) | foundation [PR #1](https://github.com/Dimash313/Wexum/pull/1) | independent review and governance | BLOCKED |
 
 Repository baseline when this file was created: `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`, unchanged; always refetch.
@@ -35,7 +42,7 @@ Repository baseline when this file was created: `main` `cc805a79b6dfc4e08e6866c1
 - [Issue #76](https://github.com/Dimash313/Wexum/issues/76) persists owner instruction immediately, even before PR merge. [PR #77](https://github.com/Dimash313/Wexum/pull/77) adds operating protocol and entry-point links in `AGENTS.md`, `README.md`, `AGENT_START.md` and `.github/copilot-instructions.md`. This HANDOFF is also proposed in that draft.
 - Foundation fixes: [auth PR #58](https://github.com/Dimash313/Wexum/pull/58) handles invalid principal IDs; [catalog PR #60](https://github.com/Dimash313/Wexum/pull/60) validates catalog schema and pins the 22 existing ID/name identities. Their **exact source** was combined into CI-only PR #63, not into PR #1.
 - [Control Plane PR #55](https://github.com/Dimash313/Wexum/pull/55) remains unchanged at `66532b4`. PR #67 copies its seven product files unchanged and adds required `core` tests + four independent regression cases in integrator-owned test paths.
-- [Node Registry PR #65](https://github.com/Dimash313/Wexum/pull/65) current inspected head `95145b5` contains generation-rotated health records and advisory selection revalidation. PR #80 copies its four files unchanged and adds three independent integration tests and required `core` job steps; no product-source edit was made by CTO.
+- [Node Registry PR #65](https://github.com/Dimash313/Wexum/pull/65) current inspected head `e91d734` contains generation-rotated health records and advisory selection revalidation. PR #80 mirrors owner source at `e91d734` (latest source test cleanup copied to candidate `7e39bac`) and adds three independent integration tests and required `core` job steps; no product-source edit was made by CTO.
 - [Auditor handoff PR #79](https://github.com/Dimash313/Wexum/pull/79) and issue #78 are owned by the separate auditor lane. Do not edit auditor documents.
 
 ## 5. Tests actually observed (exact provenance)
@@ -63,7 +70,7 @@ Author-reported local tests for #65 and other lane PRs are **not** independent o
 
 ## 7. Next concrete tasks on «Продолжаем дальше»
 
-1. **First refresh live GitHub**. CI for [PR #80](https://github.com/Dimash313/Wexum/pull/80) passed on `a1eb50b` (28+22+3 tests and CodeQL). Send evidence to owner issue #4, CI issue #56 and auditor #78/#41; require a **distinct** review before adopting the Node Registry source. Do not transfer this outcome to later source head changes without new checks.
+1. **First refresh live GitHub**. CI for [PR #80](https://github.com/Dimash313/Wexum/pull/80) passed on current candidate `7e39bac` (foundation-checks #44906218376, CodeQL #44906218399); 28+22+3 counts were inspected on older `a1eb50b` only. Send evidence to owner issue #4, CI issue #56 and auditor #78/#41; require a **distinct** review before adopting the Node Registry source. Do not transfer this outcome to later source head changes without new checks.
 2. Check issue #2 / PR #55 for a new repair head. If changed, compare source blobs, incorporate *only approved exact fix* into separate test-only candidate with same four negative regression cases, obtain full required `core` + CodeQL results, request non-author re-review. Otherwise do not spam duplicate comments.
 3. Review audit disposition and reviewer identity for #41, and whether a distinct reviewer has actually been invited and approvals enforced under #38. Never self-approve or merge while blocked.
 4. Track the newly reported Node Registry test-only CodeQL diagnostic and source owner #4 action, then request re-audit after revised #65 head. Keep this HANDOFF synced after material events, update PR #77 and request review; avoid documenting open PRs as integrated state.
