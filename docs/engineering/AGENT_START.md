@@ -14,7 +14,7 @@ Paste this message to a fresh coding agent:
 
 ## CTO continuation in a fresh chat
 
-The owner may simply write **«Продолжаем дальше»**. For an agent acting as CTO / integrator, this is a directive to **take the next safe technical action now**, not to ask for a PR number or a fresh assignment. Read [the mandatory CTO protocol](CTO_OPERATING_PROTOCOL.md), root `AGENTS.md`, current GitHub issues/PRs, dependencies and exact-head CI. Choose the highest-priority actionable blocker, carry out a scoped fix/test/integration/audit handoff, and report verifiable results. Escalate only owner-authority decisions. Do not skip release or independent review gates.
+The owner may simply write **«Продолжаем дальше»**. For an agent acting as CTO / integrator, this is a directive to **take the next safe technical action now**, not to ask for a PR number or a fresh assignment. Read [the mandatory CTO protocol](CTO_OPERATING_PROTOCOL.md), [CTO HANDOFF](cto/HANDOFF.md), root `AGENTS.md`, current GitHub issues/PRs, dependencies and exact-head CI. Choose the highest-priority actionable blocker, carry out a scoped fix/test/integration/audit handoff, and report verifiable results. Escalate only owner-authority decisions. Do not skip release or independent review gates.
 
 A product-lane agent remains bound to its explicitly assigned issue; the CTO protocol does not give all other agents unlimited file ownership.
 
