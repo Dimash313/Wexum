@@ -8,7 +8,7 @@ import threading
 import unittest
 
 from wexum_vpn_billing import (
-    BillingEngine, ConflictError, NotFoundError, Plan, SecurityError, TestHmacAdapter,
+    BillingEngine, BillingError, ConflictError, NotFoundError, Plan, SecurityError, TestHmacAdapter,
 )
 
 
@@ -43,6 +43,20 @@ class BillingTests(unittest.TestCase):
 
     def snapshot(self, now=NOW):
         return self.engine.snapshot("tenant_A", "account_A", self.order, now=now)
+
+    def test_storage_open_failure_is_sanitized_and_fail_closed(self):
+        missing_parent = Path(self.tmp.name) / "missing-parent" / "billing.db"
+        with self.assertRaisesRegex(BillingError, "^billing storage unavailable$") as caught:
+            BillingEngine(missing_parent, {"sandbox-test": TestHmacAdapter(SECRET)}, allow_test_adapters=True)
+        self.assertIsNone(caught.exception.__cause__)
+        self.assertFalse(missing_parent.exists())
+
+    def test_storage_outage_after_initialization_is_sanitized(self):
+        self.path.unlink()
+        self.path.mkdir()
+        with self.assertRaisesRegex(BillingError, "^billing storage unavailable$") as caught:
+            self.engine.snapshot("tenant_A", "account_A", self.order, now=NOW)
+        self.assertIsNone(caught.exception.__cause__)
 
     def test_no_client_activation(self):
         self.assertFalse(self.snapshot().eligible)
