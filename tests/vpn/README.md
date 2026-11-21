@@ -22,7 +22,7 @@ python -m unittest discover -s tests/vpn -p 'test_*.py' -v
 `SQLiteDeviceStore` (not surrogate implementations) if the source is present at
 `products/vpn/control/src` in the checkout. Otherwise these tests are **skipped** by default:
 check the final test summary, not just exit status. Use
-\`WEXUM_VPN_REQUIRE_CONTRACTS=1\` for mandatory CI/integration runs to turn a
+`WEXUM_VPN_REQUIRE_CONTRACTS=1` for mandatory CI/integration runs to turn a
 missing import into a **hard failure**, never silent skipped coverage. To run against a separate
 checkout of the Control Plane proposal, pass an explicit source directory:
 
@@ -36,7 +36,7 @@ An invalid explicitly set source path **fails**, not skips. The provider callbac
 is a synthetic in-memory decision; real OIDC/JWT, real entitlements, HTTP, and
 network/gateway behavior are not covered. The 16 contract checks include regressions for newest active device visibility
 and for SQLite connection-open failures on enrollment, listing and revocation.
-On PR #55 head \`66532b4df984c091b46e53697218b82557bb4bbd\`, those four
+On PR #55 head `66532b4df984c091b46e53697218b82557bb4bbd`, those four
 checks are known to fail until owner #2 corrects the implementation. Do not
 mark failing tests as expected success or hide them in CI.
 
@@ -80,19 +80,19 @@ latency, DNS and IPv6 leak claims **NOT TESTED**.
 
 Isolated Python 3.13.5 local checkout with exact GitHub blob SHAs:
 
-- PR #55 \`service.py\`: \`de329886873e1cb3a26672b8786712f86df747a4\`
-- PR #55 \`store.py\`: \`d00b0427f60ce46ccf049a808e9a692e6db34146\`
-- PR #55 \`__init__.py\`: \`8469816eb7c4cd2c6b39a3f28e1ff4426a4216be\`
-- QA \`test_control_contract.py\`: \`82d66ac38908fc9edcec3642705f3d8b0bcf0fb2\`
-- QA \`test_leak_evidence.py\`: \`6c66ab5fe1ce0cc8b8d906c70595999bec7b5296\`
-- QA \`leak_evidence.py\`: \`a5c29c87abdd605422d3cd27de2d303019e0f8ca\`
+- PR #55 `service.py`: `de329886873e1cb3a26672b8786712f86df747a4`
+- PR #55 `store.py`: `d00b0427f60ce46ccf049a808e9a692e6db34146`
+- PR #55 `__init__.py`: `8469816eb7c4cd2c6b39a3f28e1ff4426a4216be`
+- QA `test_control_contract.py`: `82d66ac38908fc9edcec3642705f3d8b0bcf0fb2`
+- QA `test_leak_evidence.py`: `6c66ab5fe1ce0cc8b8d906c70595999bec7b5296`
+- QA `leak_evidence.py`: `a5c29c87abdd605422d3cd27de2d303019e0f8ca`
 
-Ran \`python -m compileall -q tests/vpn\` successfully and
-\`PYTHONPATH=products/vpn/control/src python -m unittest discover -s tests/vpn -p 'test_*.py' -v\`:
+Ran `python -m compileall -q tests/vpn` successfully and
+`PYTHONPATH=products/vpn/control/src python -m unittest discover -s tests/vpn -p 'test_*.py' -v`:
 **27 executed; 23 passed, 1 assertion failure, 3 unexpected exceptions, 0 skipped.**
 These are expected **red tests against unfixed code**, not an accepted build
-or a green suite. Three SQLite open-failure cases leak \`sqlite3.OperationalError\`
-instead of \`EnrollmentUnavailable\`; the fourth assertion detects hidden
+or a green suite. Three SQLite open-failure cases leak `sqlite3.OperationalError`
+instead of `EnrollmentUnavailable`; the fourth assertion detects hidden
 active device after 200 expired historical records. Re-run on a corrected,
 independently reviewed source head before any integration decision. No tunnel
 or physical DNS/IP probe was executed.
