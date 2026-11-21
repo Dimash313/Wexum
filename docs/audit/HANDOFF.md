@@ -5,6 +5,14 @@
 **Repository:** https://github.com/Dimash313/Wexum
 
 
+## Audit checkpoint — 2026-11-21, PR #73 non-mapping webhook header hardening
+
+- **Exact PR #73 head:** `851214adaa97d8a5a07f08d32f048a88cb2f88c9`; base `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`. Previous reviewed head `eb82e508816555cda3a195f71d1a580ff8aabc81`.
+- **Source evidence:** reviewed current `core.py` blob `936518936f9ecba3e1f1d235d116f7b85b083548`, `test_core.py` blob `42a61639019f84cfe9dabcf27f1044651f29189d`, PR diff, issue #9, previous comments, empty review threads, proposed AGENTS/QUALITY. `TestHmacAdapter.verify` lines 128-129 now rejects non-`Mapping` header containers before `.items()`; no new confirmed bypass found in static inspection.
+- **Decision:** **NOT VERIFIED / BLOCKED**. GitHub Actions PR runs **0** and commit statuses **0** at exact head. Independent Python tests **NOT RUN**, compileall **NOT RUN**. No production payment adapter; previous local test counts are not evidence for current source.
+- **Published audit:** https://github.com/Dimash313/Wexum/pull/73#issuecomment-7065764299. Next: exact-source negative tests for non-mapping headers, mandatory integrated CI, independent non-author review; upstream foundation/Identity/Entitlements/payment provider/legal gates remain.
+- **Audit-only documentation:** this checkpoint does not alter billing code or merge any PR.
+
 ## Audit checkpoint — 2026-11-21, PR #73 billing header hardening
 
 - **Exact PR #73 head:** `eb82e508816555cda3a195f71d1a580ff8aabc81`; base `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`. Incremental review since previous audited `96db0cd934a5add36092bb034a4149487eecefe5`.
