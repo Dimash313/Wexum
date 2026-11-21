@@ -57,8 +57,8 @@ void test_revocation_and_recovery() {
   CHECK(m.update_trusted_policy({false, true, true}).action == EngineAction::None);
   (void)m.update_trusted_policy({true, true, true});
   CHECK(m.state() == ConnectionState::Interrupted);
-  CHECK(m.observe_verified_engine_event({EngineEventKind::Connected, 1, 3}));
-  CHECK(m.state() == ConnectionState::Protected);
+  CHECK(!m.observe_verified_engine_event({EngineEventKind::Connected, 1, 3}));
+  CHECK(m.state() == ConnectionState::Interrupted);
   m.on_engine_channel_lost();
   CHECK(m.state() == ConnectionState::Interrupted);
   CHECK(!m.observe_verified_engine_event({EngineEventKind::Connected, 1, 4}));
@@ -104,6 +104,49 @@ void test_interrupted_then_stale_and_downgrade() {
   CHECK(m.request_disconnect().action == EngineAction::Stop);
 }
 
+void test_reauthenticated_channel_must_confirm_old_tunnel_stopped() {
+  ConnectionMachine m;
+  (void)m.update_trusted_policy({true, true, true});
+  (void)m.request_connect();
+  CHECK(m.observe_verified_engine_event({EngineEventKind::Connected, 1, 1}));
+  m.on_engine_channel_lost();
+  CHECK(m.state() == ConnectionState::Interrupted);
+  CHECK(m.update_trusted_policy({true, true, true}).action == EngineAction::None);
+  CHECK(!m.observe_verified_engine_event({EngineEventKind::Connected, 1, 2}));
+  CHECK(m.state() == ConnectionState::Interrupted);
+  CHECK(!m.can_connect());
+  CHECK(m.observe_verified_engine_event({EngineEventKind::Disconnected, 1, 3}));
+  CHECK(m.can_connect());
+  CHECK(m.request_connect().attempt == 2);
+  CHECK(m.observe_verified_engine_event({EngineEventKind::Connected, 2, 1}));
+  CHECK(m.state() == ConnectionState::Protected);
+}
+
+void test_revocation_during_interruption_must_stop() {
+  ConnectionMachine m;
+  (void)m.update_trusted_policy({true, true, true});
+  (void)m.request_connect();
+  CHECK(m.observe_verified_engine_event({EngineEventKind::Interrupted, 1, 1}));
+  CHECK(m.update_trusted_policy({true, false, true}).action == EngineAction::Stop);
+  CHECK(m.update_trusted_policy({true, false, true}).action == EngineAction::None);
+  (void)m.update_trusted_policy({true, true, true});
+  CHECK(!m.observe_verified_engine_event({EngineEventKind::Connected, 1, 2}));
+  CHECK(m.observe_verified_engine_event({EngineEventKind::Disconnected, 1, 3}));
+  CHECK(m.can_connect());
+}
+
+void test_invalid_policy_in_error_requires_stop() {
+  ConnectionMachine m;
+  (void)m.update_trusted_policy({true, true, true});
+  (void)m.request_connect();
+  CHECK(m.observe_verified_engine_event({EngineEventKind::Failed, 1, 1}));
+  CHECK(m.update_trusted_policy({false, true, true}).action == EngineAction::Stop);
+  (void)m.update_trusted_policy({true, true, true});
+  CHECK(!m.observe_verified_engine_event({EngineEventKind::Connected, 1, 2}));
+  CHECK(m.observe_verified_engine_event({EngineEventKind::Disconnected, 1, 3}));
+  CHECK(m.can_connect());
+}
+
 void test_locales_only_published() {
   CHECK(resolve_locale({"ru-KZ", "en-US"}) == UiLocale::Russian);
   CHECK(resolve_locale({"kk-KZ", "ru-RU"}) == UiLocale::Russian);
@@ -121,6 +164,9 @@ int main() {
   test_revocation_and_recovery();
   test_errors_cannot_fake_disconnect();
   test_interrupted_then_stale_and_downgrade();
+  test_reauthenticated_channel_must_confirm_old_tunnel_stopped();
+  test_revocation_during_interruption_must_stop();
+  test_invalid_policy_in_error_requires_stop();
   test_locales_only_published();
   std::cout << "WexumVPN Desktop core: " << checks << " checks passed\n";
 }

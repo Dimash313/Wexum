@@ -54,6 +54,8 @@ class ConnectionMachine final {
   TrustedPolicy policy_{};
   std::uint64_t attempt_{0};
   std::uint64_t last_sequence_{0};
+  // Stop/revocation/channel loss requires verified tunnel-down confirmation.
+  bool stop_confirmation_required_{false};
 };
 
 }  // namespace wexum::desktop

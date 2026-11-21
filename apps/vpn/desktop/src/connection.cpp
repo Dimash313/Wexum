@@ -7,16 +7,19 @@ namespace wexum::desktop {
 bool ConnectionMachine::can_connect() const noexcept {
   return state_ == ConnectionState::Disconnected && policy_.entitlement_valid &&
          policy_.device_valid && policy_.engine_channel_authenticated &&
+         !stop_confirmation_required_ &&
          attempt_ < std::numeric_limits<std::uint64_t>::max();
 }
 
 EngineCommand ConnectionMachine::update_trusted_policy(TrustedPolicy policy) noexcept {
   policy_ = policy;
   if ((!policy_.entitlement_valid || !policy_.device_valid ||
-       !policy_.engine_channel_authenticated) &&
-      (state_ == ConnectionState::Connecting || state_ == ConnectionState::Protected)) {
+       !policy_.engine_channel_authenticated) && state_ != ConnectionState::Disconnected) {
+    const bool stop_already_required = stop_confirmation_required_;
+    stop_confirmation_required_ = true;
+    if (state_ == ConnectionState::Disconnecting) return {};
     state_ = ConnectionState::Interrupted;
-    return {EngineAction::Stop, attempt_};
+    if (!stop_already_required) return {EngineAction::Stop, attempt_};
   }
   return {};
 }
@@ -33,6 +36,7 @@ EngineCommand ConnectionMachine::request_disconnect() noexcept {
   if (state_ == ConnectionState::Disconnected ||
       state_ == ConnectionState::Disconnecting) return {};
   state_ = ConnectionState::Disconnecting;
+  stop_confirmation_required_ = true;
   return {EngineAction::Stop, attempt_};
 }
 
@@ -47,7 +51,8 @@ bool ConnectionMachine::observe_verified_engine_event(
     case EngineEventKind::Connected:
       if ((state_ != ConnectionState::Connecting &&
            state_ != ConnectionState::Interrupted) ||
-          !policy_.entitlement_valid || !policy_.device_valid) return false;
+          !policy_.entitlement_valid || !policy_.device_valid ||
+          stop_confirmation_required_) return false;
       next = ConnectionState::Protected;
       break;
     case EngineEventKind::Interrupted:
@@ -58,6 +63,7 @@ bool ConnectionMachine::observe_verified_engine_event(
     case EngineEventKind::Disconnected:
       if (state_ == ConnectionState::Disconnected) return false;
       next = ConnectionState::Disconnected;
+      stop_confirmation_required_ = false;
       break;
     case EngineEventKind::Failed:
       if (state_ == ConnectionState::Disconnected) return false;
@@ -71,8 +77,10 @@ bool ConnectionMachine::observe_verified_engine_event(
 
 void ConnectionMachine::on_engine_channel_lost() noexcept {
   policy_.engine_channel_authenticated = false;
-  if (state_ != ConnectionState::Disconnected &&
-      state_ != ConnectionState::Error) state_ = ConnectionState::Interrupted;
+  if (state_ != ConnectionState::Disconnected) {
+    stop_confirmation_required_ = true;
+    if (state_ != ConnectionState::Error) state_ = ConnectionState::Interrupted;
+  }
 }
 
 }  // namespace wexum::desktop

@@ -84,3 +84,21 @@
 - Related work: [VPN security #11](https://github.com/Dimash313/Wexum/issues/11), [VPN testing #10](https://github.com/Dimash313/Wexum/issues/10), [UX specification #39](https://github.com/Dimash313/Wexum/issues/39), [shared localization #50](https://github.com/Dimash313/Wexum/pull/50).
 
 **Handoff rule:** treat GitHub as the live source of truth, keep all changes within `apps/vpn/desktop/`, record only observed test results, and ask the integrator to resolve conflicts involving shared interfaces, release policy, infrastructure, or another agent's branch.
+
+
+## 9. Continuation checkpoint — 2026-11-21
+
+### Connection state safety correction
+- A restored entitlement or helper channel can no longer promote an old attempt to `Protected` until the same authenticated engine attempt reports a verified `Disconnected` event after trust loss/revocation/stop.
+- `ConnectionMachine` now remembers that stop confirmation is required. It also requests a stop on policy invalidation during an interrupted or error state, not only while connecting or protected.
+- Confirmed disconnect clears this latch; a new attempt is required for a subsequent connect. No transport, privileged process, OS backend or real VPN interface was introduced.
+- Event names and policy booleans are still not authentication. A future helper must verify both IPC peer identity and that `Disconnected` means the OS tunnel and routes are actually down; these are **not tested or built**.
+
+### Evidence, scoped to core
+- Baseline, before fix: GCC 14.2.0 local `ctest` **PASS**, 71 original assertions.
+- New regression against the old implementation: expected **FAIL** at revocation/revalidation `Connected` being incorrectly accepted.
+- Corrected code: GCC 14.2.0, Linux `cmake --build build --parallel 2 && ctest --test-dir build --output-on-failure` **PASS**, 93 assertions.
+- Corrected code: Clang 17.0.0, Linux equivalent core CMake/CTest **PASS**, 93 assertions.
+- Corrected code: GCC ASan + UBSan (`-fsanitize=address,undefined`), Linux CMake/CTest **PASS**.
+- Executed in an isolated local container with Qt UI OFF and reconstructed source from the GitHub branch. No GitHub Actions, Qt GUI, OS VPN, real tunnel, Windows or macOS validation.
+- Next action: independent security review of confirmation semantics; add actual authenticated native helper interface and crash/reconnect replay tests only with CTO-approved contracts and test infrastructure.
