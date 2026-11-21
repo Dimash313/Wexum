@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import sqlite3
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import threading
@@ -22,7 +23,7 @@ class BillingTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.path = Path(self.tmp.name) / "test.db"
         self.engine = BillingEngine(self.path, {"sandbox-test": TestHmacAdapter(SECRET)}, allow_test_adapters=True)
-        self.order = self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test", now=NOW)
+        self.order = self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test", now=NOW, request_id="initial-checkout")
 
     def send(self, kind="paid", *, event_id="evt1", transaction_id="txn1", order_id=None,
              occurred_at=NOW, period_end=NOW+2592000, amount=PLAN.amount_minor, currency="KZT",
@@ -75,7 +76,7 @@ class BillingTests(unittest.TestCase):
         self.assertEqual(self.snapshot().access_until, NOW+2592000)
 
     def test_transaction_reuse_across_accounts_rejected(self):
-        second = self.engine.create_order("tenant_B", "account_B", PLAN, "sandbox-test", now=NOW)
+        second = self.engine.create_order("tenant_B", "account_B", PLAN, "sandbox-test", now=NOW, request_id="secondary-checkout")
         self.send()
         with self.assertRaises(ConflictError):
             self.send(event_id="evt2", order_id=second)
@@ -205,7 +206,7 @@ class BillingTests(unittest.TestCase):
         with self.assertRaises(SecurityError):
             Plan("demo", "KZT", True)
         with self.assertRaises(SecurityError):
-            self.engine.create_order("tenant_A;DROP TABLE orders", "account_A", PLAN, "sandbox-test", now=NOW)
+            self.engine.create_order("tenant_A;DROP TABLE orders", "account_A", PLAN, "sandbox-test", now=NOW, request_id="bad-tenant")
         with self.assertRaises(SecurityError):
             self.send(event_id="evt-bool", amount_minor=True)
         self.assertFalse(self.snapshot().eligible)
@@ -226,6 +227,84 @@ class BillingTests(unittest.TestCase):
         self.assertFalse(errors, errors)
         self.assertEqual(sum(result.changed for result in results), 1)
         self.assertEqual(self.snapshot().access_until, NOW+2592000)
+
+    def test_order_retry_returns_same_order(self):
+        original = self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test",
+                                            now=NOW + 1, request_id="checkout-retry")
+        retry = self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test",
+                                         now=NOW + 100, request_id="checkout-retry")
+        self.assertEqual(original, retry)
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 2)
+
+    def test_order_retry_conflicting_plan_is_rejected(self):
+        self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test", now=NOW,
+                                 request_id="conflicting-request")
+        with self.assertRaises(ConflictError):
+            self.engine.create_order("tenant_A", "account_A", Plan("annual", "KZT", 500000),
+                                     "sandbox-test", now=NOW, request_id="conflicting-request")
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 2)
+
+    def test_same_order_request_key_scoped_to_tenant_and_account(self):
+        order1 = self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test", now=NOW,
+                                          request_id="same-key")
+        order2 = self.engine.create_order("tenant_B", "account_A", PLAN, "sandbox-test", now=NOW,
+                                          request_id="same-key")
+        order3 = self.engine.create_order("tenant_A", "account_B", PLAN, "sandbox-test", now=NOW,
+                                          request_id="same-key")
+        self.assertEqual(len({order1, order2, order3}), 3)
+
+    def test_order_retry_survives_database_restart(self):
+        order = self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test",
+                                         now=NOW, request_id="persistent-key")
+        new_engine = BillingEngine(self.path, {"sandbox-test": TestHmacAdapter(SECRET)},
+                                   allow_test_adapters=True)
+        self.assertEqual(new_engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test",
+                                                  now=NOW + 100, request_id="persistent-key"), order)
+
+    def test_concurrent_same_order_key_creates_one_order(self):
+        barrier = threading.Barrier(8)
+        results = []
+        errors = []
+        def worker():
+            try:
+                barrier.wait(timeout=5)
+                results.append(self.engine.create_order("tenant_A", "account_A", PLAN,
+                                                        "sandbox-test", now=NOW,
+                                                        request_id="concurrent-order"))
+            except Exception as exc:
+                errors.append(exc)
+        threads = [threading.Thread(target=worker) for _ in range(8)]
+        for t in threads: t.start()
+        for t in threads: t.join(timeout=8)
+        self.assertFalse(errors, errors)
+        self.assertEqual(len(results), 8)
+        self.assertEqual(len(set(results)), 1)
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 2)
+
+    def test_order_request_insert_failure_rolls_back(self):
+        with sqlite3.connect(self.path) as db:
+            db.execute("CREATE TRIGGER reject_request BEFORE INSERT ON order_requests "
+                       "BEGIN SELECT RAISE(ABORT, 'injected failure'); END")
+        with self.assertRaises(sqlite3.DatabaseError):
+            self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test",
+                                     now=NOW, request_id="fault-injection")
+        with sqlite3.connect(self.path) as db:
+            db.execute("DROP TRIGGER reject_request")
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 1)
+        self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test",
+                                 now=NOW, request_id="fault-injection")
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 2)
+
+    def test_order_request_invalid_or_missing_key_is_denied(self):
+        for bad in ("", "with spaces", "A" * 129, None):
+            with self.subTest(key=bad):
+                with self.assertRaises(SecurityError):
+                    self.engine.create_order("tenant_A", "account_A", PLAN, "sandbox-test",
+                                             now=NOW, request_id=bad)
 
     def test_restart_preserves_ledger(self):
         self.send()
