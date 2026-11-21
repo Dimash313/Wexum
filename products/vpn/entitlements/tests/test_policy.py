@@ -1,6 +1,7 @@
 """Negative, tenant-bound and failure-path tests for the non-issuing precheck."""
 
 import asyncio
+import traceback
 import unittest
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
@@ -247,6 +248,38 @@ class GrantPrecheckTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(asyncio.CancelledError):
             await check_task
         self.assertTrue(cancelled.is_set())
+
+    async def test_backward_clock_beyond_budget_fails_closed(self):
+        readings = iter((NOW, NOW - timedelta(seconds=6)))
+        self.clock = lambda: next(readings)
+        self.svc = self.service()
+        with self.assertRaises(GrantPrecheckUnavailable):
+            await self.svc.check(actor=self.actor, device_id="dev-A")
+
+    async def test_small_backward_clock_never_extends_candidate_lifetime(self):
+        readings = iter((NOW, NOW - timedelta(seconds=2)))
+        self.clock = lambda: next(readings)
+        self.svc = self.service()
+        candidate = await self.svc.check(actor=self.actor, device_id="dev-A")
+        self.assertEqual(candidate.expires_at, NOW + timedelta(seconds=120))
+
+    async def test_upstream_secret_does_not_appear_in_displayed_traceback(self):
+        self.accounts.error = RuntimeError("bearer-secret-should-not-appear")
+        with self.assertRaises(GrantPrecheckUnavailable) as caught:
+            await self.svc.check(actor=self.actor, device_id="dev-A")
+        rendered = "".join(traceback.format_exception(caught.exception))
+        self.assertNotIn("bearer-secret-should-not-appear", rendered)
+        self.assertIn("authoritative VPN state unavailable", rendered)
+
+    async def test_clock_error_does_not_appear_in_displayed_traceback(self):
+        def failing_clock():
+            raise RuntimeError("private-clock-error-sentinel")
+        self.clock = failing_clock
+        self.svc = self.service()
+        with self.assertRaises(GrantPrecheckUnavailable) as caught:
+            await self.svc.check(actor=self.actor, device_id="dev-A")
+        rendered = "".join(traceback.format_exception(caught.exception))
+        self.assertNotIn("private-clock-error-sentinel", rendered)
 
     async def test_actor_expiring_during_lookup_denied(self):
         self.accounts.delay = 0.001
