@@ -9,54 +9,63 @@ final class ConnectionStore: ObservableObject {
     @Published private(set) var state = ConnectionState()
 
     private var manager: NETunnelProviderManager?
+    private var managerTicket: ObservationEpoch.Ticket?
+    private var observationEpoch = ObservationEpoch()
     private let networkMonitor = NWPathMonitor()
     private var statusObserver: NSObjectProtocol?
-    private var refreshGeneration = 0
 
     init() {
         networkMonitor.pathUpdateHandler = { [weak self] path in
+            let available = path.status == .satisfied
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                let available = path.status == .satisfied
-                self.state.apply(available ? .networkRestored : .networkLost)
-                if available { self.refreshStatus() }
+                self?.handleNetworkAvailability(available)
             }
         }
         networkMonitor.start(queue: DispatchQueue(label: "com.ihsansoft.wexumvpn.network-status"))
         statusObserver = NotificationCenter.default.addObserver(
             forName: .NEVPNStatusDidChange, object: nil, queue: .main
         ) { [weak self] notification in
+            guard let source = notification.object as? NEVPNConnection else { return }
+            let sourceIdentity = ObjectIdentifier(source)
             Task { @MainActor [weak self] in
                 guard let self, let manager = self.manager else { return }
-                guard let source = notification.object as AnyObject?, source === manager.connection else { return }
+                guard ObjectIdentifier(manager.connection) == sourceIdentity,
+                      self.observationEpoch.permitsStatus(for: self.managerTicket) else { return }
                 self.refreshStatus()
             }
         }
     }
 
+    private func handleNetworkAvailability(_ available: Bool) {
+        guard available != state.isNetworkAvailable else { return }
+        // A completed status read from the previous network must not be reused.
+        observationEpoch.invalidate()
+        managerTicket = nil
+        state.apply(available ? .networkRestored : .networkLost)
+        if available { refreshConfiguration() }
+    }
+
     func refreshConfiguration() {
-        refreshGeneration += 1
-        let generation = refreshGeneration
+        let ticket = observationEpoch.beginRefresh()
+        managerTicket = nil
         NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, error in
             Task { @MainActor [weak self] in
-                guard let self, generation == self.refreshGeneration else { return }
-                guard error == nil, let managers else {
+                guard let self, self.observationEpoch.isCurrent(ticket) else { return }
+                guard error == nil, let managers, managers.count <= 1 else {
                     self.manager = nil
-                    self.state.apply(.observerFailed)
-                    return
-                }
-                guard managers.count <= 1 else {
-                    // Ambiguous profiles are not silently chosen.
-                    self.manager = nil
+                    self.observationEpoch.invalidate()
                     self.state.apply(.observerFailed)
                     return
                 }
                 guard let manager = managers.first else {
                     self.manager = nil
+                    self.observationEpoch.invalidate()
                     self.state.apply(.configurationMissing)
                     return
                 }
+                guard self.observationEpoch.activate(ticket) else { return }
                 self.manager = manager
+                self.managerTicket = ticket
                 self.state.apply(.configurationFound)
                 self.refreshStatus()
             }
@@ -64,7 +73,7 @@ final class ConnectionStore: ObservableObject {
     }
 
     private func refreshStatus() {
-        guard let manager else { return }
+        guard observationEpoch.permitsStatus(for: managerTicket), let manager else { return }
         let nativeStatus: NativeVPNStatus
         switch manager.connection.status {
         case .invalid: nativeStatus = .invalid
