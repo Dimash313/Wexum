@@ -147,6 +147,16 @@ class ReleaseManifestTests(unittest.TestCase):
                 errors, _ = assess(obj)
                 self.assertTrue(any("requires actor and HTTPS URL" in e for e in errors))
 
+    def test_whitespace_padded_https_evidence_url_rejected(self):
+        """URL consumers may normalize leading/trailing whitespace differently."""
+        for url in (" https://example.test/proof", "https://example.test/proof ",
+                    "\\thttps://example.test/proof"):
+            with self.subTest(url=url):
+                obj = artificial_complete()
+                obj["gates"][0]["evidence"][0]["url"] = url
+                errors, _ = assess(obj)
+                self.assertTrue(any("requires actor and HTTPS URL" in e for e in errors))
+
     def test_ambiguous_backslash_https_authority_rejected(self):
         """Backslashes can be parsed differently by URL consumers."""
         for url in ("https://example.test\\\\@evil.test/proof",
