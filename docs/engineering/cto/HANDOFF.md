@@ -94,3 +94,13 @@ Author-reported local tests for #65 and other lane PRs are **not** independent o
 - [Security issue #11](https://github.com/Dimash313/Wexum/issues/11), [Auditor issue #78](https://github.com/Dimash313/Wexum/issues/78), [Auditor draft #79](https://github.com/Dimash313/Wexum/pull/79), [CI issue #56](https://github.com/Dimash313/Wexum/issues/56)
 
 **This is a dated checkpoint, not a license to ignore fresher GitHub evidence.**
+
+
+### CTO verification — 2026-11-21 13:55 UTC
+
+- Re-read foundation-branch `AGENTS.md`, architecture boundaries, quality/review/ethics documents and open PR/issue queue. `AGENTS.md` is still not in `main`; PR #1 remains unmerged.
+- Node Registry source PR #65 remains at `e91d734ac5306bf3605962078730f7746d235e3a`. CI-only PR #80 remains at `7e39bacb19797f525deffcde65a505d931dc07bf` with the synchronized owner-authored test cleanup.
+- **New confirmed GitHub Actions result:** [foundation-checks #44906218376](https://github.com/Dimash313/Wexum/actions/runs/44906218376) completed **SUCCESS** and [CodeQL Python #44906218399](https://github.com/Dimash313/Wexum/actions/runs/44906218399) completed **SUCCESS** on PR #80 head `7e39bac`. Exact test counts on this head were **not** reverified from job logs in this cycle; prior 53-test log is for older `a1eb50b` only. These results are not source-PR #65 checks or independent approval.
+- CTO left a new exact-head review request on [PR #80](https://github.com/Dimash313/Wexum/pull/80) for independent auditor to examine current #65/#80 SHA pair, CodeQL finding and residual trust boundaries. The review is requested, **not** completed.
+- P1: Control Plane PR #55 still `66532b4` with four independently reproduced red tests in CI-only #67; owner must fix, then re-copy exact files and rerun required CI. Foundation #1, governance #38 and independent review #41 remain blocking. Do not merge any CI-only candidate or claim a live VPN tunnel.
+- Next action: inspect actual logs for new #80 run and auditor verdict; follow up on owner repair for #55 without duplicating earlier comments. Keep product-owner files untouched.
