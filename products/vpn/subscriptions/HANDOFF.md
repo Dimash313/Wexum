@@ -1,5 +1,14 @@
 # WexumVPN — Subscriptions & Billing | Agent Handoff
 
+## Backend engineering checkpoint — 2026-11-21: reject non-mapping webhook headers
+
+- **Scope:** Subscriptions & Billing, issue #9, branch `feat/vpn/9-subscription-adapter`, Draft PR #73. No changes outside `products/vpn/subscriptions/`.
+- **Change:** `TestHmacAdapter.verify` now checks that `headers` implements `Mapping` before invoking `.items()`. Previously a missing or list/string header container could raise an uncontrolled `AttributeError`; now it fails closed with `SecurityError("invalid test signature headers")`. This remains a synthetic test adapter, **not** a production webhook or payment authority.
+- **Code:** [4dfbe27](https://github.com/Dimash313/Wexum/commit/4dfbe277a85ad73f07d8b24bcfe90337f9819dd8); **regression:** [cfd8f2e](https://github.com/Dimash313/Wexum/commit/cfd8f2ef5d61fa5e58b61555bd297d8352ddea4e), one test method with four malformed container cases, checking no ledger revision or eligibility mutation.
+- **Evidence:** GitHub write and source reread **PASS**; Python unittest **NOT RUN**; compileall **NOT RUN**; exact-head GitHub Actions **NOT VERIFIED**; independent audit **PENDING**. Do not infer PASS from authored tests. CI workflow activation is integrator-owned; foundation #1 and trusted identity/entitlement/provider integrations remain blocked.
+- **Next:** run `PYTHONPATH=products/vpn/subscriptions/src python -m unittest discover -s products/vpn/subscriptions/tests -v` and `python -m compileall -q products/vpn/subscriptions/src products/vpn/subscriptions/tests`; obtain exact-head CI and distinct independent audit. Keep PR Draft; no merge.
+
+
 ## Backend engineering checkpoint — 2026-11-21: duplicate signature-header ambiguity
 
 - **P1 security hardening (test-only webhook boundary):** `TestHmacAdapter.verify` now rejects case-insensitively duplicate HTTP header names instead of silently choosing the last value. It also rejects non-string header keys/values as `SecurityError` rather than leaking an accidental `AttributeError`. This prevents differing proxy/framework header canonicalization from making signature verification ambiguous. No real payment provider is enabled or added.
