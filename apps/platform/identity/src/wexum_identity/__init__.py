@@ -13,6 +13,7 @@ from .webclient import ConfiguredWebOAuthClient
 
 from .transactions import (
     AuthorizationCapacityExceeded,
+    AuthorizationClockUnavailable,
     AuthorizationRejected,
     AuthorizationStart,
     AuthorizationTransactions,
@@ -24,6 +25,7 @@ __all__ = [
     "AuthorizationResponseRejected",
     "parse_authorization_callback",
     "AuthorizationCapacityExceeded",
+    "AuthorizationClockUnavailable",
     "AuthorizationRejected",
     "AuthorizationStart",
     "AuthorizationTransactions",

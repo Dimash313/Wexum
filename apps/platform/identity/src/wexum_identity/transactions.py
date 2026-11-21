@@ -8,6 +8,7 @@ verify the resulting tokens before establishing any authenticated principal.
 import base64
 import hashlib
 import hmac
+import math
 import secrets
 import threading
 import time
@@ -21,6 +22,10 @@ class AuthorizationRejected(Exception):
 
 class AuthorizationCapacityExceeded(Exception):
     """The bounded pending-transaction budget has been exhausted."""
+
+
+class AuthorizationClockUnavailable(Exception):
+    """Pending authorization state was discarded after an unsafe clock reading."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,8 +93,29 @@ class AuthorizationTransactions:
         self._ttl_seconds = ttl_seconds
         self._max_pending = max_pending
         self._clock = clock
+        self._last_now: float | None = None
         self._pending: dict[bytes, _Pending] = {}
         self._lock = threading.Lock()
+
+    def _read_clock(self) -> float:
+        """Require a finite nondecreasing clock; purge attempts on a fault.
+
+        Always called with the transaction lock held. A broken clock must not
+        extend the lifetime of an old authorization attempt or issue a new one.
+        """
+        try:
+            reading = self._clock()
+            if type(reading) not in (float, int):
+                raise ValueError("non-numeric clock")
+            now = float(reading)
+            if not math.isfinite(now) or (self._last_now is not None and now < self._last_now):
+                raise ValueError("non-monotonic clock")
+        except Exception:
+            self._pending.clear()
+            self._last_now = None
+            raise AuthorizationClockUnavailable("authorization clock unavailable") from None
+        self._last_now = now
+        return now
 
     def _expire(self, now: float) -> None:
         for key, transaction in tuple(self._pending.items()):
@@ -110,7 +136,7 @@ class AuthorizationTransactions:
         _require_config(redirect_uri, "redirect_uri")
 
         with self._lock:
-            now = self._clock()
+            now = self._read_clock()
             self._expire(now)
             if len(self._pending) >= self._max_pending:
                 raise AuthorizationCapacityExceeded("pending authorization capacity reached")
@@ -129,6 +155,11 @@ class AuthorizationTransactions:
             verifier = secrets.token_urlsafe(64)
             nonce = secrets.token_urlsafe(32)
             challenge = base64.urlsafe_b64encode(_digest(verifier)).rstrip(b"=").decode("ascii")
+            expires_at = now + self._ttl_seconds
+            if not math.isfinite(expires_at) or expires_at <= now:
+                self._pending.clear()
+                self._last_now = None
+                raise AuthorizationClockUnavailable("authorization clock unavailable")
             self._pending[state_key] = _Pending(
                 binding_digest=binding_digest,
                 issuer=issuer,
@@ -136,7 +167,7 @@ class AuthorizationTransactions:
                 redirect_uri=redirect_uri,
                 code_verifier=verifier,
                 nonce=nonce,
-                expires_at=now + self._ttl_seconds,
+                expires_at=expires_at,
             )
             return AuthorizationStart(state=state, code_challenge=challenge, nonce=nonce)
 
@@ -180,7 +211,7 @@ class AuthorizationTransactions:
             raise AuthorizationRejected("invalid or expired authorization transaction")
 
         with self._lock:
-            now = self._clock()
+            now = self._read_clock()
             self._expire(now)
             key = _digest(state)
             pending = self._pending.get(key)
