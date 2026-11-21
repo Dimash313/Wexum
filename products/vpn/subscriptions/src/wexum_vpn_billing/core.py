@@ -281,6 +281,8 @@ class BillingEngine:
 
     def accept_webhook(self, provider: str, body: bytes, headers: Mapping[str, str], *, now: int) -> WebhookResult:
         _int(now)
+        if not isinstance(provider, str):
+            raise SecurityError("unknown provider")
         adapter = self._adapters.get(provider)
         if adapter is None:
             raise SecurityError("unknown provider")
