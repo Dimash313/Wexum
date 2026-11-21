@@ -22,6 +22,15 @@ This is a **standalone, in-memory, standard-library-only implementation** for th
 
 An operator-declared region label does **not** prove physical geography or legal eligibility. No country, latency, or uptime claims are made.
 
+### Registration lifecycle and replay protection
+
+- `register(Node(...))` allocates and returns a new random 128-bit `registration_id` (32 lowercase hexadecimal characters). The trusted inventory adapter must retain this ID and associate it with its **authenticated, actual node instance**. Do not accept a registration ID from the public client as proof of a trusted probe.
+- `HealthObservation` requires that `registration_id`, and `record_health` rejects observations when the stored registration differs — even if the observation timestamp is recent or newer than the last accepted timestamp. Removing and re-registering the same stable `node_id` always generates a different registration ID.
+- `set_enabled(node_id, False)` clears live health and returns `None`; `set_enabled(node_id, True)` after a disabled state generates a new registration ID and returns it. Repeated no-op calls preserve the ID. An adapter must update the authenticated probe binding after re-enabling; otherwise discovery remains fail-closed.
+- `NodeSelection.registration_id` identifies the exact sampled registration so the control plane can **compare it against the current generation** before using the selection. This ID is **not** a credential, grant, authentication mechanism, or concurrency-safe capacity reservation.
+- Process restart clears all registrations and observations (no persistent inventory), so newly registered nodes require fresh matching health. Production needs transactional persistence and a separately trusted lifecycle sequence/probe identity system. The in-memory mechanism is only a local safety primitive; it cannot authenticate its inputs.
+
+
 **Fail-closed:** Unknown, expired, disabled, down, saturated, or unreported nodes are never selected. A disabled/reenabled node requires a fresh health report. Health TTL 1–300 seconds (default 30); inventory maximum 1–10000 (default 2048); snapshot limit 1–200. No external I/O, background workers or retries. The trusted caller injects UTC time.
 
 Invalid inputs raise ValueError or TypeError; missing inventory raises KeyError; expired/replayed/out-of-order observations raise StaleObservationError. HTTP adapters must map these to safe responses and enforce caller-specific rate limits.
