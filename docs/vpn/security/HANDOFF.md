@@ -166,3 +166,18 @@ Do not publish sensitive exploit detail, live secrets or user IPs in public PR c
 - GitHub commits: [validator](https://github.com/Dimash313/Wexum/commit/a27208b1951e4a05710036946cab7beee6e9563e), [regression test](https://github.com/Dimash313/Wexum/commit/3282fda3b2b482f11daea921c52471f57e40abd2). Exact GitHub blobs after write: validator `b433ffc35618ea9ec3b73386458cf6ce3afc6c8f`, test `d3e873ad8f91d302c3d7f975e6ab28040aaaf2c4`.
 - **PASS:** GitHub current file read, SHA-guarded updates, local standard-library URL parser ambiguity reproduction. **NOT RUN:** complete 23-method unittest suite, Python compileall and exact-head GitHub Actions (no verified CI run). **SKIP:** live VPN leak testing, release approval and merge. Re-fetch current PR head and run full suite in controlled checkout/mandatory CI before any integration.
 - Main AGENTS.md remains absent because foundation PR #1 is unmerged; read proposed AGENTS.md from #1 head. QA handoff is at `tests/vpn/HANDOFF.md` on PR #74 and Observability handoff at `products/vpn/observability/HANDOFF.md` on PR #72; both are separately owned. Current security PR remains Draft #71. Existing 13 release gates blocked; SEC-CTRL-001 and SEC-CTRL-002 remain open.
+
+
+## Exact-head CI evidence checkpoint — 2026-11-21 19:28 Europe/Moscow
+
+**Single P1 verification task:** confirm whether the current security evidence-gate test suite has actually run on PR #71 head, before any claims of validation or integration.
+
+- Fetched live [PR #71](https://github.com/Dimash313/Wexum/pull/71): head `01c810d781c869a2c8c0de6333ad9f5a5d600ddb`, Draft, base `main`.
+- GitHub Actions PR-triggered workflow runs for this **exact head**: **0** returned by GitHub connector. Legacy combined commit status contexts: **0**. These endpoints do not prove absence of all possible external checks, but provide **no CI evidence** for the current SHA.
+- Latest security tests in the PR diff contain **23 authored unittest methods**; no exact-head test execution is substantiated. Earlier local test counts are historical, not current-head proof.
+- **PASS:** live repository, PR metadata, handoff and proposed foundation AGENTS.md read; exact-head workflow/status queries completed; SHA-guarded HANDOFF update.
+- **FAIL:** none of the test assertions executed in this checkpoint.
+- **SKIP:** cross-lane CI workflow edits (CTO/integrator ownership); merge and release (independent review and required checks absent).
+- **NOT RUN:** `python -m unittest discover -s docs/vpn/security -p 'test_*.py' -v`, `python -m compileall -q docs/vpn/security`, real VPN/DNS/IP leak tests.
+- **Blocking action for CTO/integration:** arrange required GitHub Actions execution of the 23 security unittest methods and compileall on a reviewed integration candidate containing this exact security commit; link the workflow run and logs, then obtain non-author review. Until then release gates remain blocked and PR #71 must remain Draft.
+- No changes to other teams' files or workflows; this is a documented CI-evidence check, not a claim of a passing test suite.
