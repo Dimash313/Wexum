@@ -217,6 +217,14 @@ class GrantPrecheckTests(unittest.IsolatedAsyncioTestCase):
             await self.svc.check(actor=self.actor, device_id="dev-A")
         self.assertTrue(cancelled.is_set(), "sibling lookup must be cancelled before return")
 
+    async def test_authority_self_cancellation_is_unavailable(self):
+        async def cancelled_account(tenant_id, subject_id):
+            raise asyncio.CancelledError()
+
+        self.accounts.read_account = cancelled_account
+        with self.assertRaises(GrantPrecheckUnavailable):
+            await self.svc.check(actor=self.actor, device_id="dev-A")
+
     async def test_caller_cancellation_propagates_to_authorities(self):
         started = asyncio.Event()
         cancelled = asyncio.Event()
