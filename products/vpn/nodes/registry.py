@@ -127,6 +127,7 @@ class NodeRegistry:
         self._max_nodes = max_nodes
         self._nodes: dict[str, Node] = {}
         self._observations: dict[str, HealthObservation] = {}
+        self._last_observed_at: dict[str, datetime] = {}
         self._lock = RLock()
 
     def register(self, node: Node) -> None:
@@ -161,6 +162,7 @@ class NodeRegistry:
         with self._lock:
             del self._nodes[node_id]
             self._observations.pop(node_id, None)
+            self._last_observed_at.pop(node_id, None)
 
     def record_health(self, observation: HealthObservation, *, now: datetime) -> None:
         if not isinstance(observation, HealthObservation):
@@ -170,12 +172,16 @@ class NodeRegistry:
         if age < timedelta(0) or age >= self._ttl:
             raise StaleObservationError("observation must be fresh and not from the future")
         with self._lock:
-            if observation.node_id not in self._nodes:
+            node = self._nodes.get(observation.node_id)
+            if node is None:
                 raise KeyError("unregistered node")
-            previous = self._observations.get(observation.node_id)
-            if previous is not None and observation.observed_at <= previous.observed_at:
+            if not node.enabled:
+                raise ValueError("disabled node cannot receive health reports")
+            last_at = self._last_observed_at.get(observation.node_id)
+            if last_at is not None and observation.observed_at <= last_at:
                 raise StaleObservationError("replayed or older observation")
             self._observations[observation.node_id] = observation
+            self._last_observed_at[observation.node_id] = observation.observed_at
 
     def _availability(self, node: Node, now: datetime) -> NodeAvailability:
         observation = self._observations.get(node.node_id)
