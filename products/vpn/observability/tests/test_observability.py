@@ -83,6 +83,34 @@ class HealthTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.monitor.record("gateway", True, 0)
 
+    def test_clock_rollback_blocks_snapshot_and_export(self):
+        self.clock.now = 100
+        for _ in range(3):
+            self.monitor.record("gateway", True, 0.1)
+        self.assertEqual(self.monitor.snapshot()["gateway"].state, HealthState.HEALTHY)
+        self.clock.now = 99
+        with self.assertRaises(ValueError):
+            self.monitor.snapshot()
+        with self.assertRaises(ValueError):
+            self.monitor.render_prometheus()
+        with self.assertRaises(ValueError):
+            self.monitor.record("identity", True, 0)
+
+    def test_duration_overflow_rejected_without_partial_sample(self):
+        m = HealthMonitor(clock=self.clock, min_samples=1)
+        m.record("gateway", True, 1e308)
+        with self.assertRaises(ValueError):
+            m.record("gateway", True, 1e308)
+        summary = m.snapshot()["gateway"]
+        self.assertEqual(summary.samples, 1)
+        self.assertEqual(summary.successes, 1)
+        self.assertNotIn(" inf", m.render_prometheus())
+        self.assertIn('result="success"} 1', m.render_prometheus())
+
+    def test_invalid_max_samples_type_is_rejected(self):
+        with self.assertRaises(ValueError):
+            HealthMonitor(max_samples_per_service="12")
+
     def test_bound_memory_and_total_counters(self):
         m = HealthMonitor(clock=self.clock, min_samples=1, max_samples_per_service=5)
         for _ in range(200):
