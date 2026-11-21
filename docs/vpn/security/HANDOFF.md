@@ -65,6 +65,16 @@ The linter's `attested` state is NOT an external verification; even a structural
 
 ## 5. Test and review evidence — distinguish observed from reported
 
+**Security negative-test expansion — 2026-11-21 (subsequent cycle):**
+- Selected one P2 hardening task in owned `docs/vpn/security/` after reading live repo, PR #71/#74/#72/#1, issue #11/#41, foundation AGENTS.md and QA/Observability handoffs.
+- Added **three** stdlib unittest regressions to `test_gate_check.py`: non-object evidence record, duplicate verification masquerading as independent review, and insecure HTTP evidence URL. Total **21 authored tests** (18 prior + 3); these assert metadata rejection only, not external proof of safety.
+- GitHub commit [`8c1fe6cd8fdd3fcc873939794bd0d4f856f6f369`](https://github.com/Dimash313/Wexum/commit/8c1fe6cd8fdd3fcc873939794bd0d4f856f6f369); test file blob `c56ee68248b12dfd1ae228648bef41ea78e925ae`. Re-fetched exact prior blob before writing; only this owned file changed in that commit.
+- **PASS** GitHub API read and SHA-guarded write; **FAIL** attempted direct `git ls-remote` from local container (DNS cannot resolve github.com, environmental access failure); **NOT RUN** all 21 Python tests, `compileall`, and current-head GitHub Actions verification; **SKIP** real VPN/OS leak testing and merge. Do not imply test PASS. Re-run against exact current PR head through CI or a container with source access.
+- Existing HIGH `SEC-CTRL-001` and MEDIUM `SEC-CTRL-002` remain recorded as unresolved in `release_gates.json`; this cycle does not modify another team's Control Plane. All 13 release gates remain blocked.
+- Next task: obtain exact-head CI execution of the 21 security tests via CTO-owned workflow, then verify negative cases and independent review. No self-approval or merge.
+
+
+
 **Current continuation (2026-11-21):**
 - Re-fetched issue #11, main, proposed AGENTS.md and mandatory architecture/quality/policy docs, PR #1/#55/#64/#65/#66/#67/#71 and new PRs #62/#72/#73/#74. Foundation #1 and source defect PR #55 still unmerged/unfixed; #67 negative CI remains red.
 - Source-reviewed #72 `health.py`/`probes.py`, #73 billing `core.py`, #74 leak-evidence classifier and their tests (not run here). New separate decision request `CROSS_LANE_CONTRACT_PROPOSAL.md` is scoped to our directory.
