@@ -125,6 +125,8 @@ class TestHmacAdapter:
         if not isinstance(body, bytes) or len(body) > 16_384:
             raise SecurityError("invalid webhook size")
         received_at = _int(received_at)
+        if not isinstance(headers, Mapping):
+            raise SecurityError("invalid test signature headers")
         normalized: dict[str, str] = {}
         for key, value in headers.items():
             if not isinstance(key, str) or not isinstance(value, str):
