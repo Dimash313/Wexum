@@ -25,7 +25,7 @@ Current fail-closed policy:
 - Strict tenant, subject, device, issuer, audience and scope equality/checks; active account, subscription and device; state snapshot freshness (default 10 s) and future skew (default 5 s).
 - Actor/session, subscription, device and candidate expirations are checked using timezone-aware times; candidate TTL capped at 120 s and each upstream expiry. Defaults are **provisional**, not approved revocation SLAs.
 - `asyncio.TaskGroup` + `asyncio.timeout` cancel/join cooperative sibling authority lookups on an error or timeout. Caller cancellation propagates. Self-cancelled authority => unavailable. Adapters that suppress cancellation are not forcibly terminated; upstream network operations need separate timeouts and review.
-- Expired actor denied before authority IO; authority/clock failures fail closed. A wall-clock rollback > configured skew during lookup fails closed; smaller rollback does not extend TTL. Exception chaining is suppressed from normally displayed traceback, but `__context__` remains inspectable and adapters/loggers must independently avoid secrets.
+- Expired actor denied before authority IO; authority/clock failures fail closed. A wall-clock rollback > configured skew during lookup fails closed; smaller rollback does not extend TTL. Time freshness uses a bounded datetime difference (`now - checked_at`), not timestamp +/- arithmetic at datetime limits; remaining lifetime is capped by actor/subscription/device expiry **before** addition to the clock. Actor issuer/audience must have exact string types, not merely comparison equality. Exception chaining is suppressed from normally displayed traceback, but `__context__` remains inspectable and adapters/loggers must independently avoid secrets.
 
 **Explicitly absent:** signed/asymmetric permit format and verification; device key proof-of-possession; replay/session lease store; atomic issuance versus revocation; key storage/rotation/emergency revocation; node audience enforcement; real billing provider events/verified payments/chargebacks; trusted Identity/OIDC; HTTP API; durable notification/expiry propagation to VPN nodes; production outage/offline session handling. No homemade cryptography or unsigned client-issued credentials may be introduced to bypass these dependencies.
 
@@ -34,7 +34,7 @@ Current fail-closed policy:
 - Issue: [#3](https://github.com/Dimash313/Wexum/issues/3) (open).
 - Branch: `feat/vpn/3-entitlements`, branched from `main`.
 - Draft PR: [#64](https://github.com/Dimash313/Wexum/pull/64), targets `main`; do not merge until foundation, independent audit, and contracts approved.
-- Last **pre-HANDOFF** source head observed: `99b8e27584db4611fd1061b4301f43a2fa1a5c64`. This document commit will advance the PR head; always re-query its SHA.
+- Last independently checked **source-and-test** commit: `16af20df3b5af523b94a51a208db405709dbe906`. Documentation commits will advance the PR head; always re-query its SHA.
 - GitHub account may be shared by AI authors and the reviewer, so a review/comment under the same owner account is **not** necessarily a distinct independent approval.
 
 ## 4. Implemented work
@@ -42,19 +42,21 @@ Current fail-closed policy:
 - Typed local contracts for checked actor/account/subscription/device states and grant-candidate result.
 - Pre-check deny for malformed/wrong issuer/audience/tenant/subject/device/scope, deleted account, inactive/expired subscription, revoked/expired device, stale timestamps and invalid timezone.
 - Asynchronous service-authority lookups, bounded timeouts, cancellation handling; explicit unavailable result for faults, no new access while control plane is offline.
-- Clock rollback and error-suppression regression handling; intentionally **no issuance**.
+- Clock rollback, datetime boundary arithmetic, strict actor string types and displayed-error suppression regression handling; intentionally **no issuance**.
 - No persistence/migrations, production secrets, external APIs, new paid services or new dependencies.
 
 ## 5. Real test evidence — label scope precisely
 
-Previously executed **locally** in a Python 3.13.5 workspace, after syncing source and test contents by Git blob SHA:
+Last verified **2026-11-21**, local Python **3.13.5**, exact in-session source/test copies with byte-identical Git blob SHAs to PR #64:
 ```sh
 PYTHONPATH=products/vpn/entitlements/src python -m unittest discover -s products/vpn/entitlements/tests -v
-# Observed: 36 tests, OK
+# Observed: Ran 40 tests in 0.072s — OK
 python -m compileall -q products/vpn/entitlements/src products/vpn/entitlements/tests
-# Observed: success
+# Observed: exit 0, no errors
 ```
-Exact pre-HANDOFF source blob SHAs matched tested copies: `policy.py=3bf4c27aa6c066c3e604599672b1e713495c89ef`; `test_policy.py=8cca662727794bee2f4178feb53f95d4f4db4d62`. **No independent clean-clone test or Python 3.12 execution has been verified**. The prior latest source head `99b8e275` had **0 GitHub Actions runs and 0 commit statuses** at the time of review; **this is not passing CI**. Re-check Actions on every new head, including this HANDOFF-only commit. Local test claims do not certify upstream integrations or production security.
+Source file blob SHA `policy.py=5ec70e2ad6cc8d54bb01212b891e421141c95407`; tests `test_policy.py=65f3cfeeb3e45b3cfc4b02173c2184cf6c212fab`; exports `__init__.py=ea3be77ff6e7bb8b23b4cba37e60ebfab3348d8d`. Four additional tests since the previous checkpoint: near-min datetime snapshot, near-max candidate expiry, future snapshot outside skew near min, and custom equality-impersonation of actor issuer/audience. These verify input/temporal handling **only**, not live service integration.
+
+**No independent clean-clone test, Python 3.12 execution, GitHub CI, deployed tunnel, or full signed-grant verifier has been verified.** Earlier PR head `11c60432` had 0 Actions runs and commit statuses. Re-query CI on the latest head, including documentation commits. Do not claim passing CI merely from local tests.
 
 ## 6. Known defects, blockers and review status
 
@@ -68,8 +70,8 @@ Exact pre-HANDOFF source blob SHAs matched tested copies: `policy.py=3bf4c27aa6c
 ## 7. Next concrete tasks when asked “Продолжаем дальше”
 
 1. **Re-inspect live GitHub**: latest `main`, AGENTS instructions (on foundation branch if not merged), relevant `docs/vpn/ARCHITECTURE.md`, `docs/vpn/PRODUCT_REQUIREMENTS.md`, `docs/vpn/ENTITLEMENTS.md`, `docs/engineering/QUALITY.md`, policy docs, this HANDOFF, #3, PR #64 comments/reviews/checks, #1/#41, #2/#55, #11, #9 and #34. Determine whether any dependency became approved or whether another engineer edited the lane.
-2. Choose the smallest **independently testable issue-owned change** that does not assume signed-credential approval; examine edge cases in temporal checks, strict parser/type validation, bounded authority failure, clock behavior, and tenant/device isolation. Avoid speculative interfaces with other teams.
-3. Implement within `products/vpn/entitlements/`; add regression tests, run exact commands and record actual output, SHA, and any differences from previous evidence. Do not report "green" for missing GitHub Actions.
+2. Choose the smallest **independently testable issue-owned change** that does not assume signed-credential approval. Review remaining boundaries such as malformed trusted-adapter outputs, clock timezone behavior, concurrent state races, cancellation and tenant isolation. Do not conflate these with finalized signed-permit integration; avoid speculative cross-lane interfaces.
+3. Implement within `products/vpn/entitlements/`; add regression tests, run exact commands and record actual output, SHA, and any differences from previous evidence. Baseline local suite is currently 40 passing tests on Python 3.13.5. Do not report "green" for missing GitHub Actions.
 4. Coordinate cross-lane open decisions through #3 and #11 / CTO comments without directly editing shared contracts; request approval before designing real signing and gateway acceptance.
 5. Update PR #64 with real test evidence, known blockers and changed files; update this HANDOFF **on every substantial change and before stage completion**. Leave PR Draft/unmerged unless integrator authorizes next lifecycle state.
 
