@@ -65,7 +65,7 @@ def assess(manifest: Any) -> tuple[list[str], list[str]]:
         if not _nonempty(gate.get("owner")) or not _nonempty(gate.get("criterion")):
             errors.append(f"{ident}: owner and criterion are mandatory")
         state = gate.get("state")
-        if state not in GATE_STATES:
+        if type(state) is not str or state not in GATE_STATES:
             errors.append(f"{ident}: invalid state")
             continue
         evidence = gate.get("evidence")
@@ -122,7 +122,7 @@ def assess(manifest: Any) -> tuple[list[str], list[str]]:
         finding_ids.add(ident)
         severity = finding.get("severity")
         state = finding.get("state")
-        if severity not in SEVERITIES or state not in FINDING_STATES:
+        if type(severity) is not str or severity not in SEVERITIES or type(state) is not str or state not in FINDING_STATES:
             errors.append(f"{ident}: invalid severity/state")
         if not all(_nonempty(finding.get(key)) for key in ("owner", "source", "description")):
             errors.append(f"{ident}: owner, source and description are mandatory")
