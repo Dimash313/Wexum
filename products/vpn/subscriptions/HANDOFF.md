@@ -1,5 +1,14 @@
 # WexumVPN — Subscriptions & Billing | Agent Handoff
 
+## Backend engineering checkpoint — 2026-11-21: duplicate signature-header ambiguity
+
+- **P1 security hardening (test-only webhook boundary):** `TestHmacAdapter.verify` now rejects case-insensitively duplicate HTTP header names instead of silently choosing the last value. It also rejects non-string header keys/values as `SecurityError` rather than leaking an accidental `AttributeError`. This prevents differing proxy/framework header canonicalization from making signature verification ambiguous. No real payment provider is enabled or added.
+- **Code commit:** [d152924](https://github.com/Dimash313/Wexum/commit/d1529243112c9f8b3f6ae24acaf586b2886b3fd8). **Regression tests commit:** [96987de](https://github.com/Dimash313/Wexum/commit/96987def9d7642503f19510c92f57f395c6746b1). Only billing-owned files changed.
+- Added two test methods: four conflicting/equivalent mixed-case signature/timestamp variants must reject with no ledger mutation, and non-string header values/keys must reject with no ledger mutation. Existing valid single-case headers remain supported by implementation.
+- **Verification:** GitHub connector write/read of changed source/test files PASS; Python unit tests **NOT RUN**, compileall **NOT RUN**, GitHub Actions on latest PR head **NOT VERIFIED**, independent audit **PENDING**. These tests are authored but not execution evidence. No merge or live deployment.
+- **Next:** run `PYTHONPATH=products/vpn/subscriptions/src python -m unittest discover -s products/vpn/subscriptions/tests -v`, compileall, inspect exact-head CI and request independent audit. Coordinate shared CI with integrator; foundation #1 and trusted Identity/Entitlements/provider integrations remain blocking.
+
+
 > **Scope owner:** GitHub issue [#9](https://github.com/Dimash313/Wexum/issues/9). **Updated:** 2026-11-21 (UTC).
 > **Status:** Work in progress, **Draft PR only**; not merged, deployed, or production-ready.
 > This file is the resumption point for any replacement engineer or agent.
