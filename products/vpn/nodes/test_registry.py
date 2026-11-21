@@ -1,0 +1,194 @@
+"""Local contract tests; every name/region/observation in this file is synthetic."""
+
+import threading
+import unittest
+from datetime import datetime, timedelta, timezone
+
+from registry import (
+    AvailabilityStatus,
+    HealthObservation,
+    HealthStatus,
+    Node,
+    NodeRegistry,
+    StaleObservationError,
+)
+
+
+NOW = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)  # TEST ONLY
+
+
+def node(name="test-node-a", region="test-region-a", sessions=10, caps=frozenset({"test-wireguard"})):
+    return Node(name, region, caps, sessions)
+
+
+def observe(name="test-node-a", *, at=NOW, status=HealthStatus.HEALTHY, active=0):
+    return HealthObservation(name, status, at, active)
+
+
+class RegistryTests(unittest.TestCase):
+    def setUp(self):
+        self.registry = NodeRegistry(health_ttl_seconds=10, max_nodes=3)
+        self.registry.register(node())
+
+    def test_unreported_is_never_selected(self):
+        self.assertIsNone(self.registry.select(now=NOW))
+        self.assertEqual(self.registry.snapshot(now=NOW)[0].status, AvailabilityStatus.UNREPORTED)
+
+    def test_fresh_health_and_exact_expiry_boundary(self):
+        self.registry.record_health(observe(active=3), now=NOW)
+        result = self.registry.select(now=NOW + timedelta(seconds=9))
+        self.assertEqual((result.node_id, result.active_sessions), ("test-node-a", 3))
+        self.assertEqual(result.expires_at, NOW + timedelta(seconds=10))
+        self.assertIsNone(self.registry.select(now=NOW + timedelta(seconds=10)))
+        self.assertEqual(self.registry.snapshot(now=NOW + timedelta(seconds=10))[0].status, AvailabilityStatus.STALE)
+
+    def test_down_and_overloaded_fail_closed(self):
+        self.registry.record_health(observe(status=HealthStatus.DOWN), now=NOW)
+        self.assertEqual(self.registry.snapshot(now=NOW)[0].status, AvailabilityStatus.DOWN)
+        self.assertIsNone(self.registry.select(now=NOW))
+        self.registry.record_health(observe(at=NOW + timedelta(seconds=1), active=10), now=NOW + timedelta(seconds=1))
+        self.assertEqual(self.registry.snapshot(now=NOW + timedelta(seconds=1))[0].status, AvailabilityStatus.SATURATED)
+        self.assertIsNone(self.registry.select(now=NOW + timedelta(seconds=1)))
+
+    def test_disable_enable_resets_old_health(self):
+        self.registry.record_health(observe(), now=NOW)
+        self.registry.set_enabled("test-node-a", False)
+        self.assertEqual(self.registry.snapshot(now=NOW)[0].status, AvailabilityStatus.DISABLED)
+        self.registry.set_enabled("test-node-a", True)
+        self.assertEqual(self.registry.snapshot(now=NOW)[0].status, AvailabilityStatus.UNREPORTED)
+        self.assertIsNone(self.registry.select(now=NOW))
+
+    def test_remove_and_duplicate_inventory(self):
+        with self.assertRaises(ValueError):
+            self.registry.register(node())
+        self.registry.record_health(observe(), now=NOW)
+        self.registry.remove("test-node-a")
+        self.assertEqual(self.registry.snapshot(now=NOW), ())
+        with self.assertRaises(KeyError):
+            self.registry.record_health(observe(), now=NOW)
+
+    def test_out_of_order_and_replay_rejected(self):
+        self.registry.record_health(observe(at=NOW + timedelta(seconds=2)), now=NOW + timedelta(seconds=2))
+        for at in (NOW + timedelta(seconds=1), NOW + timedelta(seconds=2)):
+            with self.assertRaises(StaleObservationError):
+                self.registry.record_health(observe(at=at, status=HealthStatus.DOWN), now=NOW + timedelta(seconds=3))
+        self.assertIsNotNone(self.registry.select(now=NOW + timedelta(seconds=3)))
+
+    def test_future_and_expired_reports_fail_closed(self):
+        for reported, received in ((NOW + timedelta(seconds=1), NOW), (NOW, NOW + timedelta(seconds=10))):
+            with self.assertRaises(StaleObservationError):
+                self.registry.record_health(observe(at=reported), now=received)
+        self.assertIsNone(self.registry.select(now=NOW))
+
+    def test_region_and_capability_are_exact(self):
+        self.registry.record_health(observe(), now=NOW)
+        self.assertIsNone(self.registry.select(now=NOW, region_id="test-region-b"))
+        self.assertIsNone(self.registry.select(now=NOW, required_capabilities=frozenset({"test-openvpn"})))
+        self.assertEqual(self.registry.select(now=NOW, region_id="test-region-a").node_id, "test-node-a")
+
+    def test_normalized_capacity_and_stable_tie_break(self):
+        self.registry.register(node("test-node-b", sessions=20))
+        self.registry.register(node("test-node-c", sessions=30))
+        self.registry.record_health(observe(active=5), now=NOW)
+        self.registry.record_health(observe("test-node-b", active=10), now=NOW)
+        self.registry.record_health(observe("test-node-c", active=5), now=NOW)
+        self.assertEqual(self.registry.select(now=NOW).node_id, "test-node-c")
+        self.registry.record_health(observe("test-node-c", at=NOW + timedelta(seconds=1), active=15), now=NOW + timedelta(seconds=1))
+        self.assertEqual(self.registry.select(now=NOW + timedelta(seconds=1)).node_id, "test-node-a")
+
+    def test_registry_and_query_resource_bounds(self):
+        self.registry.register(node("test-node-b"))
+        self.registry.register(node("test-node-c"))
+        with self.assertRaises(ValueError):
+            self.registry.register(node("test-node-d"))
+        for bad in (0, 201, True, "3"):
+            with self.assertRaises(ValueError):
+                self.registry.snapshot(now=NOW, limit=bad)
+
+    def test_invalid_input_rejected(self):
+        invalid_nodes = [
+            ("", "test-region-a", frozenset(), 5),
+            (" TEST", "test-region-a", frozenset(), 5),
+            (123, "test-region-a", frozenset(), 5),
+            ("test-node", "../bad", frozenset(), 5),
+            ("test-node", "test-region", {"test-cap"}, 5),
+            ("test-node", "test-region", frozenset(), True),
+            ("test-node", "test-region", frozenset(), 0),
+        ]
+        for args in invalid_nodes:
+            with self.subTest(args=args), self.assertRaises(ValueError):
+                Node(*args)
+        with self.assertRaises(ValueError):
+            Node("test-id", "test-region", frozenset({"TEST"}), 10)
+        with self.assertRaises(ValueError):
+            HealthObservation("test-node-a", "healthy", NOW, 0)
+        with self.assertRaises(ValueError):
+            HealthObservation("test-node-a", HealthStatus.HEALTHY, NOW, -1)
+        with self.assertRaises(ValueError):
+            HealthObservation("test-node-a", HealthStatus.HEALTHY, NOW.replace(tzinfo=None), 0)
+        with self.assertRaises(ValueError):
+            self.registry.select(now=NOW.replace(tzinfo=None))
+        with self.assertRaises(ValueError):
+            self.registry.select(now=NOW, required_capabilities={"test-wireguard"})
+        with self.assertRaises(ValueError):
+            NodeRegistry(max_nodes=0)
+        with self.assertRaises(ValueError):
+            NodeRegistry(health_ttl_seconds=301)
+
+    def test_snapshot_is_immutable_and_sorted(self):
+        self.registry.register(node("test-node-c"))
+        self.registry.register(node("test-node-b"))
+        first = self.registry.snapshot(now=NOW, limit=2)
+        self.assertEqual(tuple(v.node_id for v in first), ("test-node-a", "test-node-b"))
+        with self.assertRaises((AttributeError, TypeError)):
+            first[0].status = AvailabilityStatus.HEALTHY
+
+    def test_parallel_registration_cannot_bypass_capacity(self):
+        reg = NodeRegistry(max_nodes=1)
+        barrier = threading.Barrier(8)
+        results = []
+        mutex = threading.Lock()
+
+        def work(i):
+            barrier.wait()
+            try:
+                reg.register(node(f"test-node-{i}"))
+                outcome = "accepted"
+            except ValueError:
+                outcome = "rejected"
+            with mutex:
+                results.append(outcome)
+
+        threads = [threading.Thread(target=work, args=(i,)) for i in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+        self.assertEqual(results.count("accepted"), 1)
+        self.assertEqual(len(reg.snapshot(now=NOW)), 1)
+
+    def test_parallel_health_updates_never_overwrite_newer(self):
+        barrier = threading.Barrier(2)
+        errors = []
+
+        def work(offset):
+            barrier.wait()
+            at = NOW + timedelta(seconds=offset)
+            try:
+                self.registry.record_health(observe(at=at, active=offset), now=NOW + timedelta(seconds=3))
+            except StaleObservationError:
+                errors.append(offset)
+
+        threads = [threading.Thread(target=work, args=(offset,)) for offset in (1, 2)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+        self.assertEqual(self.registry.select(now=NOW + timedelta(seconds=3)).active_sessions, 2)
+        self.assertTrue(set(errors).issubset({1}))
+
+
+if __name__ == "__main__":
+    unittest.main()
