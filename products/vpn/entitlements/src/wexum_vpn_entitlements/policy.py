@@ -107,7 +107,8 @@ def _instant(value: object) -> bool:
 
 
 def _fresh(checked_at: datetime, now: datetime, max_age: timedelta, skew: timedelta) -> bool:
-    return _instant(checked_at) and now - max_age <= checked_at <= now + skew
+    # Subtraction of two valid aware datetimes avoids under/overflow near year 1/9999.
+    return _instant(checked_at) and -skew <= now - checked_at <= max_age
 
 
 class GrantPrecheck:
@@ -169,6 +170,8 @@ class GrantPrecheck:
             or not _id(actor.subject_id)
             or not _id(device_id)
             or not _scope(scope)
+            or type(actor.issuer) is not str
+            or type(actor.audience) is not str
             or actor.issuer != self._issuer
             or actor.audience != self._audience
             or type(actor.scopes) is not frozenset
@@ -214,7 +217,7 @@ class GrantPrecheck:
 
         if not _instant(now):
             raise GrantPrecheckUnavailable("trusted clock unavailable")
-        if now < started_at - self._skew:
+        if started_at - now > self._skew:
             raise GrantPrecheckUnavailable("trusted clock moved backwards")
         # Never extend a decision lifetime if wall-clock time moved backwards.
         now = max(now, started_at)
@@ -253,5 +256,12 @@ class GrantPrecheck:
         ):
             raise GrantPrecheckDenied("VPN access denied")
 
-        expires_at = min(actor.expires_at, subscription.expires_at, device.expires_at, now + self._ttl)
+        # Cap duration before adding to the clock: now + TTL can overflow
+        # near datetime.max even when a real upstream expiry is earlier.
+        expires_at = now + min(
+            self._ttl,
+            actor.expires_at - now,
+            subscription.expires_at - now,
+            device.expires_at - now,
+        )
         return GrantCandidate(tenant, subject, device_id, scope, expires_at)
