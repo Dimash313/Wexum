@@ -192,6 +192,10 @@ class BillingEngine:
                     revision INTEGER NOT NULL DEFAULT 0,
                     created_at INTEGER NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS order_requests (
+                    request_digest TEXT PRIMARY KEY,
+                    order_id TEXT NOT NULL UNIQUE REFERENCES orders(order_id)
+                );
                 CREATE TABLE IF NOT EXISTS events (
                     provider TEXT NOT NULL, event_id TEXT NOT NULL,
                     order_id TEXT NOT NULL REFERENCES orders(order_id),
@@ -218,24 +222,47 @@ class BillingEngine:
         finally:
             db.close()
 
-    def create_order(self, tenant_id: str, account_id: str, plan: Plan, provider: str, *, now: int) -> str:
-        """ONLY call after authentication/authorization on a trusted server."""
+    def create_order(self, tenant_id: str, account_id: str, plan: Plan, provider: str,
+                     *, now: int, request_id: str) -> str:
+        """A trusted, authorized server must supply a stable checkout request ID.
+
+        Repeating the same tenant/account/request ID returns one persisted order;
+        changing its plan, price or provider is rejected, even after restart.
+        """
         _identifier(tenant_id)
         _identifier(account_id)
+        _identifier(request_id, _REF)
         _int(now)
-        if not isinstance(plan, Plan) or provider not in self._adapters:
+        if not isinstance(plan, Plan) or not isinstance(provider, str) or provider not in self._adapters:
             raise SecurityError("unknown plan or provider")
-        order_id = secrets.token_hex(16)
+        request_digest = hashlib.sha256(
+            json.dumps([tenant_id, account_id, request_id], separators=(",", ":")).encode("ascii")
+        ).hexdigest()
         with self._connection() as db:
             db.execute("BEGIN IMMEDIATE")
             try:
+                previous = db.execute("""
+                    SELECT orders.* FROM order_requests
+                    JOIN orders ON orders.order_id = order_requests.order_id
+                    WHERE order_requests.request_digest=?
+                """, (request_digest,)).fetchone()
+                if previous is not None:
+                    if (previous["tenant_id"] != tenant_id or previous["account_id"] != account_id
+                            or previous["plan_code"] != plan.code or previous["provider"] != provider
+                            or previous["currency"] != plan.currency or previous["amount_minor"] != plan.amount_minor):
+                        raise ConflictError("checkout request reused with different order terms")
+                    db.commit()
+                    return previous["order_id"]
+                order_id = secrets.token_hex(16)
                 db.execute("INSERT INTO orders(order_id, tenant_id, account_id, plan_code, provider, currency, amount_minor, created_at) VALUES(?,?,?,?,?,?,?,?)",
                            (order_id, tenant_id, account_id, plan.code, provider, plan.currency, plan.amount_minor, now))
+                db.execute("INSERT INTO order_requests(request_digest, order_id) VALUES(?,?)",
+                           (request_digest, order_id))
                 db.commit()
+                return order_id
             except BaseException:
                 db.rollback()
                 raise
-        return order_id
 
     def accept_webhook(self, provider: str, body: bytes, headers: Mapping[str, str], *, now: int) -> WebhookResult:
         _int(now)
