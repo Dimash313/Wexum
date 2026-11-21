@@ -2,11 +2,15 @@
 from __future__ import annotations
 
 import copy
+from contextlib import redirect_stdout
+from io import StringIO
 import json
-import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
+import unittest
+from unittest.mock import patch
 
-from gate_check import REQUIRED_GATES, assess
+from gate_check import REQUIRED_GATES, assess, main
 
 MANIFEST_PATH = Path(__file__).with_name("release_gates.json")
 SYNTHETIC_SHA = "a" * 40
@@ -114,6 +118,44 @@ class ReleaseManifestTests(unittest.TestCase):
         errors, blockers = assess(obj)
         self.assertEqual([], errors)
         self.assertTrue(any("SEC-OPS-003" in x for x in blockers))
+
+    def test_release_cli_never_passes_synthetic_attestation(self):
+        """Complete but fabricated metadata can never authorize deployment."""
+        with TemporaryDirectory() as temp:
+            manifest_path = Path(temp) / "synthetic.json"
+            manifest_path.write_text(json.dumps(artificial_complete()), encoding="utf-8")
+            output = StringIO()
+            with patch("sys.argv", ["gate_check.py", str(manifest_path), "--require-attested"]):
+                with redirect_stdout(output):
+                    result = main()
+        self.assertEqual(result, 1)
+        self.assertIn("independent, externally verified release evidence is required",
+                      output.getvalue())
+
+    def test_metadata_cli_success_explicitly_is_not_release_success(self):
+        """A valid structure can pass lint mode only; never grants release."""
+        with TemporaryDirectory() as temp:
+            manifest_path = Path(temp) / "synthetic.json"
+            manifest_path.write_text(json.dumps(artificial_complete()), encoding="utf-8")
+            output = StringIO()
+            with patch("sys.argv", ["gate_check.py", str(manifest_path)]):
+                with redirect_stdout(output):
+                    result = main()
+        self.assertEqual(result, 0)
+        self.assertIn("METADATA COMPLETE ONLY", output.getvalue())
+
+    def test_release_cli_still_blocks_open_high_finding(self):
+        with TemporaryDirectory() as temp:
+            obj = artificial_complete()
+            obj["findings"][0]["state"] = "open"
+            manifest_path = Path(temp) / "synthetic.json"
+            manifest_path.write_text(json.dumps(obj), encoding="utf-8")
+            output = StringIO()
+            with patch("sys.argv", ["gate_check.py", str(manifest_path), "--require-attested"]):
+                with redirect_stdout(output):
+                    result = main()
+        self.assertEqual(result, 1)
+        self.assertIn("SEC-CTRL-001", output.getvalue())
 
 
 if __name__ == "__main__":
