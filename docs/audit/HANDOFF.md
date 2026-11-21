@@ -1,5 +1,12 @@
 # Wexum — Chief Independent Auditor HANDOFF
 
+## Audit checkpoint — 2026-11-21, PR #73 malformed webhook provider input
+
+- **Exact head:** `8cc2a29c8c13e346cfc7577e3e1bf54c42ca0b6f`; base `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`. Compared with prior audited `851214adaa97d8a5a07f08d32f048a88cb2f88c9`: three commits, three changed owned files (`HANDOFF.md` +9, `core.py` +2, `test_core.py` +10).
+- **Code evidence:** `core.py` blob `511d76f5d634595fcd198b6f35a35f7118ef172b` lines 282–289 validates provider string before dict lookup; tests blob `a9a1204093142ecaa68b3ce2b6244d7cf20c8eaa` adds invalid provider types and no-ledger-mutation assertion. Reviewed full PR diff, existing comments/empty threads, foundation AGENTS and review protocol.
+- **Decision:** **NOT VERIFIED / BLOCKED**. Source-level guard addresses uncaught unhashable provider type in test-only billing adapter; no new confirmed exploit in reviewed delta. Exact-head GitHub Actions PR runs **0**, commit statuses **0**. Independent Python tests **NOT RUN**; compileall **NOT RUN**. No production payment verification, non-author signoff or integrated authority chain.
+- **Published conclusion:** https://github.com/Dimash313/Wexum/pull/73#issuecomment-7066652318. Next: exact-head negative suite and compileall in mandatory CI, then independent re-review. Also prioritize unresolved Control Plane #55 negative-test failures. No merge.
+
 **Status:** active, independent technical review in progress; no PR is approved for integration by this document.  
 **Last synchronized:** 2026-11-21 (after PR #80 GitHub CI at 09:52 UTC; always refresh live state).  
 **Repository:** https://github.com/Dimash313/Wexum
