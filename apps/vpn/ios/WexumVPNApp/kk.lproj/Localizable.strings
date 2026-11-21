@@ -1,0 +1,15 @@
+"app.brand" = "WexumVPN";
+"status.noConfiguration" = "VPN бапталмаған";
+"status.disconnected" = "Ажыратылған";
+"status.connecting" = "Қосылуда — қорғаныс жоқ";
+"status.unverified" = "Жүйе қосылды дейді — қорғаныс расталмаған";
+"status.reconnecting" = "Қайта қосылуда — қорғаныс жоқ";
+"status.disconnecting" = "Ажыратылуда";
+"status.interrupted" = "Қосылым үзілді";
+"status.error" = "VPN күйін тексеру мүмкін болмады";
+"status.disclaimer" = "Бұл прототип VPN туннелін жасамайды немесе растамайды. Трафик қорғалған деп есептемеңіз.";
+"action.refresh" = "Күйді жаңарту";
+"action.connectUnavailable" = "VPN қозғалтқышы мен кіру рұқсаттары тексерілгенше қосу және ажырату қолжетімсіз.";
+"accessibility.refreshHint" = "iOS баптауларындағы VPN күйін оқиды";
+"privacy.disclosureTitle" = "Деректер және құпиялық";
+"privacy.disclosure" = "Прототип API сұрауларын жібермейді және VPN тіркелгі деректерін сақтамайды. Тек жергілікті желі мен қосылым күйін оқиды. VPN трафигін бағыттамайды.";

@@ -1,0 +1,15 @@
+"app.brand" = "WexumVPN";
+"status.noConfiguration" = "لم يتم إعداد VPN";
+"status.disconnected" = "غير متصل";
+"status.connecting" = "جارٍ الاتصال — غير محمي";
+"status.unverified" = "يشير النظام إلى الاتصال — الحماية غير مؤكدة";
+"status.reconnecting" = "إعادة الاتصال — غير محمي";
+"status.disconnecting" = "جارٍ قطع الاتصال";
+"status.interrupted" = "انقطع الاتصال";
+"status.error" = "تعذر التحقق من حالة VPN";
+"status.disclaimer" = "هذا النموذج لا ينشئ نفق VPN ولا يتحقق منه. لا تفترض أن حركة بياناتك محمية.";
+"action.refresh" = "تحديث حالة النظام";
+"action.connectUnavailable" = "الاتصال وقطع الاتصال غير متاحين حتى يتم اختبار محرك VPN والتحقق من صلاحيات الوصول.";
+"accessibility.refreshHint" = "يقرأ حالة VPN الحالية من إعدادات iOS";
+"privacy.disclosureTitle" = "البيانات والخصوصية";
+"privacy.disclosure" = "لا يرسل النموذج طلبات API ولا يخزن بيانات اعتماد VPN. يقرأ فقط حالة الاتصال والشبكة المحلية. لا يوجه أي حركة VPN.";
