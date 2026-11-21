@@ -215,3 +215,15 @@ Do not publish sensitive exploit detail, live secrets or user IPs in public PR c
 - **NOT RUN:** 24 Python tests, compileall, exact-source runtime checks, VPN/DNS/IP leak tests, independent review. **SKIP:** merge and modifications to integration-owned workflows.
 - **Blocker:** mandatory exact-candidate CI evidence remains unavailable for the queried commit. Integration owner #56 must supply job URLs, tested SHA and results; verify the actual current PR head and all check types before release decisions. This checkpoint does not claim that the previously recorded SHA is still current.
 - **Repository visibility limitation:** root `AGENTS.md` returned 404 on default branch; QA and Observability HANDOFF paths attempted in this cycle were not found on the Security branch, and guessed independent branch refs returned 404. Their exact PR head refs must be resolved live before claiming a complete cross-lane review.
+
+
+### 2026-11-22 — Security URL evidence syntax regression (P2)
+
+- Scope: issue #11 / Draft PR #71, exclusively `docs/vpn/security/`; no changes to sibling lanes or shared CI.
+- Finding: `urllib.parse.urlsplit('https://example.test:/proof')` yields hostname `example.test` and `port=None`, so the prior evidence URL predicate accepted an explicitly empty port. This is a metadata validation ambiguity, **not** evidence of a deployed VPN vulnerability.
+- Fix: reject `parsed.netloc.endswith(':')` in `gate_check.py`; add `https://example.test:/proof` to negative evidence URL regression cases in `test_gate_check.py`.
+- Source commits: [72947384](https://github.com/Dimash313/Wexum/commit/72947384ed744995975edd3ff0b681fdc458c4db) and [d04951aa](https://github.com/Dimash313/Wexum/commit/d04951aa5e1153d2c9475daf50e10a77e9f8899b).
+- **PASS**: isolated Python 3.13 reproduction verified the old predicate accepts the malformed URL and the revised predicate rejects it; GitHub accepted source and test updates using current blob SHAs.
+- **NOT RUN**: full Security unittest suite, compileall, real VPN/DNS/IP checks and current-head GitHub Actions; this isolated reproduction is not a substitute for those checks.
+- **SKIP**: merge and independent approval; PR remains Draft and release gate must remain closed.
+- Follow-up: run full Security suite and `python -m compileall -q docs/vpn/security` on an exact integrated candidate SHA; attach required CI run/check links and independent review before merge. Existing release blockers and Security findings remain unresolved pending fresh external evidence.
