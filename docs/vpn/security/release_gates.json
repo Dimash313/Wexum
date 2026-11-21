@@ -1,0 +1,117 @@
+{
+  "schema_revision": 1,
+  "scope": "WexumVPN",
+  "target_sha": null,
+  "description": "DRAFT metadata; an attestation is a human-submitted claim, not proof verified by this linter.",
+  "gates": [
+    {
+      "id": "G-FOUNDATION",
+      "owner": "#1 / #41",
+      "criterion": "Foundation contracts and governance independently reviewed and integrated",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-IDENTITY",
+      "owner": "#34",
+      "criterion": "Cryptographically verified actor identity and secure session lifecycle",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-TENANCY",
+      "owner": "#2 / #3",
+      "criterion": "Server-enforced device, subject, tenant isolation and owner list/revocation",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-BILLING",
+      "owner": "#9",
+      "criterion": "Authenticated payment/refund authority, replay safe and reconciliation",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-GRANTS",
+      "owner": "#3",
+      "criterion": "Signed grant, issuer trust, device/node/session binding, replay, expiry and revocation",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-NODES",
+      "owner": "#4",
+      "criterion": "Authentic node source, capacity, scoped verifier and revocation enforcement",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-CLIENTS",
+      "owner": "#5 / #6 / #7",
+      "criterion": "Actual native tunnel integration and accurate protected-state reporting",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-LEAK-TESTS",
+      "owner": "#10",
+      "criterion": "Real-device OS-specific DNS/IPv4/IPv6 route and outage leak measurement",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-PRIVACY",
+      "owner": "#8 / #11",
+      "criterion": "Field inventory, technical log/trace scrubbing, retention/deletion and provider disclosures",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-RECOVERY",
+      "owner": "#8 / #10",
+      "criterion": "Key compromise, node failure, restore and offline-policy drills",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-CI",
+      "owner": "#56 / CTO",
+      "criterion": "Mandatory reproducible suites and current-head required GitHub status",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-INDEPENDENT",
+      "owner": "#41 / independent auditor",
+      "criterion": "Non-author independent security review and exact-head signoff",
+      "state": "blocked",
+      "evidence": []
+    },
+    {
+      "id": "G-COMPLIANCE",
+      "owner": "CTO / qualified reviewers",
+      "criterion": "Applicable legal, store and religious/ethical gates recorded",
+      "state": "blocked",
+      "evidence": []
+    }
+  ],
+  "findings": [
+    {
+      "id": "SEC-CTRL-001",
+      "severity": "high",
+      "state": "open",
+      "owner": "#2",
+      "source": "https://github.com/Dimash313/Wexum/pull/55",
+      "description": "Owner-scoped list truncation hides active device beyond 200 historical records"
+    },
+    {
+      "id": "SEC-CTRL-002",
+      "severity": "medium",
+      "state": "open",
+      "owner": "#2",
+      "source": "https://github.com/Dimash313/Wexum/pull/55",
+      "description": "SQLite open errors escape intended service error mapping"
+    }
+  ]
+}
