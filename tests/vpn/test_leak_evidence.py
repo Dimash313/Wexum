@@ -76,6 +76,29 @@ class EvidenceClassifierTests(unittest.TestCase):
             with self.subTest(item=item), self.assertRaises(ValueError):
                 assess(item, self.observed)
 
+    def test_unspecified_or_multicast_expected_addresses_fail_closed(self):
+        invalid = [
+            replace(self.expected, ipv4_egress=frozenset({'0.0.0.0'})),
+            replace(self.expected, ipv4_egress=frozenset({'224.0.0.1'})),
+            replace(self.expected, ipv6_egress=frozenset({'::'})),
+            replace(self.expected, ipv6_egress=frozenset({'ff02::1'})),
+            replace(self.expected, dns_resolvers=frozenset({'0.0.0.0'})),
+            replace(self.expected, dns_resolvers=frozenset({'ff02::1'})),
+        ]
+        for item in invalid:
+            with self.subTest(item=item), self.assertRaises(ValueError):
+                assess(item, self.observed)
+
+    def test_unspecified_or_multicast_observed_addresses_fail_closed(self):
+        invalid = [
+            replace(self.observed, ipv4_egress=frozenset({'0.0.0.0'})),
+            replace(self.observed, ipv6_egress=frozenset({'ff02::1'})),
+            replace(self.observed, dns_resolvers=frozenset({'224.0.0.251'})),
+        ]
+        for item in invalid:
+            with self.subTest(item=item), self.assertRaises(ValueError):
+                assess(self.expected, item)
+
     def test_noncanonical_ip_inputs_fail(self):
         altered = replace(self.observed, ipv6_egress=frozenset({'2001:0db8::7'}))
         with self.assertRaises(ValueError):
