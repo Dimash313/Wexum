@@ -368,7 +368,7 @@
     {
       "from": "error",
       "event": "retry",
-      "to": "disconnected",
+      "to": "interrupted",
       "source": "user"
     }
   ],
@@ -381,5 +381,5 @@
     "cached_snapshot",
     "ui_toggle"
   ],
-  "notes": "Transitions are illustrative UX handoff scenarios, not a complete state reducer. All authoritative state changes require current-session freshness checks; verified_state has no legitimate event producer in existing scaffolds."
+  "notes": "Transitions are illustrative UX handoff scenarios, not a complete state reducer. All authoritative state changes require current-session freshness checks; verified_state has no legitimate event producer in existing scaffolds. A retry after engine failure is non-protected and must not assert confirmed tunnel teardown; only a trusted service stop acknowledgement after a disconnecting phase may establish disconnected."
 }
