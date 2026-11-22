@@ -56,11 +56,17 @@ class SQLiteDeviceStore:
     def _connect(self) -> sqlite3.Connection:
         # SQLite files must be under a trusted server-owned directory. Do not
         # construct paths from tenant/user input. Symlink defense belongs in deployment.
-        connection = sqlite3.connect(self.path, timeout=self.busy_timeout_seconds,
-                                     isolation_level=None)
-        connection.execute('PRAGMA foreign_keys=ON')
-        connection.execute(f'PRAGMA busy_timeout={int(self.busy_timeout_seconds * 1000)}')
-        return connection
+        connection = None
+        try:
+            connection = sqlite3.connect(self.path, timeout=self.busy_timeout_seconds,
+                                         isolation_level=None)
+            connection.execute('PRAGMA foreign_keys=ON')
+            connection.execute(f'PRAGMA busy_timeout={int(self.busy_timeout_seconds * 1000)}')
+            return connection
+        except sqlite3.Error as error:
+            if connection is not None:
+                connection.close()
+            raise StoreBusy('device store unavailable') from error
 
     def _initialize(self) -> None:
         connection = self._connect()
