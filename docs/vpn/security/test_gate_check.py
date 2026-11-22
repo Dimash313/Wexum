@@ -210,6 +210,24 @@ class ReleaseManifestTests(unittest.TestCase):
                 errors, _ = assess(obj)
                 self.assertTrue(any("requires actor and HTTPS URL" in e for e in errors))
 
+    def test_cli_malformed_evidence_kind_returns_validation_exit_2(self):
+        """Malformed JSON kind must not crash the CLI or authorize release."""
+        for kind in ([], {}, 1, None):
+            with self.subTest(kind=kind):
+                obj = artificial_complete()
+                obj["gates"][0]["evidence"][0]["kind"] = kind
+                with TemporaryDirectory() as temp:
+                    manifest_path = Path(temp) / "malformed.json"
+                    manifest_path.write_text(json.dumps(obj), encoding="utf-8")
+                    output = StringIO()
+                    with patch("sys.argv", ["gate_check.py", str(manifest_path),
+                                            "--require-attested"]):
+                        with redirect_stdout(output):
+                            result = main()
+                self.assertEqual(result, 2)
+                self.assertIn("INVALID MANIFEST: ", output.getvalue())
+                self.assertNotIn("SCHEMA OK", output.getvalue())
+
     def test_release_cli_never_passes_synthetic_attestation(self):
         """Complete but fabricated metadata can never authorize deployment."""
         with TemporaryDirectory() as temp:
