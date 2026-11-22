@@ -5,6 +5,7 @@ public enum NativeVPNStatus: Equatable, Sendable {
 
 public enum ConnectionPhase: Equatable, Sendable {
     case noConfiguration
+    case checkingConfiguration
     case disconnected
     case connecting
     case connectedUnverified
@@ -15,6 +16,7 @@ public enum ConnectionPhase: Equatable, Sendable {
 }
 
 public enum ConnectionEvent: Equatable, Sendable {
+    case configurationRefreshStarted
     case configurationFound
     case configurationMissing
     case nativeStatus(NativeVPNStatus)
@@ -35,6 +37,10 @@ public struct ConnectionState: Equatable, Sendable {
 
     public mutating func apply(_ event: ConnectionEvent) {
         switch event {
+        case .configurationRefreshStarted:
+            // An outstanding preferences read cannot substantiate any previous OS status.
+            hasConfiguration = false
+            phase = .checkingConfiguration
         case .configurationMissing, .processRestarted:
             hasConfiguration = false
             phase = .noConfiguration
