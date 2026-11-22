@@ -123,3 +123,12 @@ Do not substitute a Kotlin smoke PASS for Android build, JUnit, emulator or VPN 
 - [Engineering rules](../../../AGENTS.md) (currently in foundation PR #1)
 
 **Permanent continuation rule:** act autonomously within Android ownership when given "Продолжаем дальше": inspect latest GitHub + docs + this handoff, pick the highest-priority unblocked Android task, commit real changes to the existing branch, run available tests, update Draft PR #66 and this file, and report exact evidence. Never require the owner to reassign already clear work. Never alter another lane's docs without CTO authorization. No self-merge, invented test outcomes, or "VPN is working" claims.
+
+## 2026-11-22 — Android P1 CI compiler unblock (one scoped cycle)
+
+- Issue #5, existing branch `feat/vpn/5-client-android`, Draft PR #66. Integration-owned CI blocker #68 / Draft PR #82 remains separate; no root workflow touched.
+- Exact pre-fix Android PR head: `8b4474947861b2a22ebb86d721d24eb6c2e0423d`. Integration observed Kotlin compiler failure `MainActivity.kt:81:13 Unresolved reference 'fillViewport'` on two GitHub Actions runs: https://github.com/Dimash313/Wexum/actions/runs/45001211641 and https://github.com/Dimash313/Wexum/actions/runs/45001263031.
+- Source-only fix: `MainActivity.kt` uses Android `ScrollView.isFillViewport = true` (the Kotlin Boolean Java-bean property) instead of nonexistent `fillViewport = true`. Commit `1bd9550cca27784a92316f387af7cf81e4558ed2`. No VPN state, service, consent, permission, or networking behavior changed.
+- **Evidence:** GitHub contents update returned commit and blob `b173279249824748ee4fd929fe4481f3338416ad`; re-fetch after handoff update to verify final HEAD. This is a targeted source correction, **not a passing compilation**.
+- **Tests:** prior Android GitHub CI = FAIL on old SHA. New-head Gradle compilation, Android unit, lint, assembleDebug, integration and live VPN/device tests = **NOT RUN / awaiting CI**. No working VPN engine exists.
+- **Next owner:** CTO/Integration (#68/#82) must rebase/recreate the CI-only candidate against new PR #66 head, then execute JDK 17 / Gradle 8.11.1 / AGP 8.9.2 / SDK 35 tasks `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`, record Actions run URL + exact SHA and require independent review. Android lane fixes any remaining product-source errors in PR #66. Do not merge either PR while red/unreviewed; foundation PR #1 remains unmerged.

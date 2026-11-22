@@ -78,7 +78,7 @@ class MainActivity : Activity() {
             }
         }, gapTop(12))
         setContentView(ScrollView(this).apply {
-            fillViewport = true
+            isFillViewport = true
             addView(container)
         })
         render()
