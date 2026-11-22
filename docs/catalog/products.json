@@ -1,0 +1,230 @@
+{
+  "organization": "IhsanSoft",
+  "ecosystem": "Wexum",
+  "hub": {
+    "name": "Wexum Hub",
+    "status": "planned"
+  },
+  "products": [
+    {
+      "id": "vpn",
+      "name": "WexumVPN",
+      "category": "Network",
+      "summary": "Protective network connectivity, native clients and independent data plane",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "secure",
+      "name": "Wexum Secure",
+      "category": "Security",
+      "summary": "Passkeys, credentials vault and local-first security tools",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "cloud",
+      "name": "Wexum Cloud",
+      "category": "Storage",
+      "summary": "Files, permissions, synchronization and backup",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "work",
+      "name": "Wexum Work",
+      "category": "Productivity",
+      "summary": "Documents, spreadsheets, presentations and collaboration",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "plan",
+      "name": "Wexum Plan",
+      "category": "Productivity",
+      "summary": "Tasks, projects and calendars",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "knowledge",
+      "name": "Wexum Knowledge",
+      "category": "Knowledge",
+      "summary": "Notes, references, research and team knowledge",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "mail",
+      "name": "Wexum Mail",
+      "category": "Communications",
+      "summary": "Mail client and eventually mail service",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "connect",
+      "name": "Wexum Connect",
+      "category": "Communications",
+      "summary": "Messages, teams and meetings",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "create",
+      "name": "Wexum Create",
+      "category": "Creativity",
+      "summary": "Typography, vectors, diagrams and compliant design tools",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "learn",
+      "name": "Wexum Learn",
+      "category": "Education",
+      "summary": "Courses, flashcards and academic planning",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "translate",
+      "name": "Wexum Translate",
+      "category": "Language",
+      "summary": "Text, document and terminology translation",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "web",
+      "name": "Wexum Web",
+      "category": "Web",
+      "summary": "Bookmarks, RSS and saved reading",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "publish",
+      "name": "Wexum Publish",
+      "category": "Publishing",
+      "summary": "Documentation, pages and newsletters",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "ai",
+      "name": "Wexum AI",
+      "category": "AI",
+      "summary": "Permissioned assistants and controlled agents",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "search",
+      "name": "Wexum Search",
+      "category": "Discovery",
+      "summary": "Permission-aware search across opted-in products",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "data",
+      "name": "Wexum Data",
+      "category": "Data",
+      "summary": "Forms, relational tables and analytics",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "flow",
+      "name": "Wexum Flow",
+      "category": "Automation",
+      "summary": "Event-driven workflows and approvals",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "dev",
+      "name": "Wexum Dev",
+      "category": "Developer",
+      "summary": "Code, Git and API developer tools",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "build",
+      "name": "Wexum Build",
+      "category": "Developer",
+      "summary": "Low-code sites, portals and internal apps",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "business",
+      "name": "Wexum Business",
+      "category": "Business",
+      "summary": "CRM, invoices, inventory and operations",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "deploy",
+      "name": "Wexum Deploy",
+      "category": "Infrastructure",
+      "summary": "Application deployment and hosting, deferred",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    },
+    {
+      "id": "personal",
+      "name": "Wexum Personal",
+      "category": "Personal",
+      "summary": "Habits, personal plans, budgets and everyday organization",
+      "status": "planned",
+      "standalone": true,
+      "hub_integration": "planned",
+      "code_owner": "unassigned"
+    }
+  ]
+}
