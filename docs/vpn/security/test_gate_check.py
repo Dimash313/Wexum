@@ -148,6 +148,17 @@ class ReleaseManifestTests(unittest.TestCase):
                 errors, _ = assess(obj)
                 self.assertTrue(any("requires actor and HTTPS URL" in e for e in errors))
 
+    def test_ambiguous_https_authority_rejected(self):
+        """Reject host spellings that URL consumers may interpret differently."""
+        for url in ("https://exa mple.test/proof",
+                    "https://%65xample.test/proof",
+                    "https://example%2etest/proof"):
+            with self.subTest(url=url):
+                obj = artificial_complete()
+                obj["gates"][0]["evidence"][0]["url"] = url
+                errors, _ = assess(obj)
+                self.assertTrue(any("requires actor and HTTPS URL" in e for e in errors))
+
     def test_c1_control_characters_in_evidence_urls_rejected(self):
         """Unicode C1 control bytes must not be accepted as evidence URLs."""
         for char in (chr(0x85), chr(0x9F)):
