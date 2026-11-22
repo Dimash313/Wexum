@@ -1,0 +1,50 @@
+name: foundation-checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foundation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Syntax
+        run: python -m compileall -q src tests
+      - name: Tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+      - name: Catalog contract
+        run: python scripts/validate_catalog.py
+      # Required product tests once the control-plane lane is an integration candidate.
+      # Run in the same protected `core` job; failures cannot be ignored by main ruleset.
+      - name: VPN control syntax
+        run: python -m compileall -q products/vpn/control/src products/vpn/control/tests tests/integration tests/vpn
+      - name: VPN control tests
+        env:
+          PYTHONPATH: products/vpn/control/src
+        run: python -m unittest discover -s products/vpn/control/tests -v
+      - name: VPN audit blocker regressions
+        env:
+          PYTHONPATH: products/vpn/control/src
+        run: python -m unittest discover -s tests/integration -v
+      - name: VPN QA real-source contract and offline evidence tests
+        env:
+          WEXUM_VPN_REQUIRE_CONTRACTS: '1'
+          WEXUM_VPN_CONTROL_SRC: products/vpn/control/src
+        run: python -m unittest discover -s tests/vpn -p 'test_*.py' -v
+

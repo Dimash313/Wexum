@@ -14,13 +14,13 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
 wheels/
-share/python-wheels/
+/share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -221,3 +221,28 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# JavaScript/TypeScript and mobile artifacts
+node_modules/
+.pnpm-store/
+.next/
+.expo/
+.expo-shared/
+*.tsbuildinfo
+android/.gradle/
+ios/Pods/
+
+# Local secrets and signing material (never commit these)
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+
+# Local IDE and OS files
+.DS_Store
+.idea/
+.vscode/

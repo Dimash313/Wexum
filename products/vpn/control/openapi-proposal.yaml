@@ -1,0 +1,95 @@
+openapi: 3.1.0
+info:
+  title: WexumVPN device control (proposed, NOT mounted)
+  version: 0.0.0-draft
+  description: >-
+    DESIGN ONLY. No deployed HTTP application or verified OIDC provider.
+    Publishing these routes before token verification and authorization is forbidden.
+servers: []
+security:
+  - OIDC: [vpn:device:read]
+paths:
+  /v1/vpn/devices:
+    get:
+      summary: List own devices
+      security:
+        - OIDC: [vpn:device:read]
+      responses:
+        '200':
+          description: >-
+            Up to 200 tenant- and subject-scoped devices. Active devices
+            (unrevoked and unexpired) come first, followed by revoked or
+            expired devices. Within each group, sort by oldest registration
+            time first, then by device ID.
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+    post:
+      summary: Register a new device under an authoritative subscription
+      security:
+        - OIDC: [vpn:device:write]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-zA-Z0-9_-]{16,128}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [platform]
+              properties:
+                platform:
+                  enum: [android, ios, desktop]
+      responses:
+        '201':
+          description: Device registered
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden or inactive entitlement
+        '409':
+          description: Limit or idempotency conflict
+        '503':
+          description: Entitlement/DB unavailable
+  /v1/vpn/devices/{deviceId}:
+    delete:
+      summary: Revoke one of caller's own devices
+      security:
+        - OIDC: [vpn:device:write]
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Revocation recorded; does not imply node has disconnected
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Forbidden
+        '404':
+          description: Device missing or inaccessible
+components:
+  securitySchemes:
+    OIDC:
+      type: oauth2
+      description: >-
+        Placeholder; issuer/token endpoint and scopes require Identity threat review.
+        Never trust client tenant/user/scopes headers.
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.invalid/authorize
+          tokenUrl: https://auth.example.invalid/token
+          scopes:
+            vpn:device:read: List own devices
+            vpn:device:write: Register or revoke own devices
