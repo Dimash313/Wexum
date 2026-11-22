@@ -108,6 +108,15 @@ public struct ObservationEpoch: Sendable {
         return true
     }
 
+    /// A pending preferences read may expire only before its ticket was activated.
+    /// Expiry invalidates late callbacks; a completed read is never timed out.
+    @discardableResult
+    public mutating func expirePending(_ ticket: Ticket) -> Bool {
+        guard isCurrent(ticket), activeTicket == nil else { return false }
+        invalidate()
+        return true
+    }
+
     public func permitsStatus(for ticket: Ticket?) -> Bool {
         guard let ticket else { return false }
         return isCurrent(ticket) && activeTicket == ticket
