@@ -106,6 +106,29 @@ class VPNUXContractTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate(data)
 
+    def test_engine_failure_requires_trusted_service_and_exact_edge(self):
+        for source in ("user", "native_os", "trusted_identity", "trusted_entitlement", "trusted_nodes", "trusted_provider"):
+            with self.subTest(source=source):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == "engine_failed")
+                edge["source"] = source
+                with self.assertRaises(ValueError):
+                    validate(data)
+        for origin, target in (("disconnected", "error"), ("connecting", "disconnected")):
+            with self.subTest(origin=origin, target=target):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == "engine_failed")
+                edge["from"] = origin
+                edge["to"] = target
+                with self.assertRaises(ValueError):
+                    validate(data)
+
+    def test_engine_failure_accepts_trusted_service(self):
+        data = copy.deepcopy(self.data)
+        edge = next(t for t in data["transitions"] if t["event"] == "engine_failed")
+        edge["source"] = "trusted_service"
+        validate(data)
+
     def test_identity_lifecycle_requires_trusted_identity(self):
         for event in ("sign_in_required", "sign_in_complete"):
             for source in ("user", "native_os", "trusted_entitlement", "trusted_service", "trusted_provider", "trusted_nodes"):
