@@ -94,6 +94,31 @@ final class ConnectionStateTests: XCTestCase {
         XCTAssertFalse(state.isProtectionVerified)
     }
 
+    func testRefreshImmediatelyDropsStaleNativeConnectedStatus() {
+        var state = ConnectionState()
+        state.apply(.configurationFound)
+        state.apply(.nativeStatus(.connected))
+        state.apply(.configurationRefreshStarted)
+        XCTAssertEqual(state.phase, .checkingConfiguration)
+        XCTAssertFalse(state.hasConfiguration)
+        XCTAssertFalse(state.isProtectionVerified)
+        // Preferences callback never arrives; a late native status cannot revive it.
+        state.apply(.nativeStatus(.connected))
+        XCTAssertEqual(state.phase, .checkingConfiguration)
+        state.apply(.configurationMissing)
+        XCTAssertEqual(state.phase, .noConfiguration)
+    }
+
+    func testRefreshAfterResumeRequiresNewConfigurationAndNativeStatus() {
+        var state = ConnectionState()
+        state.apply(.configurationFound)
+        state.apply(.nativeStatus(.connected))
+        state.apply(.configurationRefreshStarted)
+        state.apply(.configurationFound)
+        XCTAssertEqual(state.phase, .disconnected)
+        XCTAssertFalse(state.isProtectionVerified)
+    }
+
     func testObservationRejectsStatusBeforeActivation() {
         var epoch = ObservationEpoch()
         let ticket = epoch.beginRefresh()
