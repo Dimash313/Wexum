@@ -84,6 +84,27 @@ class VPNUXContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate(self.data)
 
+    def test_service_stopped_requires_trusted_service(self):
+        for source in ("user", "native_os", "trusted_provider"):
+            with self.subTest(source=source):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == "service_stopped")
+                edge["source"] = source
+                with self.assertRaises(ValueError):
+                    validate(data)
+
+    def test_verified_snapshot_requires_active_attempt_origin(self):
+        for origin in ("prototype_unavailable", "signed_out", "disconnected",
+                       "offline", "revoked", "subscription_expired", "error"):
+            with self.subTest(origin=origin):
+                data = copy.deepcopy(self.data)
+                data["transitions"].append({
+                    "from": origin, "event": "fresh_verified_snapshot",
+                    "to": "verified_connected", "source": "trusted_provider",
+                })
+                with self.assertRaises(ValueError):
+                    validate(data)
+
     def test_restart_cannot_default_connected(self):
         self.data["default_state"] = "verified_connected"
         with self.assertRaises(ValueError):
