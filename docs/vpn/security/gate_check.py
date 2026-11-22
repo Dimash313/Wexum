@@ -10,6 +10,7 @@ import json
 import re
 from pathlib import Path
 from typing import Any
+import unicodedata
 from urllib.parse import urlsplit
 
 REQUIRED_GATES = frozenset({
@@ -32,7 +33,7 @@ def _nonempty(value: Any) -> bool:
 
 def _valid_evidence_url(value: Any) -> bool:
     """Require a real HTTPS authority; reject credentials and control characters."""
-    if not _nonempty(value) or value != value.strip() or "\\" in value or any(ord(ch) < 32 or 127 <= ord(ch) <= 159 for ch in value):
+    if not _nonempty(value) or value != value.strip() or "\\" in value or any(ord(ch) < 32 or 127 <= ord(ch) <= 159 or unicodedata.category(ch) == "Cf" for ch in value):
         return False
     try:
         parsed = urlsplit(value)
