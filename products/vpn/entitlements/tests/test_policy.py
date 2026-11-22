@@ -5,6 +5,7 @@ import traceback
 import unittest
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from wexum_vpn_entitlements import (
     AccountState, AuthenticatedActor, DeviceState, GrantPrecheck,
@@ -388,6 +389,52 @@ class GrantPrecheckTests(unittest.IsolatedAsyncioTestCase):
     async def test_multiple_subjects_do_not_share_grants(self):
         await self._deny(actor=replace(self.actor, subject_id="user-B"))
 
+
+    async def test_dst_fold_stale_authority_snapshots_denied(self):
+        zone = ZoneInfo("America/New_York")
+        old = datetime(2026, 11, 1, 1, 0, 0, tzinfo=zone, fold=0)
+        current = datetime(2026, 11, 1, 1, 0, 5, tzinfo=zone, fold=1)
+        self.clock = lambda: current
+        self.actor = replace(self.actor, expires_at=current.astimezone(timezone.utc) + timedelta(minutes=5))
+        self.svc = self.service()
+        for adapter in (self.accounts, self.subscriptions, self.devices):
+            original = adapter.state
+            adapter.state = replace(original, checked_at=old)
+            with self.subTest(authority=type(adapter).__name__):
+                await self._deny()
+            adapter.state = original
+        # Ensure other snapshots are fresh when the DST-fold snapshot is tested.
+        for adapter in (self.accounts, self.subscriptions, self.devices):
+            adapter.state = replace(adapter.state, checked_at=current)
+        await self.svc.check(actor=self.actor, device_id="dev-A")
+
+    async def test_dst_fold_expired_actor_subscription_and_device_denied(self):
+        zone = ZoneInfo("America/New_York")
+        expired = datetime(2026, 11, 1, 1, 30, tzinfo=zone, fold=0)
+        current = datetime(2026, 11, 1, 1, 0, 5, tzinfo=zone, fold=1)
+        self.clock = lambda: current
+        for adapter in (self.accounts, self.subscriptions, self.devices):
+            adapter.state = replace(adapter.state, checked_at=current)
+        self.svc = self.service()
+        valid = current.astimezone(timezone.utc) + timedelta(minutes=5)
+        self.actor = replace(self.actor, expires_at=valid)
+        self.subscriptions.state = replace(self.subscriptions.state, expires_at=valid)
+        self.devices.state = replace(self.devices.state, expires_at=valid)
+        await self._deny(actor=replace(self.actor, expires_at=expired))
+        self.subscriptions.state = replace(self.subscriptions.state, expires_at=expired)
+        await self._deny()
+        self.subscriptions.state = replace(self.subscriptions.state, expires_at=valid)
+        self.devices.state = replace(self.devices.state, expires_at=expired)
+        await self._deny()
+
+    async def test_distinct_timezone_offsets_use_utc_instants(self):
+        other = timezone(timedelta(hours=3))
+        self.accounts.state = replace(self.accounts.state, checked_at=NOW.astimezone(other))
+        self.subscriptions.state = replace(self.subscriptions.state, checked_at=NOW.astimezone(other))
+        self.devices.state = replace(self.devices.state, checked_at=NOW.astimezone(other))
+        self.actor = replace(self.actor, expires_at=self.actor.expires_at.astimezone(other))
+        candidate = await self.svc.check(actor=self.actor, device_id="dev-A")
+        self.assertEqual(candidate.expires_at, NOW + timedelta(seconds=120))
 
 if __name__ == "__main__":
     unittest.main()
