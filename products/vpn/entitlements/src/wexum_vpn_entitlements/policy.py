@@ -103,7 +103,11 @@ def _scope(value: object) -> bool:
 
 
 def _instant(value: object) -> bool:
-    return type(value) is datetime and value.tzinfo is not None and value.utcoffset() is not None
+    try:
+        return type(value) is datetime and value.tzinfo is not None and value.utcoffset() is not None
+    except Exception:
+        # A malformed trusted-adapter timezone must not escape authorization checks.
+        return False
 
 
 def _utc(value: object) -> datetime | None:
@@ -112,7 +116,8 @@ def _utc(value: object) -> datetime | None:
         if not _instant(value):
             return None
         return value.astimezone(timezone.utc)
-    except (OverflowError, ValueError, TypeError):
+    except Exception:
+        # tzinfo implementations may raise arbitrary errors during conversion.
         return None
 
 
