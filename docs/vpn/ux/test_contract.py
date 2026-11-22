@@ -105,6 +105,15 @@ class VPNUXContractTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate(data)
 
+    def test_recovery_and_restart_cannot_assert_tunnel_stopped(self):
+        for origin, event in (("interrupted", "network_restored"), ("verified_connected", "app_restarted")):
+            with self.subTest(origin=origin, event=event):
+                data = copy.deepcopy(self.data)
+                edge = next(x for x in data["transitions"] if x["from"] == origin and x["event"] == event)
+                edge["to"] = "disconnected"
+                with self.assertRaises(ValueError):
+                    validate(data)
+
     def test_restart_cannot_default_connected(self):
         self.data["default_state"] = "verified_connected"
         with self.assertRaises(ValueError):
