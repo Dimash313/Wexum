@@ -7,6 +7,7 @@ struct ConnectionView: View {
     private var statusKey: LocalizedStringKey {
         switch store.state.phase {
         case .noConfiguration: return "status.noConfiguration"
+        case .checkingConfiguration: return "status.checkingConfiguration"
         case .disconnected: return "status.disconnected"
         case .connecting: return "status.connecting"
         case .connectedUnverified: return "status.unverified"
