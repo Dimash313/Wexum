@@ -1,11 +1,27 @@
 # Wexum CTO / Integrator — HANDOFF
 
-**Snapshot:** 2026-11-22 06:28 UTC (refresh GitHub before using).  
+**Snapshot:** 2026-11-22 07:14 UTC (refresh GitHub before using).  
 **Role:** CTO / integrator; **Issue:** [#76](https://github.com/Dimash313/Wexum/issues/76).  
 **Branch:** `docs/engineering/76-cto-operating-protocol`.  
 **Draft PR:** [#77](https://github.com/Dimash313/Wexum/pull/77), stacked on unmerged foundation PR #1. **Do not merge or assume this file is in main.**
 
-## LIVE CTO integration checkpoint — 2026-11-22 06:28 UTC (refresh before use)
+## Latest CTO integration cycle — 2026-11-22 07:14 UTC (refresh before use)
+
+**Codex fix source PR #81:** Draft HEAD 03130999c36d0b68f9994df01a584005d3c3d051, base Control Plane Draft PR #55 HEAD 542b2a70ca2e8dca5028c1f8c9df373f0f9438f0. Five-file Codex change under products/vpn/control/ adds active-first owner-scoped list (up to 200), deterministic registration sorting, two additive indexes, server-clock injection, documented API ordering, and new negative tests. SQLite outage error remediation is inherited from #55. Response shape is unchanged; return ordering/history selection deliberately changes. The service caps allowed active devices at 200. Assess edge cases and query/index contracts independently.
+
+**CTO real action:** Updated existing CI-only Draft [PR #67](https://github.com/Dimash313/Wexum/pull/67) to [commit 928dccec](https://github.com/Dimash313/Wexum/commit/928dccec5e4b5447e59745ee221c80fb78d58303). Its eight Control Plane source/document/test Git blobs are byte-identical to PR #81 HEAD; its six tests/vpn/ QA blobs are byte-identical to QA [PR #74](https://github.com/Dimash313/Wexum/pull/74) HEAD 2948e52100a943d1345a1a7e2e8a4c7db1fe544a (14/14 matches verified from Git tree). Product/QA branch heads and main were not edited. PR #67 remains DO NOT MERGE: only main-targeted to run CI on an isolated candidate.
+
+**Two integrator-owned file changes in candidate:** .github/workflows/ci.yml now compiles integration and QA paths and mandates real Control Plane source in QA via WEXUM_VPN_REQUIRE_CONTRACTS=1, without silently skipping contracts. tests/integration/test_vpn_control_blockers.py explicitly provides now=NOW + timedelta(hours=1) to the direct-store listing call; without that change its historical fixture expires 2026-11-24 12:00 UTC and would become a false red. Removed the unused asyncio import. All four regression assertions retained.
+
+**Actual current-candidate GitHub Actions:** [required core run #44997283479](https://github.com/Dimash313/Wexum/actions/runs/44997283479), job 137130939734 completed SUCCESS on exact 928dccec; inspected log: general discovery 57/57 (includes QA tests), Control Plane 24/24, independent tests/integration 4/4, tests/vpn QA 29/29, syntax compilation + catalog contract all PASS. Test groups overlap; do not report an additive unique total. [CodeQL Python #44997283398](https://github.com/Dimash313/Wexum/actions/runs/44997283398) completed SUCCESS on the same SHA. These are independently observed GitHub Actions results (not merely Codex-reported local numbers), but NOT proof of a live VPN.
+
+**Review and remaining gates:** [Independent auditor request](https://github.com/Dimash313/Wexum/issues/78#issuecomment-7075779567) for precise PR #81 head and [new CI handoff](https://github.com/Dimash313/Wexum/issues/78#issuecomment-7075803485); audit verdict and distinct non-author approval are not yet received. On PR #67 an unresolved CodeQL inline thread flags unused dataclasses.replace import in source-owned products/vpn/control/tests/test_control.py; this same import is in PR #81's exact source. Green CodeQL does NOT resolve it. [Backend issue #2 action](https://github.com/Dimash313/Wexum/issues/2#issuecomment-7075806443): maintain both #55/#81 as Draft, coordinate source-side cleanup and independent audit, then (only after approval) adopt reviewed #81 into #55 without force-push; synchronize exact final #55 blobs into CI-only #67, rerun core + CodeQL and obtain final source-head independent review. Foundation PR #1 and independent review #41, governance #38, Identity and trust-bound gateway/real tunnel remain separate blockers. Never merge CI-only PR #67 or assert the VPN works.
+
+**Next operator:** refresh PRs #81/#55/#67 SHA, auditor verdict and review threads; after approved source adoption rerun exact-head CI and request final audit. No money, no paid services, no Codex relaunch, no production or main merge.
+
+---
+
+## Archived CTO integration checkpoint — 2026-11-22 06:28 UTC
 
 **One substantive integration repair completed in the intended source PR, not merely the CI-only candidate.**
 
