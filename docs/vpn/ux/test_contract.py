@@ -106,6 +106,24 @@ class VPNUXContractTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate(data)
 
+    def test_entitlement_lifecycle_events_require_trusted_source(self):
+        for event in ("grant_revoked", "grant_expired", "entitlement_check_failed"):
+            for source in ("user", "native_os", "trusted_identity", "trusted_service", "trusted_provider"):
+                with self.subTest(event=event, source=source):
+                    data = copy.deepcopy(self.data)
+                    edge = next(t for t in data["transitions"] if t["event"] == event)
+                    edge["source"] = source
+                    with self.assertRaises(ValueError):
+                        validate(data)
+
+    def test_entitlement_lifecycle_events_accept_trusted_source(self):
+        for event in ("grant_revoked", "grant_expired", "entitlement_check_failed"):
+            with self.subTest(event=event):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == event)
+                edge["source"] = "trusted_entitlement"
+                validate(data)
+
     def test_service_stopped_requires_trusted_service(self):
         for source in ("user", "native_os", "trusted_provider"):
             with self.subTest(source=source):
