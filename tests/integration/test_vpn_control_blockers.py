@@ -1,11 +1,10 @@
 """Independent integration regressions for outstanding PR #55 review findings.
 
-These tests intentionally assert the desired contract. They will fail on the
-unfixed control-plane source until issue #2 remedies both cases.
+These tests enforce the previously observed Control Plane negative cases.
+Clock-dependent fixtures use a deterministic explicitly supplied instant.
 Only stdlib and synthetic test data; no VPN or external service is required.
 """
 
-import asyncio
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -44,6 +43,7 @@ class HistoricalDeviceVisibility(unittest.TestCase):
             )
             listed = store.list_for_owner(
                 tenant_id="tenant-a", subject_id="subject-a",
+                now=NOW + timedelta(hours=1),
             )
             self.assertIn(fresh.device_id, {item.device_id for item in listed})
 

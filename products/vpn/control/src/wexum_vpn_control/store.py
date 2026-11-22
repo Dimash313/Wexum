@@ -56,11 +56,17 @@ class SQLiteDeviceStore:
     def _connect(self) -> sqlite3.Connection:
         # SQLite files must be under a trusted server-owned directory. Do not
         # construct paths from tenant/user input. Symlink defense belongs in deployment.
-        connection = sqlite3.connect(self.path, timeout=self.busy_timeout_seconds,
-                                     isolation_level=None)
-        connection.execute('PRAGMA foreign_keys=ON')
-        connection.execute(f'PRAGMA busy_timeout={int(self.busy_timeout_seconds * 1000)}')
-        return connection
+        connection = None
+        try:
+            connection = sqlite3.connect(self.path, timeout=self.busy_timeout_seconds,
+                                         isolation_level=None)
+            connection.execute('PRAGMA foreign_keys=ON')
+            connection.execute(f'PRAGMA busy_timeout={int(self.busy_timeout_seconds * 1000)}')
+            return connection
+        except sqlite3.Error as error:
+            if connection is not None:
+                connection.close()
+            raise StoreBusy('device store unavailable') from error
 
     def _initialize(self) -> None:
         connection = self._connect()
@@ -78,6 +84,11 @@ class SQLiteDeviceStore:
                 );
                 CREATE INDEX IF NOT EXISTS device_owner_lookup
                     ON devices (tenant_id, subject_id, revoked_at, expires_at);
+                CREATE INDEX IF NOT EXISTS device_owner_active_listing
+                    ON devices (tenant_id, subject_id, expires_at, device_id)
+                    WHERE revoked_at IS NULL;
+                CREATE INDEX IF NOT EXISTS device_owner_registration_order
+                    ON devices (tenant_id, subject_id, registered_at, device_id);
                 CREATE TABLE IF NOT EXISTS enrollment_requests (
                     tenant_id TEXT NOT NULL,
                     subject_id TEXT NOT NULL,
@@ -150,15 +161,42 @@ class SQLiteDeviceStore:
         finally:
             connection.close()
 
-    def list_for_owner(self, *, tenant_id: str, subject_id: str) -> list[Device]:
+    def list_for_owner(self, *, tenant_id: str, subject_id: str,
+                       now: datetime | None = None) -> list[Device]:
+        now_text = utc_stamp(now if now is not None else datetime.now(timezone.utc))
         connection = self._connect()
         try:
+            # The oldest limit-sized window contains enough history to fill
+            # any slots left by active devices, even after removing duplicates.
             rows = connection.execute('''
+                WITH active AS (
+                    SELECT device_id, tenant_id, subject_id, platform,
+                           registered_at, expires_at, revoked_at
+                    FROM devices INDEXED BY device_owner_active_listing
+                    WHERE tenant_id=:tenant AND subject_id=:subject
+                      AND revoked_at IS NULL AND expires_at>:now
+                    ORDER BY expires_at, device_id
+                    LIMIT :limit
+                ), oldest AS (
+                    SELECT device_id, tenant_id, subject_id, platform,
+                           registered_at, expires_at, revoked_at
+                    FROM devices INDEXED BY device_owner_registration_order
+                    WHERE tenant_id=:tenant AND subject_id=:subject
+                    ORDER BY registered_at, device_id
+                    LIMIT :limit
+                )
                 SELECT device_id, tenant_id, subject_id, platform,
-                       registered_at, expires_at, revoked_at FROM devices
-                WHERE tenant_id=? AND subject_id=?
-                ORDER BY registered_at ASC, device_id ASC LIMIT 200
-            ''', (tenant_id, subject_id)).fetchall()
+                       registered_at, expires_at, revoked_at
+                FROM (
+                    SELECT active.*, 0 AS priority FROM active
+                    UNION ALL
+                    SELECT oldest.*, 1 FROM oldest
+                    WHERE revoked_at IS NOT NULL OR expires_at<=:now
+                )
+                ORDER BY priority, registered_at, device_id
+                LIMIT :limit
+            ''', {'tenant': tenant_id, 'subject': subject_id,
+                  'now': now_text, 'limit': 200}).fetchall()
             return [_record(row) for row in rows]
         except sqlite3.Error as error:
             raise StoreBusy('device store unavailable') from error

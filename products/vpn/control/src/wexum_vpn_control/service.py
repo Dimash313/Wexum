@@ -159,7 +159,8 @@ class DeviceControlService:
         now = self._now()
         self._authorize(actor, 'vpn:device:read', now)
         try:
-            return self._store.list_for_owner(tenant_id=actor.tenant_id, subject_id=actor.subject_id)
+            return self._store.list_for_owner(
+                tenant_id=actor.tenant_id, subject_id=actor.subject_id, now=now)
         except StoreBusy as error:
             raise EnrollmentUnavailable('device store unavailable') from error
 

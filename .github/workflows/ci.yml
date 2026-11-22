@@ -33,7 +33,7 @@ jobs:
       # Required product tests once the control-plane lane is an integration candidate.
       # Run in the same protected `core` job; failures cannot be ignored by main ruleset.
       - name: VPN control syntax
-        run: python -m compileall -q products/vpn/control/src products/vpn/control/tests
+        run: python -m compileall -q products/vpn/control/src products/vpn/control/tests tests/integration tests/vpn
       - name: VPN control tests
         env:
           PYTHONPATH: products/vpn/control/src
@@ -42,4 +42,9 @@ jobs:
         env:
           PYTHONPATH: products/vpn/control/src
         run: python -m unittest discover -s tests/integration -v
+      - name: VPN QA real-source contract and offline evidence tests
+        env:
+          WEXUM_VPN_REQUIRE_CONTRACTS: '1'
+          WEXUM_VPN_CONTROL_SRC: products/vpn/control/src
+        run: python -m unittest discover -s tests/vpn -p 'test_*.py' -v
 
