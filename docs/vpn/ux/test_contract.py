@@ -154,6 +154,23 @@ class VPNUXContractTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate(data)
 
+    def test_error_retry_never_certifies_teardown(self):
+        edge = next(t for t in self.data["transitions"]
+                    if t["from"] == "error" and t["event"] == "retry")
+        self.assertEqual(edge["to"], "interrupted")
+        self.assertFalse(self.state("interrupted")["protection_claim"])
+        edge["to"] = "disconnected"
+        with self.assertRaises(ValueError):
+            validate(self.data)
+
+    def test_connecting_failure_cannot_claim_disconnected(self):
+        data = copy.deepcopy(self.data)
+        edge = next(t for t in data["transitions"]
+                    if t["from"] == "connecting" and t["event"] == "engine_failed")
+        edge["to"] = "disconnected"
+        with self.assertRaises(ValueError):
+            validate(data)
+
     def test_restart_cannot_default_connected(self):
         self.data["default_state"] = "verified_connected"
         with self.assertRaises(ValueError):
