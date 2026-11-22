@@ -125,6 +125,15 @@ class ReleaseManifestTests(unittest.TestCase):
         errors, _ = assess(obj)
         self.assertTrue(any("must be object" in item for item in errors))
 
+    def test_non_string_evidence_kind_rejected_without_exception(self):
+        """Malformed JSON evidence kinds must produce validation errors, not crash."""
+        for kind in ([], {}, 1, None):
+            with self.subTest(kind=kind):
+                obj = artificial_complete()
+                obj["gates"][0]["evidence"][0]["kind"] = kind
+                errors, _ = assess(obj)
+                self.assertTrue(any("evidence kind must be unique" in e for e in errors))
+
     def test_duplicate_verification_cannot_replace_independent_review(self):
         obj = artificial_complete()
         obj["gates"][0]["evidence"][1]["kind"] = "verification"
