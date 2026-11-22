@@ -175,6 +175,17 @@ class RegistryTests(unittest.TestCase):
         )
         self.assertIsNotNone(self.registry.select(now=early))
 
+    def test_extreme_utc_clock_range_is_stale_not_an_exception(self):
+        earliest = datetime.min.replace(tzinfo=timezone.utc)
+        latest = datetime.max.replace(tzinfo=timezone.utc)
+        with self.assertRaises(StaleObservationError):
+            self.registry.record_health(self.observe(at=earliest), now=latest)
+        self.assertEqual(self.registry.snapshot(now=latest)[0].status, AvailabilityStatus.UNREPORTED)
+        self.assertIsNone(self.registry.select(now=latest))
+        self.registry.record_health(self.observe(at=earliest), now=earliest)
+        self.assertEqual(self.registry.snapshot(now=latest)[0].status, AvailabilityStatus.STALE)
+        self.assertIsNone(self.registry.select(now=latest))
+
     def test_region_and_capability_are_exact(self):
         self.registry.record_health(self.observe(), now=NOW)
         self.assertIsNone(self.registry.select(now=NOW, region_id="test-region-b"))
