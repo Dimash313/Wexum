@@ -1,3 +1,13 @@
+## 2026-11-22 — P1 identity event-source trust guard
+
+- **Scope:** Issue #39 / existing Draft PR #75, branch `docs/vpn/39-interface-specs`; source baseline `335674daddd862ca2528d2dae0382ad697980dfe` (unmerged foundation PR #1).
+- **Defect:** proposed validator previously accepted `sign_in_required` and `sign_in_complete` with arbitrary recognized source labels, including `user`, permitting a forged identity-completion edge in the UX specification. This is a contract-validation issue, not proof of a live identity bypass.
+- **Correction:** both events require `trusted_identity`. Added negative matrix (2 events × 6 non-identity sources = 12 cases) and positive cases for the intended source. Files: `validate_contract.py`, `test_contract.py`.
+- **Source commits:** validator `7e7ec7212d31c843e44f0b47b170b49747d0eb0d`; tests `57695d0a0e7c3c8a17cbe9e3dccef9c147132919`.
+- **Checks:** connector-confirmed GitHub writes; in-tool structural checks of guard and negative/positive test definitions PASS. Python validator, unittest, compileall: **NOT RUN** (container cannot resolve github.com to check out exact source). GitHub Actions, native build, integration and live VPN/device/DNS/IP: **NOT RUN**. Authored tests are not claimed passing.
+- **Risks:** `source` is only a proposed JSON label; future native clients must authenticate actual identity producer and bind session/attempt freshness. No working VPN/identity integration is claimed.
+- **Next:** UX owner run Python validator/unittest/compileall on exact latest PR HEAD; Independent Audit verify negative cases and exact SHA; CTO/Integration ensure identity contract and mandatory CI. No merge pending checks and audit.
+
 ## 2026-11-22 — P1 engine-error retry truthfulness correction
 
 - **Scope:** Issue #39, existing branch `docs/vpn/39-interface-specs`, Draft PR #75. Foundation PR #1 remains unmerged; proposed UX contract only.
