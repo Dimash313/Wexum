@@ -20,6 +20,46 @@ class AuthorizationTests(unittest.TestCase):
         self.assertFalse(authorize(Principal(""), Resource(ResourceKind.PERSONAL, ""), Action.READ).allowed)
         self.assertFalse(authorize(Principal("alice"), Resource(ResourceKind.PERSONAL, "alice"), "read").allowed)
 
+    def test_malformed_matching_personal_identifiers_are_denied(self):
+        for bad_id in (None, 0, 123, True, " ", "\t\n"):
+            with self.subTest(bad_id=bad_id):
+                result = authorize(
+                    Principal(bad_id),
+                    Resource(ResourceKind.PERSONAL, bad_id),
+                    Action.READ,
+                )
+                self.assertFalse(result.allowed)
+                self.assertEqual(result.reason, "invalid_identity")
+
+    def test_malformed_organization_identifiers_are_denied(self):
+        cases = (
+            (Principal(123, {"org-a": frozenset({"admin"})}), "org-a"),
+            (Principal("alice", {123: frozenset({"admin"})}), 123),
+            (Principal("alice", {"   ": frozenset({"admin"})}), "   "),
+        )
+        for principal, tenant_id in cases:
+            with self.subTest(tenant_id=tenant_id):
+                result = authorize(
+                    principal,
+                    Resource(ResourceKind.ORGANIZATION, tenant_id),
+                    Action.MANAGE,
+                )
+                self.assertFalse(result.allowed)
+                self.assertEqual(result.reason, "invalid_identity")
+
+    def test_non_contract_inputs_are_denied_without_exception(self):
+        valid_principal = Principal("alice")
+        valid_resource = Resource(ResourceKind.PERSONAL, "alice")
+        self.assertEqual(
+            authorize(None, valid_resource, Action.READ).reason, "invalid_request"
+        )
+        self.assertEqual(
+            authorize(valid_principal, None, Action.READ).reason, "invalid_request"
+        )
+        self.assertFalse(
+            authorize(valid_principal, valid_resource, object()).allowed
+        )
+
     def test_unknown_resource_kind_denied(self):
         self.assertFalse(authorize(Principal("alice"), Resource("unknown", "alice"), Action.READ).allowed)
 
