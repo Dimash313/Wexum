@@ -123,6 +123,8 @@ def validate(data: Any) -> None:
         if key in seen:
             _fail("ambiguous duplicate transition")
         seen.add(key)
+        if target == "disconnected" and origin in {"interrupted", "verified_connected", "connected_unverified", "reconnecting", "disconnecting"} and event != "service_stopped":
+            _fail("tunnel lifecycle cannot assert disconnected without trusted stop acknowledgement")
         if event == "service_stopped" and (origin != "disconnecting" or target != "disconnected" or source != "trusted_service"):
             _fail("service stop acknowledgement requires trusted service and disconnecting origin")
         if target == "verified_connected":
