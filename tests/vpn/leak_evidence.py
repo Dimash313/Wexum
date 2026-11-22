@@ -54,6 +54,8 @@ def _addresses(value: object, family: int | None, field: str) -> None:
             raise ValueError(f"{field} contains the wrong IP family")
         if str(address) != raw:
             raise ValueError(f"{field} must contain canonical IP addresses")
+        if address.is_unspecified or address.is_multicast:
+            raise ValueError(f"{field} contains a non-endpoint IP address")
 
 
 def assess(expected: ExpectedPath, observed: ProbeEvidence) -> Assessment:
