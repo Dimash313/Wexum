@@ -1,3 +1,10 @@
+## Audit checkpoint — 2026-11-22, PR #71 malformed evidence kind guard
+
+- **Scope:** [PR #71](https://github.com/Dimash313/Wexum/pull/71), exact head `83d8c0a402c0bda3e32b94b12ff7f5460cc33a35`, base main `cc805a79b6dfc4e08e6866c1bc0653381755fb83`, previous reviewed `15d4f5fa0702d09f6722d02fdf2984874ebcb9ed`. Compare: 3 commits, `gate_check.py` +1/-1, `test_gate_check.py` +9, security HANDOFF +6. Source blob `gate_check.py` `61af915d9f34dc1bdd9bd0f8bd1bcc4177838555`.
+- **Mechanism:** `assess()` now checks `type(kind) is str` before set membership, avoiding `TypeError` on JSON list/dict evidence kinds; new authored tests cover list/dict/int/null. CLI exit-2 fault-injection not yet covered. Metadata-only `--require-attested` still fail-closed. 13 release gates blocked, Control #55 findings unresolved.
+- **Evidence:** GitHub PR/base patch and compare, AGENTS/REVIEW_PROTOCOL from unmerged foundation, auditor HANDOFF, PR discussion and zero review threads checked. Exact-head PR-triggered workflow runs 0 (first page only); Python unittest NOT RUN, compileall NOT RUN, real VPN/network tests NOT VERIFIED. **Decision NOT VERIFIED / integration BLOCKED**. No new proven exploit or full security certification.
+- **Published:** https://github.com/Dimash313/Wexum/pull/71#issuecomment-7073671563. **Next:** required exact integrated SHA security CI, CLI malformed-kind exit 2 and attestation exit 1 checks, independent artifact/reviewer verification, Control #55 remediation and upstream #1/#41/#38 review. No product edits, approvals or merges.
+
 ## Audit checkpoint — 2026-11-22, PR #71 Unicode evidence URL hardening
 
 - **Target:** [PR #71](https://github.com/Dimash313/Wexum/pull/71), head `15d4f5fa0702d09f6722d02fdf2984874ebcb9ed`, base main `cc805a79b6dfc4e08e6866c1bc0653381755fb83`; previous reviewed `8cf1e079eb5ae4c4110efd66b5c3d78ced53c14c`. GitHub compare: 6 commits; `gate_check.py` +4/-1, `test_gate_check.py` +22, security HANDOFF +14.
