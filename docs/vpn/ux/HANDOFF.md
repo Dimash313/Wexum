@@ -1,3 +1,12 @@
+## 2026-11-22 — P1 engine-error retry truthfulness correction
+
+- **Scope:** Issue #39, existing branch `docs/vpn/39-interface-specs`, Draft PR #75. Foundation PR #1 remains unmerged; proposed UX contract only.
+- **Source finding:** independent review https://github.com/Dimash313/Wexum/pull/75#issuecomment-7081176762 identified `connecting -> error -> disconnected` on user retry without trusted tunnel stop acknowledgement.
+- **Changes:** validator now rejects transitions from `connecting` or `error` to `disconnected` without `service_stopped`; proposed `error/retry` now enters non-protected `interrupted` pending reconciliation. Added two negative regression methods.
+- **Commits:** validator `7eb70ee63e4184acf7a4c6a0cdfed34e11621c64`; contract `aa2492ef0aca85fb3e0f7b01e2b7fecdc008bece`; tests `4f1c05a0bd74cef75b6daf785c7a69a6ff6971a9`.
+- **Verification:** GitHub accepted all three file updates with current blob SHA. Python validator/unittest/compileall on the resulting SHA: **NOT RUN**; native build, integration, device VPN/DNS/IP: **NOT RUN**. No claim of passing tests or real VPN.
+- **Next owners:** UX lane runs `python docs/vpn/ux/validate_contract.py`, `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v`, and `python -m compileall -q docs/vpn/ux` on exact final SHA; Independent Audit reviews negative cases; CTO/Integration specifies authenticated service teardown and mandatory CI. The `interrupted` state is non-protected, not proof of teardown. Do not merge until checks and independent audit pass.
+
 ## 2026-11-22 — P1 entitlement authority regression fix (current cycle)
 
 - **Issue/branch/PR:** #39, `docs/vpn/39-interface-specs`, Draft PR #75; foundation PR #1 remains unmerged and is not an integrated dependency.
