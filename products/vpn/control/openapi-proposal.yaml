@@ -16,7 +16,11 @@ paths:
         - OIDC: [vpn:device:read]
       responses:
         '200':
-          description: Tenant and subject scoped devices
+          description: >-
+            Up to 200 tenant- and subject-scoped devices. Active devices
+            (unrevoked and unexpired) come first, followed by revoked or
+            expired devices. Within each group, sort by oldest registration
+            time first, then by device ID.
         '401':
           description: Unauthenticated
         '403':
