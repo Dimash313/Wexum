@@ -127,6 +127,10 @@ def validate(data: Any) -> None:
             _fail("tunnel lifecycle cannot assert disconnected without trusted stop acknowledgement")
         if event == "service_stopped" and (origin != "disconnecting" or target != "disconnected" or source != "trusted_service"):
             _fail("service stop acknowledgement requires trusted service and disconnecting origin")
+        if event == "engine_integrated_and_preconditions_ready" and (
+            origin != "prototype_unavailable" or target != "disconnected" or source != "trusted_service"
+        ):
+            _fail("prototype activation requires trusted service and exact lifecycle edge")
         if target == "verified_connected":
             if origin not in {"connecting", "connected_unverified", "reconnecting"}:
                 _fail("verified state requires an active connection attempt origin")
