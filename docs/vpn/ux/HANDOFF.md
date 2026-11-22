@@ -1,3 +1,14 @@
+## 2026-11-22 — P1 entitlement authority regression fix (current cycle)
+
+- **Issue/branch/PR:** #39, `docs/vpn/39-interface-specs`, Draft PR #75; foundation PR #1 remains unmerged and is not an integrated dependency.
+- **Finding:** independent audit comment https://github.com/Dimash313/Wexum/pull/75#issuecomment-7079735120 reported that `grant_revoked`, `grant_expired`, and `entitlement_check_failed` accepted arbitrary recognized event sources, including `user`.
+- **Code:** `validate_contract.py` now requires `trusted_entitlement` for each of those event names. This is a static proposed UX contract check, **not** native authorization or verified VPN functionality.
+- **Regression source:** `test_contract.py` adds a negative matrix across all three events and five non-entitlement source values, plus positive checks for `trusted_entitlement`.
+- **Commits:** validator `b519cf877127d56e4e5d3eef86652c5824431a35`; regression tests `669577dd72990c60fe59a3863279f346b6cea26a`. Re-fetch PR HEAD before any further changes.
+- **Evidence:** GitHub Contents API accepted both writes with expected prior blob SHA; `git ls-remote https://github.com/Dimash313/Wexum.git HEAD` attempted in local shell and failed `Could not resolve host: github.com`. Python `unittest`, validator execution, `compileall`, GitHub Actions on final SHA, native builds, integration and real VPN/device tests: **NOT RUN**. Authored tests are not a PASS.
+- **Next owner/acceptance:** UX lane executes `python docs/vpn/ux/validate_contract.py`, `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v`, `python -m compileall -q docs/vpn/ux` on exact new HEAD; independent auditor checks negative cases and fresh SHA; CTO/integrator owns mandatory CI and shared source-authentication contract. Require successful actual checks and independent review before integration. Do not merge, self-approve, or claim working VPN.
+- **Risks:** source labels in a JSON spec are not cryptographic authentication; future native clients must verify trusted producer identity, session freshness, revocation and teardown with platform-specific tests. Earlier P1 stop-acknowledgement lifecycle concern remains a separate cross-platform dependency.
+
 # WexumVPN Interfaces & UX — persistent handoff
 
 > **Read this first in every new chat/agent session.** This is the live, issue-owned continuation record, not evidence of product release. Updated: **2026-11-21** (GitHub rechecked at start of continued work; PR #75 remains open/draft and foundation PR #1 remains unmerged). Re-check GitHub before relying on any status below. Do not infer new work from a chat transcript.
