@@ -1,3 +1,10 @@
+## Audit checkpoint — 2026-11-22, Entitlements #64 DST-fold temporal authorization failure
+
+- **Source:** [Draft PR #64](https://github.com/Dimash313/Wexum/pull/64) head `8acebae483a146c5adf68bd82ba4c440f01e3e7f`, base `main` `cc805a79b6dfc4e08e6866c1bc0653381755fb83`; Issue #3. Reviewed source `policy.py`, negative tests, PR comments and zero review threads; latest head rechecked before posting.
+- **MAJOR confirmed:** `_fresh()` and same-zone aware datetime expiry comparisons use wall-clock arithmetic across DST folds. Independent Python/zoneinfo negative reproduction: America/New_York 2026-11-01 01:00:00 fold=0 to 01:00:05 fold=1 is **3605 seconds actual**, but direct subtraction returns **5 seconds** and passes 10-second snapshot freshness. Expired actor/subscription/device checks can also misclassify across fold. No deployed exploit asserted.
+- **Evidence:** isolated stdlib Python reproduction **PASS (bug reproduced)**; complete source test suite **NOT RUN**; PR-triggered SHA-filtered GitHub Actions returned 0 (limited first page), **CI NOT VERIFIED**. Author-reported local 40/40 is not independent CI.
+- **Decision:** **BLOCKED / CHANGES REQUIRED**. [Published finding](https://github.com/Dimash313/Wexum/pull/64#issuecomment-7083742023). Owner #3 must normalize instants to UTC or fail-closed reject non-UTC, add DST-fold and mixed-zone expiry/freshness regressions; CTO to request new SHA/CI and independent retest. Do not merge or weaken temporal budgets. Existing foundation, Identity/Billing and signed-node grant gates remain separate.
+
 ## Audit checkpoint — 2026-11-22, VPN control/data-plane ADR #86 trust and revocation gate
 
 - **Scope:** [Draft PR #86](https://github.com/Dimash313/Wexum/pull/86), source `21c4826a4c78eacf4e07a13a22971cd027246e78`, base Foundation #1 `ead392f9fd823814f35916823b0a477d571427c5` (NOT main); Issue #12. Inspected PR diff/contract and negative acceptance specifications, Issue #12, source/base, 0 review threads and current auditor handoff. Main remains a stub; Foundation AGENTS/QUALITY/REVIEW_PROTOCOL are unmerged proposals.
