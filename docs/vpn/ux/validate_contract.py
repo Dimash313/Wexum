@@ -123,7 +123,7 @@ def validate(data: Any) -> None:
         if key in seen:
             _fail("ambiguous duplicate transition")
         seen.add(key)
-        if target == "disconnected" and origin in {"interrupted", "verified_connected", "connected_unverified", "reconnecting", "disconnecting"} and event != "service_stopped":
+        if target == "disconnected" and origin in {"interrupted", "verified_connected", "connected_unverified", "reconnecting", "disconnecting", "connecting", "error"} and event != "service_stopped":
             _fail("tunnel lifecycle cannot assert disconnected without trusted stop acknowledgement")
         if event in {"grant_revoked", "grant_expired", "entitlement_check_failed"} and source != "trusted_entitlement":
             _fail("entitlement lifecycle event requires trusted entitlement authority")
