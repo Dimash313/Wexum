@@ -40,6 +40,8 @@ def _valid_evidence_url(value: Any) -> bool:
         return (parsed.scheme == "https" and bool(parsed.hostname)
                 and parsed.username is None and parsed.password is None
                 and parsed.port != 0 and not parsed.netloc.endswith(":")
+                and not any(ch.isspace() for ch in parsed.netloc)
+                and "%" not in parsed.netloc
                 and not value.startswith("https:///"))
     except ValueError:
         return False
