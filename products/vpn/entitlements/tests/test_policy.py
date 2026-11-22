@@ -398,6 +398,8 @@ class GrantPrecheckTests(unittest.IsolatedAsyncioTestCase):
         self.actor = replace(self.actor, expires_at=current.astimezone(timezone.utc) + timedelta(minutes=5))
         self.svc = self.service()
         for adapter in (self.accounts, self.subscriptions, self.devices):
+            adapter.state = replace(adapter.state, checked_at=current)
+        for adapter in (self.accounts, self.subscriptions, self.devices):
             original = adapter.state
             adapter.state = replace(original, checked_at=old)
             with self.subTest(authority=type(adapter).__name__):
