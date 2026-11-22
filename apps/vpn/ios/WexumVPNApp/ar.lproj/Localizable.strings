@@ -1,4 +1,5 @@
 "app.brand" = "WexumVPN";
+"status.checkingConfiguration" = "جارٍ التحقق من إعدادات VPN — الحماية غير مؤكدة";
 "status.noConfiguration" = "لم يتم إعداد VPN";
 "status.disconnected" = "غير متصل";
 "status.connecting" = "جارٍ الاتصال — غير محمي";
