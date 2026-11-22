@@ -50,6 +50,15 @@ final class ConnectionStore: ObservableObject {
         managerTicket = nil
         manager = nil
         state.apply(.configurationRefreshStarted)
+        // A preferences API callback is not guaranteed to arrive. Fail closed after
+        // a bounded wait; the epoch rejects any later completion.
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 10_000_000_000)
+            guard let self, self.observationEpoch.expirePending(ticket) else { return }
+            self.manager = nil
+            self.managerTicket = nil
+            self.state.apply(.observerFailed)
+        }
         NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, error in
             Task { @MainActor [weak self] in
                 guard let self, self.observationEpoch.isCurrent(ticket) else { return }
