@@ -1,3 +1,10 @@
+## Audit checkpoint — 2026-11-22, PR #71 CLI malformed-kind regression test
+
+- **Scope/SHA:** [PR #71](https://github.com/Dimash313/Wexum/pull/71) exact head `7b97c64bb2459d60ede1ab03fe85011aaafe824c`, base main `cc805a79b6dfc4e08e6866c1bc0653381755fb83`, previous reviewed `83d8c0a402c0bda3e32b94b12ff7f5460cc33a35`. Two commits; only `docs/vpn/security/test_gate_check.py` (+18) and security HANDOFF (+7). `gate_check.py` unchanged, blob `61af915d9f34dc1bdd9bd0f8bd1bcc4177838555`.
+- **Evidence:** fetched source, full PR/base diff, compare, unmerged foundation AGENTS/REVIEW_PROTOCOL, auditor HANDOFF, open PR/issue search, PR comments and zero review threads. New in-process CLI negative test asserts malformed JSON kind list/dict/int/null returns 2 and INVALID MANIFEST without SCHEMA OK; no subprocess/traceback assertion. No new confirmed code defect. Metadata-only gate still cannot attest external evidence; 13 security gates blocked and Control #55 unresolved.
+- **Actual tests:** exact-head PR-triggered workflow runs 0 (first page/filter only); independent unittest NOT RUN; compileall NOT RUN; subprocess and live VPN NOT VERIFIED. Decision **NOT VERIFIED / integration BLOCKED**. Previously failed Control negative CI https://github.com/Dimash313/Wexum/actions/runs/44873727876 is a different SHA.
+- **Published:** https://github.com/Dimash313/Wexum/pull/71#issuecomment-7074301776. **Next:** exact integrated SHA mandatory CI, subprocess CLI negative test, external evidence authentication and independent non-author approval, Control #55 fix, upstream #1/#41/#38. No product edits, self-approval or merges.
+
 ## Audit checkpoint — 2026-11-22, PR #71 malformed evidence kind guard
 
 - **Scope:** [PR #71](https://github.com/Dimash313/Wexum/pull/71), exact head `83d8c0a402c0bda3e32b94b12ff7f5460cc33a35`, base main `cc805a79b6dfc4e08e6866c1bc0653381755fb83`, previous reviewed `15d4f5fa0702d09f6722d02fdf2984874ebcb9ed`. Compare: 3 commits, `gate_check.py` +1/-1, `test_gate_check.py` +9, security HANDOFF +6. Source blob `gate_check.py` `61af915d9f34dc1bdd9bd0f8bd1bcc4177838555`.
