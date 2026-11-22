@@ -1,0 +1,60 @@
+name: "Coding task — scoped agent"
+description: "One agent, one isolated change, one owned path set"
+title: "TASK / <product>: <specific capability>"
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: "Read AGENTS.md, SYSTEM.md, QUALITY.md and current main/PRs first. Tasks are not approval to release."
+  - type: input
+    id: product
+    attributes:
+      label: Product and subsystem
+      placeholder: "VPN / control-plane"
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Goal and measurable user behavior
+      description: "State what must work, including errors and forbidden states."
+    validations:
+      required: true
+  - type: textarea
+    id: ownership
+    attributes:
+      label: Exclusive file paths
+      description: "List precise paths. Do not overlap active tasks without integrator approval."
+      placeholder: "products/vpn/control/"
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Prerequisites, contracts and blockers
+      placeholder: "Issue #, PR #, approved ADR, external restrictions"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance tests
+      description: "Positive, negative, tenant isolation, concurrency and failure paths as applicable."
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Security, privacy, licensing, religious-review and cost impacts
+      placeholder: "Document any unknowns; do not assume permission."
+    validations:
+      required: true
+  - type: checkboxes
+    id: workflow
+    attributes:
+      label: Engineering agreement
+      options:
+        - label: "Dedicated branch and draft PR; no direct commits to main or self-merge."
+          required: true
+        - label: "Do not report unexecuted tests or claim unconditional 10/10."
+          required: true
