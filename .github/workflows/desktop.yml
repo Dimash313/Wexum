@@ -1,0 +1,54 @@
+name: wexum-desktop-checks
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - integration/7-desktop-ci-candidate
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout candidate source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Identify exact Desktop source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git log -1 --format='Checked out commit %H'
+          git rev-parse HEAD:apps/vpn/desktop
+          test -f apps/vpn/desktop/CMakeLists.txt
+      - name: Build and test C++20 core with GCC and Clang
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compiler in g++ clang++; do
+            "$compiler" --version | head -n 1
+            if [[ "$compiler" == "g++" ]]; then suffix=gcc; else suffix=clang; fi
+            cmake -S apps/vpn/desktop -B "build-desktop-$suffix" \
+              -DCMAKE_CXX_COMPILER="$compiler" \
+              -DBUILD_TESTING=ON -DWEXUM_DESKTOP_BUILD_UI=OFF
+            cmake --build "build-desktop-$suffix" --parallel 2
+            ctest --test-dir "build-desktop-$suffix" --output-on-failure --no-tests=error
+          done
+      - name: Audit CI test discovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          for suffix in gcc clang; do
+            test -x "build-desktop-$suffix/wexum_desktop_tests"
+            test -s "build-desktop-$suffix/Testing/Temporary/LastTest.log"
+            grep -q "wexum_desktop_core_tests" "build-desktop-$suffix/Testing/Temporary/LastTest.log"
+          done
