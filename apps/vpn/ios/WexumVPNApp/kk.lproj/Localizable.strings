@@ -1,4 +1,5 @@
 "app.brand" = "WexumVPN";
+"status.checkingConfiguration" = "VPN баптаулары тексерілуде — қорғаныс расталмаған";
 "status.noConfiguration" = "VPN бапталмаған";
 "status.disconnected" = "Ажыратылған";
 "status.connecting" = "Қосылуда — қорғаныс жоқ";
