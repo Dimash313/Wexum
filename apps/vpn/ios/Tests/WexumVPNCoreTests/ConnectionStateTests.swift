@@ -119,6 +119,34 @@ final class ConnectionStateTests: XCTestCase {
         XCTAssertFalse(state.isProtectionVerified)
     }
 
+    func testPendingPreferencesTimeoutInvalidatesLateCallback() {
+        var epoch = ObservationEpoch()
+        let pending = epoch.beginRefresh()
+        XCTAssertTrue(epoch.expirePending(pending))
+        XCTAssertFalse(epoch.isCurrent(pending))
+        XCTAssertFalse(epoch.activate(pending))
+        XCTAssertFalse(epoch.permitsStatus(for: pending))
+
+        var state = ConnectionState()
+        state.apply(.configurationFound)
+        state.apply(.nativeStatus(.connected))
+        state.apply(.configurationRefreshStarted)
+        state.apply(.observerFailed)
+        XCTAssertEqual(state.phase, .error)
+        XCTAssertFalse(state.isProtectionVerified)
+    }
+
+    func testTimeoutCannotInvalidateCompletedOrSupersededRefresh() {
+        var epoch = ObservationEpoch()
+        let old = epoch.beginRefresh()
+        let current = epoch.beginRefresh()
+        XCTAssertFalse(epoch.expirePending(old))
+        XCTAssertTrue(epoch.isCurrent(current))
+        XCTAssertTrue(epoch.activate(current))
+        XCTAssertFalse(epoch.expirePending(current))
+        XCTAssertTrue(epoch.permitsStatus(for: current))
+    }
+
     func testObservationRejectsStatusBeforeActivation() {
         var epoch = ObservationEpoch()
         let ticket = epoch.beginRefresh()
