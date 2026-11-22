@@ -1,0 +1,16 @@
+"app.brand" = "WexumVPN";
+"status.checkingConfiguration" = "Checking VPN configuration — protection not verified";
+"status.noConfiguration" = "VPN not configured";
+"status.disconnected" = "Disconnected";
+"status.connecting" = "Connecting — not protected";
+"status.unverified" = "System connected — protection not verified";
+"status.reconnecting" = "Reconnecting — not protected";
+"status.disconnecting" = "Disconnecting";
+"status.interrupted" = "Connection interrupted";
+"status.error" = "Unable to verify VPN state";
+"status.disclaimer" = "This preview cannot establish or verify a VPN tunnel. Do not assume your traffic is protected.";
+"action.refresh" = "Refresh system status";
+"action.connectUnavailable" = "Connect and disconnect are unavailable until the VPN engine and access checks are independently validated.";
+"accessibility.refreshHint" = "Reads the current VPN status from iOS settings";
+"privacy.disclosureTitle" = "Data and privacy";
+"privacy.disclosure" = "This preview makes no requests to Wexum servers and stores no VPN credentials. It reads local system connection and network availability state only. No VPN traffic is routed by this app.";

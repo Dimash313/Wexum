@@ -1,0 +1,34 @@
+// !$*UTF8*$!
+{ archiveVersion = 1; classes = {}; objectVersion = 56; objects = {
+100000000000000000000065 = { isa = PBXBuildFile; fileRef = 1000000000000000000000C9; };
+100000000000000000000066 = { isa = PBXBuildFile; fileRef = 1000000000000000000000CA; };
+100000000000000000000067 = { isa = PBXBuildFile; fileRef = 1000000000000000000000CB; };
+100000000000000000000068 = { isa = PBXBuildFile; fileRef = 1000000000000000000000CC; };
+100000000000000000000069 = { isa = PBXBuildFile; fileRef = 1000000000000000000000CD; };
+1000000000000000000000C9 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WexumVPNApp.swift; sourceTree = "<group>"; };
+1000000000000000000000CA = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStore.swift; sourceTree = "<group>"; };
+1000000000000000000000CB = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionView.swift; sourceTree = "<group>"; };
+1000000000000000000000CC = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionState.swift; sourceTree = "<group>"; };
+1000000000000000000000CE = { isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WexumVPNApp.entitlements; sourceTree = "<group>"; };
+1000000000000000000000CF = { isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WexumVPN.app; sourceTree = BUILT_PRODUCTS_DIR; };
+1000000000000000000000D0 = { isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+1000000000000000000000D1 = { isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
+1000000000000000000000D2 = { isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = kk; path = kk.lproj/Localizable.strings; sourceTree = "<group>"; };
+1000000000000000000000D3 = { isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/Localizable.strings; sourceTree = "<group>"; };
+1000000000000000000000CD = { isa = PBXVariantGroup; children = (1000000000000000000000D0, 1000000000000000000000D1, 1000000000000000000000D2, 1000000000000000000000D3); name = Localizable.strings; sourceTree = "<group>"; };
+10000000000000000000012D = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+10000000000000000000012E = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (100000000000000000000065, 100000000000000000000066, 100000000000000000000067, 100000000000000000000068); runOnlyForDeploymentPostprocessing = 0; };
+10000000000000000000012F = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (100000000000000000000069); runOnlyForDeploymentPostprocessing = 0; };
+100000000000000000000191 = { isa = PBXGroup; children = (100000000000000000000192, 100000000000000000000193, 100000000000000000000194); sourceTree = "<group>"; };
+100000000000000000000192 = { isa = PBXGroup; children = (1000000000000000000000C9, 1000000000000000000000CA, 1000000000000000000000CB, 1000000000000000000000CE, 1000000000000000000000CD); path = WexumVPNApp; sourceTree = "<group>"; };
+100000000000000000000193 = { isa = PBXGroup; children = (1000000000000000000000CC); path = Sources/WexumVPNCore; sourceTree = "<group>"; };
+100000000000000000000194 = { isa = PBXGroup; children = (1000000000000000000000CF); name = Products; sourceTree = "<group>"; };
+1000000000000000000001F5 = { isa = PBXNativeTarget; buildConfigurationList = 1000000000000000000002BD; buildPhases = (10000000000000000000012E, 10000000000000000000012D, 10000000000000000000012F); buildRules = (); dependencies = (); name = WexumVPN; productName = WexumVPN; productReference = 1000000000000000000000CF; productType = "com.apple.product-type.application"; };
+100000000000000000000259 = { isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastUpgradeCheck = 1600; TargetAttributes = {1000000000000000000001F5 = {CreatedOnToolsVersion = 16.0; }; }; }; buildConfigurationList = 1000000000000000000002BE; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, ru, kk, ar, Base); mainGroup = 100000000000000000000191; productRefGroup = 100000000000000000000194; projectDirPath = ""; projectRoot = ""; targets = (1000000000000000000001F5); };
+100000000000000000000321 = { isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_ENTITLEMENTS = WexumVPNApp/WexumVPNApp.entitlements; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = WexumVPN; INFOPLIST_KEY_UILaunchScreen_Generation = YES; IPHONEOS_DEPLOYMENT_TARGET = 16.0; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); PRODUCT_BUNDLE_IDENTIFIER = com.ihsansoft.wexumvpn; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+100000000000000000000322 = { isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_ENTITLEMENTS = WexumVPNApp/WexumVPNApp.entitlements; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = WexumVPN; INFOPLIST_KEY_UILaunchScreen_Generation = YES; IPHONEOS_DEPLOYMENT_TARGET = 16.0; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); PRODUCT_BUNDLE_IDENTIFIER = com.ihsansoft.wexumvpn; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; }; name = Release; };
+100000000000000000000323 = { isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; }; name = Debug; };
+100000000000000000000324 = { isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; }; name = Release; };
+1000000000000000000002BD = { isa = XCConfigurationList; buildConfigurations = (100000000000000000000321, 100000000000000000000322); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+1000000000000000000002BE = { isa = XCConfigurationList; buildConfigurations = (100000000000000000000323, 100000000000000000000324); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+}; rootObject = 100000000000000000000259; }

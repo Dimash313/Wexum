@@ -1,0 +1,16 @@
+"app.brand" = "WexumVPN";
+"status.checkingConfiguration" = "Проверка настроек VPN — защита не подтверждена";
+"status.noConfiguration" = "VPN не настроен";
+"status.disconnected" = "Отключено";
+"status.connecting" = "Подключение — защиты нет";
+"status.unverified" = "Система сообщает о подключении — защита не подтверждена";
+"status.reconnecting" = "Переподключение — защиты нет";
+"status.disconnecting" = "Отключение";
+"status.interrupted" = "Соединение прервано";
+"status.error" = "Не удалось проверить состояние VPN";
+"status.disclaimer" = "Этот прототип не создаёт и не подтверждает VPN-туннель. Не считайте трафик защищённым.";
+"action.refresh" = "Обновить состояние";
+"action.connectUnavailable" = "Подключение и отключение недоступны до независимой проверки VPN-движка и разрешений доступа.";
+"accessibility.refreshHint" = "Читает текущее состояние VPN из настроек iOS";
+"privacy.disclosureTitle" = "Данные и конфиденциальность";
+"privacy.disclosure" = "Прототип не обращается к серверам Wexum и не хранит учётные данные VPN. Он читает только локальный статус подключения и сети. VPN-трафик через приложение не направляется.";
