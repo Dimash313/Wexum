@@ -106,6 +106,24 @@ class VPNUXContractTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate(data)
 
+    def test_identity_lifecycle_requires_trusted_identity(self):
+        for event in ("sign_in_required", "sign_in_complete"):
+            for source in ("user", "native_os", "trusted_entitlement", "trusted_service", "trusted_provider", "trusted_nodes"):
+                with self.subTest(event=event, source=source):
+                    data = copy.deepcopy(self.data)
+                    edge = next(t for t in data["transitions"] if t["event"] == event)
+                    edge["source"] = source
+                    with self.assertRaises(ValueError):
+                        validate(data)
+
+    def test_identity_lifecycle_accepts_trusted_identity(self):
+        for event in ("sign_in_required", "sign_in_complete"):
+            with self.subTest(event=event):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == event)
+                edge["source"] = "trusted_identity"
+                validate(data)
+
     def test_entitlement_lifecycle_events_require_trusted_source(self):
         for event in ("grant_revoked", "grant_expired", "entitlement_check_failed"):
             for source in ("user", "native_os", "trusted_identity", "trusted_service", "trusted_provider"):
