@@ -123,7 +123,11 @@ def validate(data: Any) -> None:
         if key in seen:
             _fail("ambiguous duplicate transition")
         seen.add(key)
+        if event == "service_stopped" and (origin != "disconnecting" or target != "disconnected" or source != "trusted_service"):
+            _fail("service stop acknowledgement requires trusted service and disconnecting origin")
         if target == "verified_connected":
+            if origin not in {"connecting", "connected_unverified", "reconnecting"}:
+                _fail("verified state requires an active connection attempt origin")
             if event != "fresh_verified_snapshot" or source != "trusted_provider":
                 _fail("verified state requires authenticated, fresh combined proof")
         elif event == "fresh_verified_snapshot":
