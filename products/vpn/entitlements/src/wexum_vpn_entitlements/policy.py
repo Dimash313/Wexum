@@ -106,9 +106,19 @@ def _instant(value: object) -> bool:
     return type(value) is datetime and value.tzinfo is not None and value.utcoffset() is not None
 
 
+def _utc(value: object) -> datetime | None:
+    """Normalize trusted instants before arithmetic; reject invalid/overflowing offsets."""
+    try:
+        if not _instant(value):
+            return None
+        return value.astimezone(timezone.utc)
+    except (OverflowError, ValueError, TypeError):
+        return None
+
+
 def _fresh(checked_at: datetime, now: datetime, max_age: timedelta, skew: timedelta) -> bool:
-    # Subtraction of two valid aware datetimes avoids under/overflow near year 1/9999.
-    return _instant(checked_at) and -skew <= now - checked_at <= max_age
+    checked_utc = _utc(checked_at)
+    return checked_utc is not None and -skew <= now - checked_utc <= max_age
 
 
 class GrantPrecheck:
@@ -182,10 +192,11 @@ class GrantPrecheck:
             raise GrantPrecheckDenied("VPN access denied")
 
         try:
-            started_at = self._clock()
-            if not _instant(started_at):
+            started_at = _utc(self._clock())
+            actor_expiry = _utc(actor.expires_at)
+            if started_at is None or actor_expiry is None:
                 raise GrantPrecheckUnavailable("trusted clock unavailable")
-            if actor.expires_at <= started_at:
+            if actor_expiry <= started_at:
                 raise GrantPrecheckDenied("VPN access denied")
         except (GrantPrecheckDenied, GrantPrecheckUnavailable):
             raise
@@ -211,16 +222,18 @@ class GrantPrecheck:
                 account, subscription, device = (
                     account_task.result(), subscription_task.result(), device_task.result()
                 )
-            now = self._clock()
+            now = _utc(self._clock())
         except Exception:
             raise GrantPrecheckUnavailable("authoritative VPN state unavailable") from None
 
-        if not _instant(now):
+        if now is None:
             raise GrantPrecheckUnavailable("trusted clock unavailable")
         if started_at - now > self._skew:
             raise GrantPrecheckUnavailable("trusted clock moved backwards")
         # Never extend a decision lifetime if wall-clock time moved backwards.
         now = max(now, started_at)
+        subscription_expiry = _utc(subscription.expires_at) if type(subscription) is SubscriptionState else None
+        device_expiry = _utc(device.expires_at) if type(device) is DeviceState else None
         tenant, subject = actor.tenant_id, actor.subject_id
         if (
             type(account) is not AccountState
@@ -248,11 +261,11 @@ class GrantPrecheck:
             or type(subscription.allowed_scopes) is not frozenset
             or any(not _scope(s) for s in subscription.allowed_scopes)
             or scope not in subscription.allowed_scopes
-            or not _instant(subscription.expires_at)
-            or not _instant(device.expires_at)
-            or actor.expires_at <= now
-            or subscription.expires_at <= now
-            or device.expires_at <= now
+            or subscription_expiry is None
+            or device_expiry is None
+            or actor_expiry <= now
+            or subscription_expiry <= now
+            or device_expiry <= now
         ):
             raise GrantPrecheckDenied("VPN access denied")
 
@@ -260,8 +273,8 @@ class GrantPrecheck:
         # near datetime.max even when a real upstream expiry is earlier.
         expires_at = now + min(
             self._ttl,
-            actor.expires_at - now,
-            subscription.expires_at - now,
-            device.expires_at - now,
+            actor_expiry - now,
+            subscription_expiry - now,
+            device_expiry - now,
         )
         return GrantCandidate(tenant, subject, device_id, scope, expires_at)
