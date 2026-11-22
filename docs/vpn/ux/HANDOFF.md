@@ -130,3 +130,12 @@ Do not edit another workstream's HANDOFF.md or its docs without CTO coordination
 - GitHub contents API accepted three source changes: 537cd0dd5cc3c0e136adeb9242df0238759c1453, 42c99b8b0add8c369654db0c60fb49de3d64748a, b9f5b4a5fdc9575c9121398114e042bb046f2fac. These are source-write confirmations, **not** executed Python tests.
 - **NOT RUN:** Python unittest, validator CLI, compileall, GitHub Actions, native builds, integration and live VPN/device tests. The UX contract remains a proposed specification, not a functioning tunnel.
 - Next: independently run `python docs/vpn/ux/validate_contract.py` and `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v` on final exact HEAD; audit all remaining paths to `disconnected`, particularly `offline/network_restored` and `error/retry`, against authoritative stop semantics. CTO must approve cross-client contract changes; no merge before audit and CI.
+
+## 2026-11-22 — P1 prototype activation authority guard
+
+- Issue #39, existing branch `docs/vpn/39-interface-specs`, Draft PR #75. No shared or native code changed; foundation PR #1 is still an unmerged dependency.
+- Root cause: the proposed transition `prototype_unavailable --engine_integrated_and_preconditions_ready--> disconnected` could previously be rewritten with `source: user` while passing the generic allowed-source validator. A user/UI event must not authorize enabling a nonfunctional VPN scaffold.
+- Changed `validate_contract.py` to require the exact origin/target and `trusted_service` authority for this event; added two negative unittest methods in `test_contract.py` covering untrusted sources and wrong lifecycle endpoints.
+- Commits: validator `84b6715436f19bf2cb2dd79f31e82b2e24d700ea`; regression source `4d66012726cbdccd3e1d21112bc0ac0817fc460f`. Re-fetch HEAD before any subsequent write.
+- Evidence: GitHub accepted both file updates and blob SHAs. Python validator, unittest, compileall, Actions, native build, integration and live VPN/device tests: **NOT RUN** in this cycle. Authored negative tests are not passing test evidence. No actual VPN engine or protected tunnel exists.
+- Next: run `python docs/vpn/ux/validate_contract.py` and `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v` on the exact final PR HEAD; independent auditor to review authority semantics and source SHA; CTO/integrator to define authoritative service/engine contract and activate relevant mandatory CI. Acceptance requires actual passing checks and independent non-author review before integration. No self-merge or public release.
