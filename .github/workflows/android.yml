@@ -1,0 +1,94 @@
+name: vpn-android-checks
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - main
+      - integration/68-android-ci-candidate
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vpn-android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Record checked-out source
+        run: |
+          git log -1 --format='Commit %H'
+          android_tree="$(git rev-parse HEAD:apps/vpn/android)"
+          echo "Android tree $android_tree"
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK packages
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" \
+            --install 'platforms;android-35' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+        with:
+          gradle-version: '8.11.1'
+          cache-disabled: true
+      - name: Unit tests, lint, and debug APK compilation
+        id: gradle
+        run: bash apps/vpn/android/ci/android-check.sh
+      - name: Report Android check results
+        if: ${{ !cancelled() && (steps.gradle.outcome == 'success' || steps.gradle.outcome == 'failure') }}
+        env:
+          GRADLE_OUTCOME: ${{ steps.gradle.outcome }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import os
+          import xml.etree.ElementTree as ET
+          from collections import Counter
+          from pathlib import Path
+
+          build = Path('apps/vpn/android/app/build')
+          counts = Counter()
+          for report in (build / 'test-results/testDebugUnitTest').glob('TEST-*.xml'):
+              suite = ET.parse(report).getroot()
+              for field in ('tests', 'failures', 'errors', 'skipped'):
+                  counts[field] += int(suite.attrib.get(field, 0))
+          print('JUnit: {tests} tests, {failures} failures, {errors} errors, {skipped} skipped'.format_map(counts))
+
+          lint = build / 'reports/lint-results-debug.xml'
+          if lint.is_file():
+              issues = Counter(issue.attrib['severity'] for issue in ET.parse(lint).findall('issue'))
+              print(f'Lint findings by severity: {dict(sorted(issues.items()))}')
+          else:
+              print('Lint XML report unavailable')
+
+          apk = build / 'outputs/apk/debug/app-debug.apk'
+          if apk.is_file():
+              with apk.open('rb') as artifact:
+                  print(f'Debug APK SHA-256: {hashlib.file_digest(artifact, "sha256").hexdigest()}')
+          else:
+              print('Debug APK unavailable')
+
+          if os.environ['GRADLE_OUTCOME'] == 'success':
+              if counts['tests'] <= counts['skipped'] or counts['failures'] or counts['errors']:
+                  raise SystemExit('Expected at least one executed JUnit test and no failures or errors')
+              if not lint.is_file() or not apk.is_file() or not apk.stat().st_size:
+                  raise SystemExit('Expected a lint report and a nonempty debug APK')
+          PY
+      - name: Upload JUnit and lint reports
+        if: ${{ !cancelled() && (steps.gradle.outcome == 'success' || steps.gradle.outcome == 'failure') }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: android-check-reports
+          path: |
+            apps/vpn/android/app/build/test-results/testDebugUnitTest/TEST-*.xml
+            apps/vpn/android/app/build/reports/lint-results-debug.*
+          retention-days: 7
