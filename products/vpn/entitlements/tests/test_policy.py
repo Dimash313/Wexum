@@ -365,6 +365,28 @@ class GrantPrecheckTests(unittest.IsolatedAsyncioTestCase):
         self.devices.state = {"device_id": "dev-A", "active": True}
         await self._deny()
 
+    async def test_broken_timezone_offsets_fail_closed(self):
+        from datetime import tzinfo
+
+        class BrokenTimezone(tzinfo):
+            def utcoffset(self, dt):
+                raise RuntimeError("untrusted timezone failure")
+            def dst(self, dt):
+                return None
+
+        broken = NOW.replace(tzinfo=BrokenTimezone())
+        await self._deny(actor=replace(self.actor, expires_at=broken))
+        self.accounts.state = replace(self.accounts.state, checked_at=broken)
+        await self._deny()
+        self.accounts.state = replace(self.accounts.state, checked_at=NOW)
+        self.subscriptions.state = replace(self.subscriptions.state, expires_at=broken)
+        await self._deny()
+        self.subscriptions.state = replace(self.subscriptions.state, expires_at=NOW + timedelta(minutes=8))
+        self.clock = lambda: broken
+        self.svc = self.service()
+        with self.assertRaises(GrantPrecheckUnavailable):
+            await self.svc.check(actor=self.actor, device_id="dev-A")
+
     async def test_timezone_naive_timestamp_denied(self):
         self.subscriptions.state = replace(self.subscriptions.state, expires_at=NOW.replace(tzinfo=None))
         await self._deny()
