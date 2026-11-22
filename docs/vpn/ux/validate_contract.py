@@ -125,6 +125,8 @@ def validate(data: Any) -> None:
         seen.add(key)
         if target == "disconnected" and origin in {"interrupted", "verified_connected", "connected_unverified", "reconnecting", "disconnecting", "connecting", "error"} and event != "service_stopped":
             _fail("tunnel lifecycle cannot assert disconnected without trusted stop acknowledgement")
+        if event == "engine_failed" and (origin != "connecting" or target != "error" or source != "trusted_service"):
+            _fail("engine failure requires trusted service and exact lifecycle edge")
         if event in {"sign_in_required", "sign_in_complete"} and source != "trusted_identity":
             _fail("identity lifecycle event requires trusted identity authority")
         if event in {"grant_revoked", "grant_expired", "entitlement_check_failed"} and source != "trusted_entitlement":
