@@ -250,3 +250,9 @@ Do not publish sensitive exploit detail, live secrets or user IPs in public PR c
 - Change: reject whitespace and percent signs in parsed HTTPS `netloc`; preserve existing checks against credentials, controls, empty port and non-HTTPS schemes. Added one negative test method with three synthetic malformed authorities.
 - Code commit: `05b06a58701562d3032f3057986699f31046fc3d`; test commit: `8f37506f0e07c1c3667b4cca0297a2946540ebad`. Full Python test suite and compileall: **NOT RUN** in this connector-only edit; run on exact PR head before claiming success. No independent approval, real VPN/DNS/IP testing, or release clearance.
 - Ownership: only `docs/vpn/security/` changed; PR #71 remains draft. Existing CI escalation [#56](https://github.com/Dimash313/Wexum/issues/56) and open SEC-CTRL-001/002 remain blockers. Next: execute security unittest/compileall on exact candidate SHA, inspect CI Check Runs and independent audit; do not merge.
+
+## 2026-11-22 — malformed evidence kind validation (P1)
+
+- Scope: Security PR #71, owned metadata validator only. `assess()` previously evaluated `kind in seen_kinds` on arbitrary JSON values; a list or object raises `TypeError` instead of returning a validation error. Added explicit `str` type guard and negative regression for list/object/integer/null kinds.
+- Source and test commits: 6fb9d1eaf2a38ed034085ed8b6cd282893b481c8 / 77e30b6e5138a0604eed6bcc814369e2ee614a87. GitHub content updates used current blob SHA for each file. No other lanes or shared CI edited.
+- PASS: connector source read and SHA-guarded writes. NOT RUN: complete Python unittest, compileall, real VPN tests, GitHub CI on updated head. Independent audit pending; all 13 release gates remain blocked. Follow-up: execute security unittest and compileall on exact PR SHA, seek independent review; no merge.
