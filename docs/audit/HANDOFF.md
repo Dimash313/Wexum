@@ -1,3 +1,10 @@
+## Audit checkpoint — 2026-11-22, PR #64 entitlement trust/cancellation boundary
+
+- **Scope:** [PR #64](https://github.com/Dimash313/Wexum/pull/64), head `8acebae483a146c5adf68bd82ba4c440f01e3e7f`, base main `cc805a79b6dfc4e08e6866c1bc0653381755fb83`. Full PR patch, policy.py, issue #3, comments, zero review threads, proposed foundation AGENTS/review protocol reviewed.
+- **Evidence:** actor/tenant/device/freshness checks and cooperative TaskGroup cancellation present; only unsigned candidate returned. No confirmed new source bypass. MAJOR integration limitations: unverified authority provenance, no signed grants/revocation/node enforcement; cancellation-resistant adapters can exceed timeout.
+- **Tests:** exact-head PR Actions 0 (first page/filter), combined statuses 0; independent unittest NOT RUN, compileall NOT RUN, live VPN/identity/billing NOT VERIFIED. Author's 40 local tests not independently reproduced.
+- **Decision:** NOT VERIFIED / integration BLOCKED. [Published conclusion](https://github.com/Dimash313/Wexum/pull/64#issuecomment-7074889819). **Next:** authenticated adapters, network I/O deadlines, signed grant/revocation ADR, adversarial exact-head CI, resolve #55 and foundation #1/#38/#41. No code edits, approval or merge.
+
 ## Audit checkpoint — 2026-11-22, PR #71 CLI malformed-kind regression test
 
 - **Scope/SHA:** [PR #71](https://github.com/Dimash313/Wexum/pull/71) exact head `7b97c64bb2459d60ede1ab03fe85011aaafe824c`, base main `cc805a79b6dfc4e08e6866c1bc0653381755fb83`, previous reviewed `83d8c0a402c0bda3e32b94b12ff7f5460cc33a35`. Two commits; only `docs/vpn/security/test_gate_check.py` (+18) and security HANDOFF (+7). `gate_check.py` unchanged, blob `61af915d9f34dc1bdd9bd0f8bd1bcc4177838555`.
