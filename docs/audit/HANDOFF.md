@@ -1,3 +1,11 @@
+## Audit checkpoint — 2026-11-22, governance #84 stale-stack and enforceability review
+
+- **Source:** [Draft PR #84](https://github.com/Dimash313/Wexum/pull/84) `f90848dd59a2cdec8cfdd1950e026f94985cb60b`, base `6cefaeb565b39538a21bb10bea5b442519ed24b3` on #77; current upstream [#77](https://github.com/Dimash313/Wexum/pull/77) `965dc6eafa1c215f323be33a4deee65a93738899`; [foundation #1](https://github.com/Dimash313/Wexum/pull/1) still open at `ead392f9fd823814f35916823b0a477d571427c5`. Scope: issue #38 internal review policy and stack coherence, not production VPN.
+- **Independently inspected:** seven changed-file patches, PR metadata, Issue #38, zero #84 comments/review threads, own HANDOFF. Source/parent SHA rechecked before publication. **MAJOR governance integration evidence gap:** #84 is based on older #77 commit, so the combined latest policy/CTO/foundation tree has not been reviewed. No demonstrated runtime vulnerability or new P0 in documentation diff.
+- **CI:** commit-run query returned 0 pull_request-triggered runs for #84 source; endpoint is filtered, not exhaustive. Auditor executable tests NOT RUN; live ruleset/red-or-missing-check enforcement NOT VERIFIED. No claim of CI PASS or second-account approval.
+- **Decision:** [CHANGES REQUIRED audit comment](https://github.com/Dimash313/Wexum/pull/84#issuecomment-7082232103), not merge authorization. CTO #38/#77 must reconcile/rebase the stacked proposal on current upstream, validate exact combined SHA and required checks/ruleset enforcement, then request independent re-audit. Owner policy allows AI-lane review without universal second human; public VPN launch remains separate founder/security gate.
+- **No changes:** source, main, branch protection, paid resources, automation schedules, other HANDOFF files.
+
 ## Audit checkpoint — 2026-11-22, Desktop #70 exact-source Linux CI follow-up
 
 - **Scope:** [source Draft #70](https://github.com/Dimash313/Wexum/pull/70) `6bc54706b0b70e44b239135d5e5780ee61a76455`, main base `cc805a79b6dfc4e08e6866c1bc0653381755fb83`; CI-only [Draft #83](https://github.com/Dimash313/Wexum/pull/83) `f3ac92b6ccd8de871447c423b634b55a50cb00ef`, actual Actions merge checkout `f605641300689cbd74c6bf4e746f92419cfa66ac`. Exact PR HEADs rechecked before writing. Source still non-connecting, foundation #1 and governance #38/#84 pending.
