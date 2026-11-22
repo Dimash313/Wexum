@@ -19,7 +19,7 @@ DeviceControlService requires an **injected** authenticated actor verified by an
 ## Implemented contract
 
 - await enroll(actor, platform, idempotency_key) checks scope and session freshness, obtains a bounded-time authoritative entitlement decision, then atomically enforces device limits and inserts a server-generated opaque UUID.
-- list_devices(actor) sees **only** the authenticated tenant/subject's rows.
+- list_devices(actor) returns up to 200 rows for the authenticated tenant and subject. Unrevoked devices whose expiry is in the future come first. Revoked and expired devices fill the remaining slots. Each group is ordered by registration time from oldest to newest, then by device ID.
 - revoke_device(actor, device_id) only affects the caller's own device and remains usable if the entitlement verifier is unavailable.
 - Duplicated registration idempotency keys return the same device, not a new permit. Reusing the key for a different platform fails. The key is stored as a SHA-256 digest, not plaintext.
 - A revoked device does not return to active state on a duplicate request; expired/revoked devices do not consume a new device slot.

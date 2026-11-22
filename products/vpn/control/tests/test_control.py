@@ -77,6 +77,67 @@ class DeviceServiceTests(unittest.IsolatedAsyncioTestCase):
         other_store = SQLiteDeviceStore(self.db)
         self.assertEqual(other_store.list_for_owner(tenant_id='tenant-A', subject_id='subject-A'), [device])
 
+    async def test_new_active_device_is_listed_after_200_revocations(self):
+        principal = actor()
+        history = []
+        for index in range(200):
+            device = self.store.enroll(
+                tenant_id=principal.tenant_id, subject_id=principal.subject_id,
+                platform='android', request_key=f'historic_key_{index:04d}',
+                now=BASE, expires_at=BASE + timedelta(days=1), max_devices=1,
+            )
+            history.append(self.service.revoke_device(actor=principal, device_id=device.device_id))
+        history.sort(key=lambda device: device.device_id)
+
+        self.now = BASE + timedelta(minutes=1)
+        active = await self.register(principal=principal)
+        listed = self.service.list_devices(actor=principal)
+        self.assertEqual([device.device_id for device in listed[:1]], [active.device_id])
+        self.assertEqual(listed[1:], history[:199])
+
+        revoked = self.service.revoke_device(actor=principal, device_id=active.device_id)
+        self.assertIsNotNone(revoked.revoked_at)
+        self.assertEqual(self.service.revoke_device(actor=principal, device_id=active.device_id), revoked)
+        self.assertEqual(self.service.list_devices(actor=principal), history)
+
+    async def test_full_active_allowance_is_listed_ahead_of_expired_history(self):
+        principal = actor()
+        self.now = BASE + timedelta(minutes=1)
+        for index in range(200):
+            self.store.enroll(
+                tenant_id=principal.tenant_id, subject_id=principal.subject_id,
+                platform='android', request_key=f'expired_key_{index:04d}',
+                now=BASE, expires_at=self.now, max_devices=200,
+            )
+
+        self.answer = decision(limit=200)
+        active = [
+            await self.register(key=f'current_key_{index:04d}', principal=principal)
+            for index in range(200)
+        ]
+        active_ids = sorted(device.device_id for device in active)
+        listed = self.service.list_devices(actor=principal)
+        self.assertEqual(len(listed), 200)
+        self.assertEqual([device.device_id for device in listed], active_ids)
+
+    async def test_listing_active_and_historical_rows_is_scoped_to_tenant_and_subject(self):
+        own_history = await self.register()
+        own_history = self.service.revoke_device(actor=actor(), device_id=own_history.device_id)
+        self.now = BASE + timedelta(minutes=1)
+        own_active = await self.register(key='own_active_key_0001')
+
+        for tenant, subject in [('tenant-B', 'subject-A'), ('tenant-A', 'subject-B')]:
+            principal = actor(tenant, subject)
+            self.answer = decision(tenant=tenant, subject=subject)
+            history = await self.register(principal=principal)
+            history = self.service.revoke_device(actor=principal, device_id=history.device_id)
+            active = await self.register(key='other_active_key_01', principal=principal)
+            self.assertEqual(self.service.list_devices(actor=principal), [active, history])
+            with self.assertRaises(DeviceNotFound):
+                self.service.revoke_device(actor=principal, device_id=own_active.device_id)
+
+        self.assertEqual(self.service.list_devices(actor=actor()), [own_active, own_history])
+
     async def test_duplicate_request_is_idempotent_even_at_limit(self):
         self.answer = decision(limit=1)
         first = await self.register()
