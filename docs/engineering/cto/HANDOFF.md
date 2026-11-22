@@ -1,11 +1,47 @@
 # Wexum CTO / Integrator — HANDOFF
 
-**Snapshot:** 2026-11-21 20:50 UTC (refresh GitHub before using).  
+**Snapshot:** 2026-11-22 06:28 UTC (refresh GitHub before using).  
 **Role:** CTO / integrator; **Issue:** [#76](https://github.com/Dimash313/Wexum/issues/76).  
 **Branch:** `docs/engineering/76-cto-operating-protocol`.  
 **Draft PR:** [#77](https://github.com/Dimash313/Wexum/pull/77), stacked on unmerged foundation PR #1. **Do not merge or assume this file is in main.**
 
-## Current decision checkpoint (2026-11-21 20:50 UTC)
+## LIVE CTO integration checkpoint — 2026-11-22 06:28 UTC (refresh before use)
+
+**One substantive integration repair completed in the intended source PR, not merely the CI-only candidate.**
+
+- Foundation [PR #1](https://github.com/Dimash313/Wexum/pull/1) is now at **`ead392f9fd823814f35916823b0a477d571427c5`**. The integrator adopted *exact Git blob contents* from reviewed [PR #58](https://github.com/Dimash313/Wexum/pull/58) (#57 identifier validation) and [PR #60](https://github.com/Dimash313/Wexum/pull/60) (#59 catalog invariants) directly into its existing foundation branch. Changed source/test/doc files: `src/wexum_core/authorization.py`, `tests/test_authorization.py`, `scripts/validate_catalog.py`, `tests/test_catalog_validation.py` (new), `docs/catalog/SCHEMA.md` (new). All five source/destination Git blobs were re-fetched and verified identical. Commits: `1f1f918`, `c83e29f`, `b3d2b83`, `a2b1de6`, `ead392f`.
+- **Current-head CI, observed:** [foundation-checks run #44993810742](https://github.com/Dimash313/Wexum/actions/runs/44993810742) completed **SUCCESS**, job `core` `137120429114`; inspected real job logs: **28/28 Python tests pass**, syntax step passes, `Catalog contract OK`. [CodeQL run #44993810643](https://github.com/Dimash313/Wexum/actions/runs/44993810643) was **in_progress** at observation; re-check before any signoff. These runs belong to **#1 latest head**, unlike earlier CI-only #63.
+- **Still BLOCKED:** PR #1 has zero submitted formal reviews; active main ruleset `27754912` requires strict `core`, squash PR and resolved threads but **zero required approvals**. Require an attributable trusted non-author review of exact latest head, full remediation review #41 and ruleset decision #38. Auth/catalog fixes do *not* imply trusted authentication or released VPN. PRs #58/#60 remain separate drafts; do not merge them again blindly. PR #63/#67/#80 are CI-only verification drafts marked DO NOT MERGE.
+- **Unresolved P1 Control Plane:** [#55](https://github.com/Dimash313/Wexum/pull/55) at `66532b4`, with four red independent integration regressions reproduced in [#67 core #44873727876](https://github.com/Dimash313/Wexum/actions/runs/44873727876): historical limit hides current active device, and 3 connection-open SQLite errors escape. Owner #2 must correct and re-run exact-head tests before integration.
+- **Nodes:** #65 at `e91d734`; #80 at `7e39bac`; older successful tests and CodeQL do not revoke [independent auditor NOT VERIFIED finding](https://github.com/Dimash313/Wexum/pull/80#issuecomment-7071731181). Trustworthy health sources, persistence, network enforcement and cross-lane contracts are not proven.
+
+### Minimal technical dependency path to first *lab* tunnel (not a release)
+
+1. **Foundation** #1 must adopt reviewed fixes (source adoption now complete), pass latest-head core/CodeQL and separate independent approval; merge only if authorized under rules. Keep `main` unchanged until all gates.
+2. **Trusted identity** (#34/#62) must become a real issuer/verifier, not merely PKCE transaction storage or illustrative authorization rules; define audience/subject/tenant and negative token tests.
+3. **Device Control Plane** (#2/#55/#67) must fix all four red regressions and prove authenticated tenant-scoped enroll/revoke, deny-on-error, idempotency and persistence.
+4. **Entitlements** (#3/#64) must issue/verify real bounded signed grants from an authoritative eligibility source; test device binding, expiration, revocation, key rotation and outage behavior. A billing prototype (#9/#73) is *not required* to make a non-paying isolated lab grant, but grant issuance must never trust a client-provided paid flag.
+5. **Trusted Node Registry + gateway/data plane** (#4/#65, #8, #11): a node actually exists in an isolated disposable lab, exposes proven non-fabricated health, verifies signed permit, runs reviewed VPN implementation with real routes/DNS. **No such operational gateway is verified yet**; do not claim connecting based on registry state.
+6. **One native lab client first** (Android #5/#66 is a candidate; iOS #6/#69 and desktop #7/#70 remain independent) must use actual OS VPN consent/tunnel APIs and reflect system-observed state; no UI-only `protected`.
+7. **Cross-lane security + QA** (#10/#74, #11/#71) must exercise connect/disconnect, timeout/revoke/replay, network switch, DNS/IP leak, failed node, rollback, no traffic history in logs. Obtain independent exact-head audit before any release or production use.
+
+### CI integration gates, existing vs required
+
+| Scope | Current evidence | Additional gate required before that lane's integration |
+|---|---|---|
+| Foundation Python | PR #1 `core` 28/28 PASS on `ead392f`; CodeQL pending at observation | latest-head CodeQL + non-author review #41/#38 |
+| Control Plane Python/SQLite | CI-only #67 four FAIL against byte-matched #55 | code-owner fix, Python unit+negative integration suite and current-head `core`+CodeQL |
+| Identity/entitlements/node authority | isolated drafts only | signed auth/entitlement contract integration, failure/replay/revocation tests, independent review |
+| Android Gradle/Kotlin | draft #66, no validated required Android job here | deterministic Gradle/JVM tests, Android lint/build and instrumented VpnService contract tests; coordinate issue #68 before merge |
+| iOS Swift/Network Extension | draft #69; no real tunnel proof | macOS/Xcode compile and unit tests, supported entitlement/device test; do not provision paid resources without owner |
+| Desktop UI/privileged adapter | draft #70; no real tunnel proof | repeatable Linux build/tests and privileged helper boundary tests |
+| Gateway + end-to-end VPN | no verified operational tunnel | safe disposable-lab connection and DNS/IP leak/fault-injection evidence per actual OS/protocol |
+
+**CTO next:** inspect final CodeQL outcome #44993810643, ask independent auditor #41 to re-review exact #1 head; keep #1 unmerged until distinct approval path #38. Separately coordinate owner #2 to remediate #55's four failures; never weaken the suite. Do not start parallel work across 22 products.
+
+---
+
+## Archived decision checkpoint (2026-11-21 20:50 UTC)
 
 - **P1 Control Plane:** source [#55](https://github.com/Dimash313/Wexum/pull/55) remains at `66532b4`; four negative cases fail on separate CI-only [#67](https://github.com/Dimash313/Wexum/pull/67), [core run #44873727876](https://github.com/Dimash313/Wexum/actions/runs/44873727876). Do not attribute that run to #55's own SHA. Wait for an owner-authored fix, then compare exact blobs and rerun required tests before re-audit.
 - **P1 Foundation/governance:** [#1](https://github.com/Dimash313/Wexum/pull/1) remains at `6b072ca`, without adopting remediation #58/#60. Independent review [#41](https://github.com/Dimash313/Wexum/issues/41) and approval enforcement [#38](https://github.com/Dimash313/Wexum/issues/38) block integration. The earlier finding of zero required approving reviews must be rechecked against live rules before any merge.
