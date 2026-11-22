@@ -104,7 +104,7 @@ def assess(manifest: Any) -> tuple[list[str], list[str]]:
                 errors.append(f"{ident}: evidence[{j}] must be object")
                 continue
             kind = record.get("kind")
-            if kind not in ("verification", "independent_review") or kind in seen_kinds:
+            if type(kind) is not str or kind not in ("verification", "independent_review") or kind in seen_kinds:
                 errors.append(f"{ident}: evidence kind must be unique verification/independent_review")
                 continue
             seen_kinds.add(kind)
