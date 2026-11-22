@@ -256,3 +256,10 @@ Do not publish sensitive exploit detail, live secrets or user IPs in public PR c
 - Scope: Security PR #71, owned metadata validator only. `assess()` previously evaluated `kind in seen_kinds` on arbitrary JSON values; a list or object raises `TypeError` instead of returning a validation error. Added explicit `str` type guard and negative regression for list/object/integer/null kinds.
 - Source and test commits: 6fb9d1eaf2a38ed034085ed8b6cd282893b481c8 / 77e30b6e5138a0604eed6bcc814369e2ee614a87. GitHub content updates used current blob SHA for each file. No other lanes or shared CI edited.
 - PASS: connector source read and SHA-guarded writes. NOT RUN: complete Python unittest, compileall, real VPN tests, GitHub CI on updated head. Independent audit pending; all 13 release gates remain blocked. Follow-up: execute security unittest and compileall on exact PR SHA, seek independent review; no merge.
+
+## 2026-11-22 — CLI malformed-kind negative regression (Security)
+
+- **Scope:** One bounded P1 regression test for existing `assess()` malformed evidence-kind guard, prompted by independent audit of PR #71. Existing issue #11 / branch `feat/vpn/11-security-review` / Draft PR #71; no product code or shared workflow edited.
+- **Change:** `test_cli_malformed_evidence_kind_returns_validation_exit_2` covers JSON array/object/integer/null `kind` values via the actual `main()` entry point, asserting exit code 2, `INVALID MANIFEST` and no `SCHEMA OK` output with `--require-attested`. Test commit `2e3def9605973c18932ecc9d368a4d43828a6ecf`.
+- **Evidence:** GitHub contents update used current blob SHA; test source re-read after commit. **NOT RUN:** actual Python unittest, compileall, exact-head CI, VPN/DNS/IP checks. Authored assertions are not execution evidence.
+- **Blockers / next:** Require execution of security tests and compileall on exact PR head in mandatory CI, independent review of output and Control #55 blockers before integration. Keep release blocked; do not merge or self-approve. Links: https://github.com/Dimash313/Wexum/pull/71 ; https://github.com/Dimash313/Wexum/issues/56 ; https://github.com/Dimash313/Wexum/issues/41 .
