@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WexumVPN</string>
+    <string name="home_title">WexumVPN</string>
+    <string name="home_subtitle">Native Android VPN client</string>
+    <string name="home_notice">VPN transport is not configured. This app does not protect your traffic yet.</string>
+    <string name="status_disconnected">Not connected</string>
+    <string name="status_consent">Waiting for VPN permission</string>
+    <string name="status_ready">Permission granted — not connected</string>
+    <string name="status_connecting">Connecting — not yet protected</string>
+    <string name="status_protected">Tunnel verified</string>
+    <string name="status_interrupted">Connection interrupted</string>
+    <string name="status_error">VPN unavailable</string>
+    <string name="permission_button">Request VPN permission</string>
+    <string name="language_button">App language</string>
+    <string name="language_legacy">This device uses its system language for the app.</string>
+    <string name="about_button">About connection safety</string>
+    <string name="about_title">Connection status</string>
+    <string name="about_message">Permission to create a VPN is not a working connection. WexumVPN does not create a tunnel until an audited VPN engine and backend are integrated. No protection is claimed.</string>
+    <string name="permission_denied">VPN permission was not granted.</string>
+</resources>

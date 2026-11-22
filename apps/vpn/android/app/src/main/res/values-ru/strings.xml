@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WexumVPN</string>
+    <string name="home_title">WexumVPN</string>
+    <string name="home_subtitle">VPN-клиент для Android</string>
+    <string name="home_notice">VPN-транспорт не настроен. Приложение пока не защищает трафик.</string>
+    <string name="status_disconnected">Не подключено</string>
+    <string name="status_consent">Ожидание разрешения VPN</string>
+    <string name="status_ready">Разрешение получено — нет подключения</string>
+    <string name="status_connecting">Подключение — защиты ещё нет</string>
+    <string name="status_protected">Туннель проверен</string>
+    <string name="status_interrupted">Соединение прервано</string>
+    <string name="status_error">VPN недоступен</string>
+    <string name="permission_button">Запросить разрешение VPN</string>
+    <string name="language_button">Язык приложения</string>
+    <string name="language_legacy">На этом устройстве используется системный язык.</string>
+    <string name="about_button">О безопасности подключения</string>
+    <string name="about_title">Статус подключения</string>
+    <string name="about_message">Разрешение VPN — не работающее соединение. WexumVPN не создаёт туннель без проверенного VPN-движка и серверной части. Защита не заявляется.</string>
+    <string name="permission_denied">Разрешение VPN не получено.</string>
+</resources>
