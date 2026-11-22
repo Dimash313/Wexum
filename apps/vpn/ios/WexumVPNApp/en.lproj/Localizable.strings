@@ -1,4 +1,5 @@
 "app.brand" = "WexumVPN";
+"status.checkingConfiguration" = "Checking VPN configuration — protection not verified";
 "status.noConfiguration" = "VPN not configured";
 "status.disconnected" = "Disconnected";
 "status.connecting" = "Connecting — not protected";
