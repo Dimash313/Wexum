@@ -158,6 +158,23 @@ class RegistryTests(unittest.TestCase):
                 self.registry.record_health(self.observe(at=reported), now=received)
         self.assertIsNone(self.registry.select(now=NOW))
 
+    def test_unrepresentable_expiry_rejected_without_state_mutation(self):
+        near_max = datetime.max.replace(tzinfo=timezone.utc) - timedelta(seconds=1)
+        with self.assertRaises(StaleObservationError):
+            self.registry.record_health(self.observe(at=near_max), now=near_max)
+        self.assertEqual(
+            self.registry.snapshot(now=near_max)[0].status,
+            AvailabilityStatus.UNREPORTED,
+        )
+        self.assertIsNone(self.registry.select(now=near_max))
+        early = datetime.min.replace(tzinfo=timezone.utc)
+        self.registry.record_health(self.observe(at=early), now=early)
+        self.assertEqual(
+            self.registry.snapshot(now=early)[0].status,
+            AvailabilityStatus.HEALTHY,
+        )
+        self.assertIsNotNone(self.registry.select(now=early))
+
     def test_region_and_capability_are_exact(self):
         self.registry.record_health(self.observe(), now=NOW)
         self.assertIsNone(self.registry.select(now=NOW, region_id="test-region-b"))
