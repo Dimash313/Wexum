@@ -84,6 +84,28 @@ class VPNUXContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate(self.data)
 
+    def test_prototype_activation_requires_trusted_service(self):
+        for source in ("user", "native_os", "trusted_identity", "trusted_provider"):
+            with self.subTest(source=source):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"]
+                            if t["event"] == "engine_integrated_and_preconditions_ready")
+                edge["source"] = source
+                with self.assertRaises(ValueError):
+                    validate(data)
+
+    def test_prototype_activation_cannot_skip_lifecycle(self):
+        for origin, target in (("signed_out", "disconnected"),
+                               ("prototype_unavailable", "verified_connected")):
+            with self.subTest(origin=origin, target=target):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"]
+                            if t["event"] == "engine_integrated_and_preconditions_ready")
+                edge["from"] = origin
+                edge["to"] = target
+                with self.assertRaises(ValueError):
+                    validate(data)
+
     def test_service_stopped_requires_trusted_service(self):
         for source in ("user", "native_os", "trusted_provider"):
             with self.subTest(source=source):
