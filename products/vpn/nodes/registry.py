@@ -186,6 +186,10 @@ class NodeRegistry:
         age = now - observation.observed_at
         if age < timedelta(0) or age >= self._ttl:
             raise StaleObservationError("observation must be fresh and not from the future")
+        try:
+            observation.observed_at + self._ttl
+        except OverflowError as exc:
+            raise StaleObservationError("observation expiry is outside supported datetime range") from exc
         with self._lock:
             node = self._nodes.get(observation.node_id)
             if node is None:
