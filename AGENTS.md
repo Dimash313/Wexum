@@ -19,7 +19,7 @@ Mandatory CTO operating instructions: [`docs/engineering/CTO_OPERATING_PROTOCOL.
 - One GitHub issue = one independently owned change = one branch = one PR, unless the issue explicitly defines a different arrangement.
 - Branch: `feat/<domain>/<issue-number>-<slug>`, `fix/<domain>/<issue-number>-<slug>`, or `docs/<domain>/<issue-number>-<slug>`.
 - Before changing a shared interface or cross-team file, create an interface proposal/ADR and obtain integrator approval. Avoid editing `docs/engineering/STATE.md` in parallel; only the integrator updates that file.
-- No direct commits to `main`, no force pushes, no self-approval, no unreviewed merge. Passing CI alone is not proof of production readiness.
+- No direct commits to `main`, no force pushes, no author self-approval and no unreviewed merge. For internal PRs, the distinct Independent Audit AI lane provides a documented verdict on the exact source SHA; passing mandatory GitHub Actions and clearing blockers remain necessary. Formal GitHub approval from a second human account is not a universal prerequisite unless the live ruleset requires it. Only the CTO/integrator may perform an authorized integration after these gates; an implementer must not self-merge. See `docs/engineering/INTERNAL_REVIEW_POLICY.md`. Passing CI alone is not proof of production readiness.
 - If blocked by unavailable API, dependency, tools or missing authority, report the blocker accurately; do not fabricate implementation or test results.
 - Do not introduce runtime dependencies, paid third-party APIs, cloud services or new infrastructure without a documented rationale and cost/security review.
 - No secrets, API tokens, credentials, private keys, user files or personal data in the repo, issues, test fixtures, logs or chat.
