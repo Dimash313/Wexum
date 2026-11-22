@@ -296,7 +296,7 @@
     {
       "from": "interrupted",
       "event": "network_restored",
-      "to": "disconnected",
+      "to": "reconnecting",
       "source": "native_os"
     },
     {
@@ -332,7 +332,7 @@
     {
       "from": "verified_connected",
       "event": "app_restarted",
-      "to": "disconnected",
+      "to": "interrupted",
       "source": "native_os"
     },
     {
