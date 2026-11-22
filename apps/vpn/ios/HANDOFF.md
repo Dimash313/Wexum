@@ -72,3 +72,14 @@ Updated: 2026-11-21 (UTC). **Source of truth: live GitHub, not a chat transcript
 - [iOS README](README.md) · [Apple gates](Docs/APPLE_GATES.md) · [Validation script](ci/ios-check.sh) · [Inactive macOS CI proposal](ci/macos-workflow.proposal.yml)
 
 **When the owner says «Продолжаем дальше»:** inspect current GitHub, read the mandatory docs and this handoff, choose the highest-priority unblocked item within issue #6, implement it in this branch, run every available genuine check, update Draft PR #69 and this handoff. If a cross-lane decision or Apple account is required, record the blocker and ask the integrator/owner through GitHub without modifying other lanes. A fresh AI should be able to continue from this document without asking the owner to repeat the history.
+
+
+## 2026-11-22 — P1 audit remediation: refresh must invalidate stale UI status
+
+- Independent audit: https://github.com/Dimash313/Wexum/pull/69#issuecomment-7063551605 (reviewed old head `72922fd7ddef6562d853bd7bd1b479711819c833`).
+- Existing issue #6 / branch `feat/vpn/6-client-ios` / Draft PR #69. Scope exclusively `apps/vpn/ios/`.
+- `ConnectionState` now has `configurationRefreshStarted` and a neutral `checkingConfiguration` phase. `ConnectionStore.refreshConfiguration()` clears old manager/ticket and applies the event synchronously before the asynchronous preference load. The view maps it to explicit unverified checking copy in EN/RU/KK/AR. A previous `connectedUnverified` label cannot persist while a new preferences read is pending.
+- Two authored deterministic regression XCTest methods cover a never-completing callback/stale native status and a successful refresh requiring fresh native status. **Authored, NOT RUN** on this GitHub source. No new proof of actual tunnel protection.
+- **NOT RUN:** Swift unit tests on exact current SHA, Apple SDK/Xcode build, simulator/device, GitHub Actions, integration, VPN traffic/DNS/IP leak tests. Do not treat source edits as successful tests.
+- **Remaining P1:** the asynchronous preferences API has no bounded timeout/failure fallback in this change; a missing callback leaves neutral checking status indefinitely. Owner must implement a cancellable, epoch-checked timeout with negative tests and verify on Xcode. Independent auditor must re-review the new exact head. Integrator owns SHA-pinned macOS workflow activation; no shared CI touched.
+- Rollback: revert only the above iOS-owned source, test and localization edits; no production deployment, secrets, accounts or migration.
