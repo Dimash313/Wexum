@@ -1,3 +1,10 @@
+## Audit checkpoint — 2026-11-22, PR #71 Unicode evidence URL hardening
+
+- **Target:** [PR #71](https://github.com/Dimash313/Wexum/pull/71), head `15d4f5fa0702d09f6722d02fdf2984874ebcb9ed`, base main `cc805a79b6dfc4e08e6866c1bc0653381755fb83`; previous reviewed `8cf1e079eb5ae4c4110efd66b5c3d78ced53c14c`. GitHub compare: 6 commits; `gate_check.py` +4/-1, `test_gate_check.py` +22, security HANDOFF +14.
+- **Reviewed:** current source, PR diff, open issue/PR inventory, prior PR discussion, zero review threads, AGENTS.md/REVIEW_PROTOCOL.md from **unmerged** foundation (main returned 404), auditor handoff. `_valid_evidence_url` rejects Unicode Cf controls and C0/C1 characters; negative tests authored. `--require-attested` remains unconditional failure, metadata cannot authorize release. 13 gates blocked, Control #55 negative regressions unresolved.
+- **Evidence:** PR-triggered workflow runs exact head 0 (first-page API only); independent Python tests NOT RUN; compileall NOT RUN; real VPN and external attestation NOT VERIFIED. No new confirmed bypass in static scope. **Decision NOT VERIFIED / integration BLOCKED**.
+- **Published:** https://github.com/Dimash313/Wexum/pull/71#issuecomment-7073052078. **Next:** exact-head unittest/compileall and mandatory integrated CI, evidence authenticity, independent non-author review, resolve Control #55. No merge, approval or product edits.
+
 # Wexum — Chief Independent Auditor HANDOFF
 
 ## Audit checkpoint — 2026-11-22, Control Plane #55 unresolved confirmed blockers (no duplicate PR comment)
