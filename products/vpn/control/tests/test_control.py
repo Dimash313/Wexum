@@ -227,107 +227,6 @@ class DeviceServiceTests(unittest.IsolatedAsyncioTestCase):
             lock.rollback()
             lock.close()
 
-    async def test_database_open_failure_is_a_stable_service_outage(self):
-        device = await self.register()
-        # A vanished parent directory must not leak raw SQLite errors.
-        self.store.path = self.db.parent / 'missing-parent' / 'devices.sqlite3'
-        try:
-            with self.assertRaisesRegex(EnrollmentUnavailable, '^device store unavailable
-        self.answer = decision(limit=1)
-        def enroll_raw(key):
-            return self.store.enroll(tenant_id='tenant-A',subject_id='subject-A',
-                platform='android',request_key=key,now=BASE,
-                expires_at=BASE+timedelta(days=1),max_devices=1)
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            futures=[pool.submit(enroll_raw, 'concurrent_req_1234'+str(i)) for i in range(2)]
-            outcomes=[]
-            for result in futures:
-                try:
-                    result.result()
-                    outcomes.append('ok')
-                except Exception as error:
-                    outcomes.append(type(error).__name__)
-        self.assertCountEqual(outcomes,['ok','StoreLimit'])
-        self.assertEqual(len(self.service.list_devices(actor=actor())),1)
-
-    async def test_user_scope_not_bypassed_by_client_device_uuid(self):
-        first = await self.register()
-        with self.assertRaises(DeviceNotFound):
-            self.service.revoke_device(actor=actor('tenant-A','other'),device_id=first.device_id)
-        with self.assertRaises(DeviceNotFound):
-            self.service.revoke_device(actor=actor(),device_id='00000000-0000-0000-0000-000000000000')
-
-
-if __name__ == '__main__':
-    unittest.main()
-):
-                self.service.list_devices(actor=actor())
-            with self.assertRaisesRegex(EnrollmentUnavailable, '^device store unavailable
-        self.answer = decision(limit=1)
-        def enroll_raw(key):
-            return self.store.enroll(tenant_id='tenant-A',subject_id='subject-A',
-                platform='android',request_key=key,now=BASE,
-                expires_at=BASE+timedelta(days=1),max_devices=1)
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            futures=[pool.submit(enroll_raw, 'concurrent_req_1234'+str(i)) for i in range(2)]
-            outcomes=[]
-            for result in futures:
-                try:
-                    result.result()
-                    outcomes.append('ok')
-                except Exception as error:
-                    outcomes.append(type(error).__name__)
-        self.assertCountEqual(outcomes,['ok','StoreLimit'])
-        self.assertEqual(len(self.service.list_devices(actor=actor())),1)
-
-    async def test_user_scope_not_bypassed_by_client_device_uuid(self):
-        first = await self.register()
-        with self.assertRaises(DeviceNotFound):
-            self.service.revoke_device(actor=actor('tenant-A','other'),device_id=first.device_id)
-        with self.assertRaises(DeviceNotFound):
-            self.service.revoke_device(actor=actor(),device_id='00000000-0000-0000-0000-000000000000')
-
-
-if __name__ == '__main__':
-    unittest.main()
-):
-                self.service.revoke_device(actor=actor(), device_id=device.device_id)
-            with self.assertRaisesRegex(EnrollmentUnavailable, '^device store unavailable
-        self.answer = decision(limit=1)
-        def enroll_raw(key):
-            return self.store.enroll(tenant_id='tenant-A',subject_id='subject-A',
-                platform='android',request_key=key,now=BASE,
-                expires_at=BASE+timedelta(days=1),max_devices=1)
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            futures=[pool.submit(enroll_raw, 'concurrent_req_1234'+str(i)) for i in range(2)]
-            outcomes=[]
-            for result in futures:
-                try:
-                    result.result()
-                    outcomes.append('ok')
-                except Exception as error:
-                    outcomes.append(type(error).__name__)
-        self.assertCountEqual(outcomes,['ok','StoreLimit'])
-        self.assertEqual(len(self.service.list_devices(actor=actor())),1)
-
-    async def test_user_scope_not_bypassed_by_client_device_uuid(self):
-        first = await self.register()
-        with self.assertRaises(DeviceNotFound):
-            self.service.revoke_device(actor=actor('tenant-A','other'),device_id=first.device_id)
-        with self.assertRaises(DeviceNotFound):
-            self.service.revoke_device(actor=actor(),device_id='00000000-0000-0000-0000-000000000000')
-
-
-if __name__ == '__main__':
-    unittest.main()
-):
-                await self.register(key='another_key_1234567')
-        finally:
-            self.store.path = self.db
-
-        # Failed requests must leave existing owner state untouched.
-        self.assertEqual(self.service.list_devices(actor=actor()), [device])
-
     async def test_database_device_limit_transaction_safe_under_threads(self):
         self.answer = decision(limit=1)
         def enroll_raw(key):
@@ -352,6 +251,21 @@ if __name__ == '__main__':
             self.service.revoke_device(actor=actor('tenant-A','other'),device_id=first.device_id)
         with self.assertRaises(DeviceNotFound):
             self.service.revoke_device(actor=actor(),device_id='00000000-0000-0000-0000-000000000000')
+
+
+    async def test_database_open_failure_maps_to_service_unavailable(self):
+        existing = await self.register()
+        self.store.path = self.db.parent / 'missing-parent' / 'devices.sqlite3'
+        try:
+            with self.assertRaises(EnrollmentUnavailable):
+                self.service.list_devices(actor=actor())
+            with self.assertRaises(EnrollmentUnavailable):
+                self.service.revoke_device(actor=actor(), device_id=existing.device_id)
+            with self.assertRaises(EnrollmentUnavailable):
+                await self.register(key='another_key_1234567')
+        finally:
+            self.store.path = self.db
+        self.assertEqual(self.service.list_devices(actor=actor()), [existing])
 
 
 if __name__ == '__main__':
