@@ -48,6 +48,8 @@ final class ConnectionStore: ObservableObject {
     func refreshConfiguration() {
         let ticket = observationEpoch.beginRefresh()
         managerTicket = nil
+        manager = nil
+        state.apply(.configurationRefreshStarted)
         NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, error in
             Task { @MainActor [weak self] in
                 guard let self, self.observationEpoch.isCurrent(ticket) else { return }
