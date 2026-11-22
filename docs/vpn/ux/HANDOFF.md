@@ -1,3 +1,11 @@
+## 2026-11-22 — P1 engine failure event authority (bounded cycle)
+
+- **Issue / branch / Draft PR:** #39 / `docs/vpn/39-interface-specs` / #75. Proposed UX contract only, not merged; foundation PR #1 remains unmerged.
+- **Architecture:** `engine_failed` in the illustrative state contract is now accepted only from `trusted_service` for the exact `connecting -> error` edge. Source labels are documentation, **not** authenticated runtime identities.
+- **Commits:** validator `e07d07e9f204da1d3e5ddac4c21ef07af704f168`; regression tests `2994926a6780d71ac4f6e5cef61324ed87d7dd81`. Re-fetch current PR HEAD before further edits.
+- **Tests authored:** negative matrix for six non-service sources and two invalid lifecycle edges; positive trusted-service case. GitHub Contents writes confirmed. Python unit/contract, compileall, native builds, integration, Actions on final SHA and live VPN/device/DNS/IP: **NOT RUN**. Local `git ls-remote` failed DNS resolution of github.com; no false green claims.
+- **Risks / next owners:** UX owner to execute `python docs/vpn/ux/validate_contract.py`, `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v`, `python -m compileall -q docs/vpn/ux` on exact SHA; independent auditor to inspect the exact source and negative cases; CTO/integrator to define authenticated native service event provenance and mandatory CI. No merge until checks/audit and contract approval.
+
 ## 2026-11-22 — P1 identity event-source trust guard
 
 - **Scope:** Issue #39 / existing Draft PR #75, branch `docs/vpn/39-interface-specs`; source baseline `335674daddd862ca2528d2dae0382ad697980dfe` (unmerged foundation PR #1).
