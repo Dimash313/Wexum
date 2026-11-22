@@ -1,5 +1,14 @@
 # Wexum — Chief Independent Auditor HANDOFF
 
+## Audit checkpoint — 2026-11-22, PR #80 exact-head node replay CI
+
+- **Scope / priority:** independent assessment of CI-only [PR #80](https://github.com/Dimash313/Wexum/pull/80), Issue #56, head `7e39bacb19797f525deffcde65a505d931dc07bf`, base main `cc805a79b6dfc4e08e6866c1bc0653381755fb83`; related source [PR #65](https://github.com/Dimash313/Wexum/pull/65) head `e91d734ac5306bf3605962078730f7746d235e3a`. Current registry.py blob identical in both: `f3963343ff537ce81289859c5fdd6e39bfebca61`.
+- **Reviewed:** proposed foundation AGENTS.md and REVIEW_PROTOCOL.md (main AGENTS.md not yet merged), PR #80 discussion, resolved CodeQL thread, full registry.py, replay test patch, CI workflow, available open PR/issue search. Generation-rotation guards in register/remove/set_enabled/record_health and advisory revalidation reviewed. Trust boundary remains unimplemented.
+- **Actual GitHub CI evidence:** [core 44906218376](https://github.com/Dimash313/Wexum/actions/runs/44906218376) SUCCESS; independently inspected log confirms 28 foundation + 22 node + 3 negative replay tests, compilation and catalog validation. [CodeQL 44906218399](https://github.com/Dimash313/Wexum/actions/runs/44906218399) SUCCESS with SARIF upload; not proof of zero alerts. Auditor-local tests NOT RUN; real VPN, distributed persistence, trusted health adapter, grants, leaks NOT VERIFIED.
+- **Decision:** **NOT VERIFIED for integration / targeted generation-replay regression CI PASS**. Missing authenticated health ingestion, persistent/distributed generation semantics, capacity leasing, signed control-plane grants; unresolved Control Plane #55/#67 negative failures. Do not merge CI-only #80. Verify resolved CodeQL empty-except alert state.
+- **Published:** https://github.com/Dimash313/Wexum/pull/80#issuecomment-7071731181. **Next:** independently validate #65 latest SHA and integration trust contracts, obtain Control Plane fixes and exact integrated CI, non-author review. No developer code, main, or merges modified.
+
+
 ## Audit checkpoint — 2026-11-22, PR #71 evidence URL hardening
 
 - **Exact head:** https://github.com/Dimash313/Wexum/pull/71 at `8cf1e079eb5ae4c4110efd66b5c3d78ced53c14c`, previous audited `22d6b78d9daae8fe8080aefb49e09210a37a3332`. Seven commits, three changed paths: `docs/vpn/security/HANDOFF.md`, `gate_check.py`, `test_gate_check.py`. PR base `main`.
