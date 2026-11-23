@@ -158,6 +158,29 @@ class VPNUXContractTests(unittest.TestCase):
         edge["source"] = "trusted_service"
         validate(data)
 
+    def test_native_connected_unverified_provenance_guard(self):
+        for source in ("user", "trusted_identity", "trusted_entitlement", "trusted_nodes", "trusted_service", "trusted_provider"):
+            with self.subTest(source=source):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == "native_connected_unverified")
+                edge["source"] = source
+                with self.assertRaises(ValueError):
+                    validate(data)
+        for origin, target in (("disconnected", "connected_unverified"), ("connecting", "disconnected")):
+            with self.subTest(origin=origin, target=target):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == "native_connected_unverified")
+                edge["from"] = origin
+                edge["to"] = target
+                with self.assertRaises(ValueError):
+                    validate(data)
+
+    def test_native_connected_unverified_accepts_os_observation(self):
+        data = copy.deepcopy(self.data)
+        edge = next(t for t in data["transitions"] if t["event"] == "native_connected_unverified")
+        edge["source"] = "native_os"
+        validate(data)
+
     def test_os_permission_events_reject_non_os_sources(self):
         for event in ("permission_missing", "permission_granted", "permission_denied"):
             for source in ("user", "trusted_identity", "trusted_entitlement",
