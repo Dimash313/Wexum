@@ -177,3 +177,12 @@ Do not edit another workstream's HANDOFF.md or its docs without CTO coordination
 - Commits: validator `84b6715436f19bf2cb2dd79f31e82b2e24d700ea`; regression source `4d66012726cbdccd3e1d21112bc0ac0817fc460f`. Re-fetch HEAD before any subsequent write.
 - Evidence: GitHub accepted both file updates and blob SHAs. Python validator, unittest, compileall, Actions, native build, integration and live VPN/device tests: **NOT RUN** in this cycle. Authored negative tests are not passing test evidence. No actual VPN engine or protected tunnel exists.
 - Next: run `python docs/vpn/ux/validate_contract.py` and `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v` on the exact final PR HEAD; independent auditor to review authority semantics and source SHA; CTO/integrator to define authoritative service/engine contract and activate relevant mandatory CI. Acceptance requires actual passing checks and independent non-author review before integration. No self-merge or public release.
+
+
+## 2026-11-23 — P1 engine lifecycle provenance follow-up
+
+- **Issue/branch/Draft PR:** #39 / `docs/vpn/39-interface-specs` / #75 (unmerged proposed UX contract).
+- **Change:** `validate_contract.py` now constrains `engine_channel_lost` to `verified_connected -> interrupted` and `reassertion_started` to `verified_connected -> reconnecting`, both from declared `trusted_service`. Two unittest methods cover 12 wrong-source mutations, 4 wrong-edge mutations, and 2 accepted trusted cases.
+- **Evidence:** GitHub Contents API accepted source and test writes on exact prior blobs `d84d91aac4c43352278c5403e96d92345f679e6d` and `1a4e33cb307a6c9b2a328dd00851d53f3d3490ea`. Source inspection only; **Python unit, validator execution, compileall, contract runtime, native build, integration, device/live VPN and leak tests: NOT RUN** (local Git remote DNS unavailable). New tests are authored, **not verified passing**.
+- **Architecture/risk:** This validates only labels in a proposed JSON UX contract. It does **not** authenticate event producers or prove OS tunnel teardown, DNS/route correctness or packet protection. Backend/native authority and identity checks require CTO/security review.
+- **Next:** execute `python docs/vpn/ux/validate_contract.py`, `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v`, `python -m compileall -q docs/vpn/ux` on final SHA; obtain independent AI audit and mandatory GitHub CI on integration SHA. No self-merge.
