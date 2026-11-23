@@ -127,6 +127,10 @@ def validate(data: Any) -> None:
             _fail("tunnel lifecycle cannot assert disconnected without trusted stop acknowledgement")
         if event == "engine_failed" and (origin != "connecting" or target != "error" or source != "trusted_service"):
             _fail("engine failure requires trusted service and exact lifecycle edge")
+        if event in {"engine_channel_lost", "reassertion_started"}:
+            expected_target = "interrupted" if event == "engine_channel_lost" else "reconnecting"
+            if origin != "verified_connected" or target != expected_target or source != "trusted_service":
+                _fail("engine lifecycle event requires trusted service and exact lifecycle edge")
         if event in {"sign_in_required", "sign_in_complete"} and source != "trusted_identity":
             _fail("identity lifecycle event requires trusted identity authority")
         if event in {"grant_revoked", "grant_expired", "entitlement_check_failed"} and source != "trusted_entitlement":
