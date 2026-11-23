@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Wexum engineering instructions
+    url: https://github.com/Dimash313/Wexum/blob/main/AGENTS.md
+    about: "Review the engineering rules before opening a coding task. This link is available once the foundation PR is merged."

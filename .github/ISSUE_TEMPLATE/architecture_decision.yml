@@ -1,0 +1,35 @@
+name: "Architecture / shared interface change"
+description: "An integrator-reviewed change to shared contracts or trust boundaries"
+title: "ARCH / <domain>: <decision>"
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem, constraints and evidence
+      description: "Explain why the existing contract is insufficient."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed architecture and exact files/interfaces
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and trade-offs
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Compatibility, data migration, security and rollback
+    validations:
+      required: true
+  - type: textarea
+    id: approval
+    attributes:
+      label: Dependent products, owners and review requirements
+    validations:
+      required: true
