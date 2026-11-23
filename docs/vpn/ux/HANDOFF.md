@@ -1,3 +1,12 @@
+## 2026-11-23 — P1 required-transition completeness regression
+
+- **Ownership:** Issue #39, branch `docs/vpn/39-interface-specs`, existing Draft PR #75; Foundation PR #1 remains unmerged. UX proposed contract only, not a VPN runtime.
+- **Finding:** strict allowlist previously rejected *extra or mutated* transitions, but silently accepted deletion of a reviewed transition. Removing e.g. a `grant_revoked`, `service_stopped` or `fresh_verified_snapshot` edge could leave the proposed contract incomplete without validator failure. This is specification drift, not an observed production VPN vulnerability.
+- **Change:** after per-edge checks, validator requires exact set equality with all 34 reviewed tuples. Regression methods remove entitlement-revocation, service-stop and verification edges and assert rejection; positive reference graph checks 34 edges. No new runtime producer or authentication mechanism.
+- **Commits:** validator `7d4de8686f4f141dd5a346fa0cc2c5d43f20ef23`; tests `065d509c8f6c7f41e743d285225f17361aeaf019`. This HANDOFF commit follows.
+- **Verification:** GitHub blob-conditional writes confirmed. Local `git ls-remote` failed DNS (`Could not resolve host: github.com`). Python unit/contract, compileall, native build, integration and live VPN/device/DNS/IP **NOT RUN**. GitHub Actions on final SHA and independent audit remain required; authored tests are not PASS evidence.
+- **Risk/next owners:** UX owner run `python docs/vpn/ux/validate_contract.py`, `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v` and `python -m compileall -q docs/vpn/ux` on final SHA. CTO/Integration own required UX CI and trusted native event contracts. Independent Audit review missing-edge negatives and exact SHA. No merge, release or protected-traffic claim.
+
 ## 2026-11-23 — P1 reviewed-transition allowlist hardening
 
 - **Scope:** Issue #39, branch `docs/vpn/39-interface-specs`, existing Draft PR #75. Foundation PR #1 unmerged. UX-only proposed contract; no native tunnel or protection evidence.
