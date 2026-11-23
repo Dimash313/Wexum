@@ -40,6 +40,44 @@ FORBIDDEN = frozenset({
 })
 
 
+# Reviewed UX illustration edges; adding or changing an edge requires explicit review.
+ALLOWED_TRANSITIONS = frozenset({
+    ("prototype_unavailable", "engine_integrated_and_preconditions_ready", "disconnected", "trusted_service"),
+    ("disconnected", "sign_in_required", "signed_out", "trusted_identity"),
+    ("signed_out", "sign_in_complete", "disconnected", "trusted_identity"),
+    ("disconnected", "permission_missing", "permission_required", "native_os"),
+    ("permission_required", "permission_granted", "disconnected", "native_os"),
+    ("permission_required", "permission_denied", "permission_denied", "native_os"),
+    ("disconnected", "start_requested", "connecting", "user"),
+    ("connecting", "native_connected_unverified", "connected_unverified", "native_os"),
+    ("connecting", "fresh_verified_snapshot", "verified_connected", "trusted_provider"),
+    ("connected_unverified", "fresh_verified_snapshot", "verified_connected", "trusted_provider"),
+    ("reconnecting", "fresh_verified_snapshot", "verified_connected", "trusted_provider"),
+    ("verified_connected", "reassertion_started", "reconnecting", "trusted_service"),
+    ("verified_connected", "disconnect_requested", "disconnecting", "user"),
+    ("connected_unverified", "disconnect_requested", "disconnecting", "user"),
+    ("connecting", "cancel_requested", "disconnecting", "user"),
+    ("reconnecting", "disconnect_requested", "disconnecting", "user"),
+    ("interrupted", "disconnect_requested", "disconnecting", "user"),
+    ("disconnecting", "service_stopped", "disconnected", "trusted_service"),
+    ("verified_connected", "network_lost", "interrupted", "native_os"),
+    ("connected_unverified", "network_lost", "interrupted", "native_os"),
+    ("reconnecting", "network_lost", "interrupted", "native_os"),
+    ("interrupted", "network_restored", "reconnecting", "native_os"),
+    ("verified_connected", "grant_expired", "subscription_expired", "trusted_entitlement"),
+    ("connecting", "grant_expired", "subscription_expired", "trusted_entitlement"),
+    ("verified_connected", "grant_revoked", "revoked", "trusted_entitlement"),
+    ("connected_unverified", "grant_revoked", "revoked", "trusted_entitlement"),
+    ("verified_connected", "engine_channel_lost", "interrupted", "trusted_service"),
+    ("verified_connected", "app_restarted", "interrupted", "native_os"),
+    ("verified_connected", "entitlement_check_failed", "access_check_unavailable", "trusted_entitlement"),
+    ("disconnected", "no_eligible_nodes", "no_nodes", "trusted_nodes"),
+    ("disconnected", "network_lost", "offline", "native_os"),
+    ("offline", "network_restored", "disconnected", "native_os"),
+    ("connecting", "engine_failed", "error", "trusted_service"),
+    ("error", "retry", "interrupted", "user"),
+})
+
 def _fail(message: str) -> None:
     raise ValueError(message)
 
@@ -119,6 +157,8 @@ def validate(data: Any) -> None:
             _fail("transition requires event name")
         if source not in SOURCES:
             _fail("unknown or untrusted event source")
+        if (origin, event, target, source) not in ALLOWED_TRANSITIONS:
+            _fail("transition is not in the reviewed UX allowlist")
         key = (origin, event)
         if key in seen:
             _fail("ambiguous duplicate transition")
