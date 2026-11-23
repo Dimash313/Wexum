@@ -1,3 +1,10 @@
+## 2026-11-23 — P1 UX user-intent provenance guard (bounded cycle)
+
+- **Scope:** Issue #39, existing branch `docs/vpn/39-interface-specs`, Draft PR #75; proposed UX specification only, no operational VPN. Foundation PR #1 remains unmerged.
+- **Change:** `validate_contract.py` now rejects non-`user` source labels for `start_requested`, `disconnect_requested`, `cancel_requested` and `retry`; `test_contract.py` adds 24 negative source mutations and four positive controls. This prevents a trusted backend/OS source label from being misrepresented as explicit user intent in the proposed transition table; it does **not** authenticate runtime event origin.
+- **Verification:** GitHub Contents API blob-conditional writes and exact-HEAD readback are source-presence checks only. Python validator, unittest/contract, compileall, native builds, integration and live VPN/device/DNS/IP are **NOT RUN** in this cycle due to local GitHub DNS failure. GitHub Actions and independent audit must be checked on the final exact SHA; no PASS is inferred from authored tests.
+- **Next owners / acceptance:** UX owner execute `python docs/vpn/ux/validate_contract.py`, `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v`, `python -m compileall -q docs/vpn/ux` on exact head. CTO/Integration owns trusted native event provenance and mandatory CI; Independent Audit independently review the new SHA and negative cases. No merge or protected-status claim until required checks and blockers clear.
+
 ## 2026-11-23 — P1 Node Registry provenance regression (bounded cycle)
 
 - **Ownership:** Issue #39, branch `docs/vpn/39-interface-specs`, Draft PR #75. Foundation PR #1 is unmerged. Proposed UX state contract only; no working VPN or authenticated Node Registry adapter.
