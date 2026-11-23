@@ -1,3 +1,13 @@
+## 2026-11-23 — P1 OS permission source guard (one bounded cycle)
+
+- **Ownership:** Issue #39; existing branch `docs/vpn/39-interface-specs`; Draft PR #75. Foundation PR #1 remains unmerged; this is a **proposed UX contract only**, not a working VPN.
+- **Finding:** Issue raised in [PR #75 comment](https://github.com/Dimash313/Wexum/pull/75#issuecomment-7088953577): permission lifecycle event source could be changed to another recognized source without validator rejection.
+- **Change:** `validate_contract.py` now requires `native_os` for `permission_missing`, `permission_granted`, and `permission_denied`. The additional missing-permission case shares the same OS authority boundary. `test_contract.py` adds 18 negative source mutations (3 events × 6 other sources) and 3 positive native OS cases.
+- **Commits:** guard `f807843d4cb1445ab21e982930ea5df14cc1b2c7`; regression source `8bfbb4c10eba2e6f6ad16f2ff32bfc9c2fd2ad64`. GitHub Contents API confirmed writes on exact previous blobs.
+- **Checks:** `git ls-remote https://github.com/Dimash313/Wexum.git HEAD` attempted in local container: **FAILED** (DNS `Could not resolve host: github.com`). Python validator, unit/contract suite, compileall, native build, integration, and live VPN/device/DNS/IP: **NOT RUN**. New tests are authored, **not** claimed passing. GitHub Actions on final HEAD must be checked separately.
+- **Risk:** JSON `source` is a specification label, not an authenticated OS callback. Native clients must bind real OS permission state and reject stale results. No claim of traffic protection or real consent validation.
+- **Next owners / acceptance:** UX owner runs `python docs/vpn/ux/validate_contract.py`, `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v`, `python -m compileall -q docs/vpn/ux` at exact latest SHA; independent auditor reviews all source-mutation negatives and current SHA; CTO/Integration owns mandatory CI and native source-authentication contract. No merge until required checks and independent review pass.
+
 ## 2026-11-22 — P1 engine failure event authority (bounded cycle)
 
 - **Issue / branch / Draft PR:** #39 / `docs/vpn/39-interface-specs` / #75. Proposed UX contract only, not merged; foundation PR #1 remains unmerged.
