@@ -1,3 +1,11 @@
+## 2026-11-23 — P1 native connection observation provenance guard
+
+- **Issue/branch/Draft PR:** #39 / `docs/vpn/39-interface-specs` / #75. Unmerged UX specification only; Foundation #1 remains unmerged.
+- **Change:** `native_connected_unverified` must be exactly `connecting -> connected_unverified` with `native_os` source. This prevents specification drift that could represent user/provider-origin status as an OS observation; it does **not** authenticate runtime OS callbacks or assert VPN protection.
+- **Regressions authored:** six negative sources, two wrong edges and one positive OS observation. Source-label validation only, no actual device/transport proof.
+- **Checks:** GitHub Contents API writes on previously read blob SHA; Python unit/contract, compileall, native build, integration and live VPN/device/DNS/IP **NOT RUN** because local GitHub checkout fails DNS. GitHub Actions on final head and independent audit remain required.
+- **Next:** UX owner run `python docs/vpn/ux/validate_contract.py`, `python -m unittest discover -s docs/vpn/ux -p "test_*.py" -v`, `python -m compileall -q docs/vpn/ux`; CTO/Integration own native callback authentication and CI; independent auditor inspect exact final SHA. Do not merge or imply a working VPN.
+
 ## 2026-11-23 — P1 OS permission source guard (one bounded cycle)
 
 - **Ownership:** Issue #39; existing branch `docs/vpn/39-interface-specs`; Draft PR #75. Foundation PR #1 remains unmerged; this is a **proposed UX contract only**, not a working VPN.
