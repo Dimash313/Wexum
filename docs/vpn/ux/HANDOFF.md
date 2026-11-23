@@ -1,3 +1,11 @@
+## 2026-11-23 — P1 OS network/restart event source guard
+
+- **Issue / branch / Draft PR:** #39 / `docs/vpn/39-interface-specs` / #75. Proposed UX contract only, not an operational VPN. Foundation #1 remains unmerged.
+- **Risk:** `network_lost`, `network_restored` and `app_restarted` could previously accept any recognized source label (including `user`), permitting proposed lifecycle authority drift. No runtime exploit is asserted.
+- **Change:** validator requires `native_os` for all three event names. Authored two regression methods: 18 negative source mutations and three positive native-OS checks. Validator commit `80210d86e141ed76e868879ae810d926c6835a9c`; tests commit `595e85faa168da7663987be73bf11fd50e4e562d`.
+- **Checks:** GitHub Contents API accepted both source writes on current file blob SHAs. Python unit/contract, compileall, native builds, integration, live VPN/device/DNS/IP: **NOT RUN**. Source labels do not authenticate actual OS callbacks; native clients must verify callback provenance and attempt freshness.
+- **Next:** UX owner execute `python docs/vpn/ux/validate_contract.py`, `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v`, `python -m compileall -q docs/vpn/ux` on final exact HEAD; Independent Audit inspect mutation tests and current SHA; CTO/Integration approve native provenance contract and required CI. No merge or protected-state claim.
+
 ## 2026-11-23 — P1 native connection observation provenance guard
 
 - **Issue/branch/Draft PR:** #39 / `docs/vpn/39-interface-specs` / #75. Unmerged UX specification only; Foundation #1 remains unmerged.
