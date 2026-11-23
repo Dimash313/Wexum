@@ -35,7 +35,7 @@ jobs:
           git log -1 --format='Checkout commit %H'
           actual="$(git rev-parse HEAD:products/vpn/subscriptions)"
           echo "Billing tree $actual"
-          test "$actual" = "c6b46df9888aec085f00098846349b05b3be947a"
+          test "$actual" = "4ea5d93a52c4916ac70124a653f23c4bb1b09896"
       - name: Billing syntax
         run: python -m compileall -q products/vpn/subscriptions/src products/vpn/subscriptions/tests
       - name: Billing full tests
