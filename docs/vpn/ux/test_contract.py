@@ -14,6 +14,30 @@ class VPNUXContractTests(unittest.TestCase):
     def state(self, identifier: str) -> dict:
         return next(s for s in self.data["states"] if s["id"] == identifier)
 
+    def test_undeclared_transition_cannot_bypass_protection_lifecycle(self):
+        for origin, event, target, source in (
+            ("verified_connected", "user_forced_disconnected", "signed_out", "user"),
+            ("connecting", "unknown_engine_success", "interrupted", "trusted_service"),
+            ("disconnected", "arbitrary", "signed_out", "trusted_identity"),
+        ):
+            with self.subTest(origin=origin, event=event):
+                data = copy.deepcopy(self.data)
+                data["transitions"].append({
+                    "from": origin, "event": event, "to": target, "source": source,
+                })
+                with self.assertRaises(ValueError):
+                    validate(data)
+
+    def test_declared_transition_target_or_source_cannot_drift(self):
+        for target, source in (("signed_out", "user"), ("interrupted", "trusted_service")):
+            with self.subTest(target=target, source=source):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == "disconnect_requested")
+                edge["to"] = target
+                edge["source"] = source
+                with self.assertRaises(ValueError):
+                    validate(data)
+
     def test_reference_contract_is_valid(self):
         validate(self.data)
 
