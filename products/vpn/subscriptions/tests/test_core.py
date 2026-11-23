@@ -219,8 +219,20 @@ class BillingTests(unittest.TestCase):
             SECRET, timestamp.encode("ascii") + b"." + body, hashlib.sha256
         ).hexdigest()
         headers = {"X-Test-Timestamp": timestamp, "X-Test-Signature": signature}
-        with self.assertRaisesRegex(SecurityError, "^invalid webhook JSON$"):
+        # Python versions differ in how deeply json.loads accepts nested arrays.
+        # Either parser rejection or top-level schema rejection must fail closed.
+        with self.assertRaisesRegex(SecurityError, "^(invalid webhook JSON|invalid event fields)$"):
             self.engine.accept_webhook("sandbox-test", body, headers, now=NOW)
+        self.assertEqual(self.snapshot().revision, 0)
+        self.assertFalse(self.snapshot().eligible)
+
+    def test_json_parser_recursion_error_is_sanitized_without_ledger_write(self):
+        from unittest.mock import patch
+
+        body = self._payload()
+        with patch("wexum_vpn_billing.core.json.loads", side_effect=RecursionError):
+            with self.assertRaisesRegex(SecurityError, "^invalid webhook JSON$"):
+                self.engine.accept_webhook("sandbox-test", body, self._headers(), now=NOW)
         self.assertEqual(self.snapshot().revision, 0)
         self.assertFalse(self.snapshot().eligible)
 
