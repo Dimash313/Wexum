@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, docs/engineering/76-cto-operating-protocol]
   schedule:
     - cron: "33 4 * * 1"
 
