@@ -15,10 +15,10 @@
 10. Compliance: store/legal licensing and ethical/religious review for affected features.
 
 ## Release blocker rules
-- Any critical security flaw, secret leak, unresolved cross-tenant access, broken data integrity, red CI, missing required human review or unresolved religious restriction blocks release.
+- Any critical security flaw, secret leak, unresolved cross-tenant access, broken data integrity, red/missing mandatory CI, absent or negative independent audit of the reviewed SHA, or unresolved religious restriction blocks integration or release. A separate human GitHub approval is not automatically required for ordinary internal PRs; actual repository rules and the public-production release gate still apply.
 - "Not applicable" needs a documented explanation, not an automatic pass.
 - A passing PR CI is necessary but not sufficient for production.
-- Tests and reviewer conclusions must be independently verified. Never fabricate commands, benchmarks, vulnerability scans or approval.
+- Tests and reviewer conclusions must be independently verified against exact source SHAs. An AI audit comment from the owner's connected account is not a distinct GitHub approval. Never fabricate commands, benchmarks, vulnerability scans or approval.
 - Product parity with a competitor is assessed by measured user workflows, reliability and audited scope, not branding.
 - No product-release numbers until actual product launch.
 

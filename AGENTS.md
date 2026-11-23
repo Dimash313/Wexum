@@ -2,6 +2,12 @@
 
 This document is binding for every ChatGPT, Codex and other coding agent working anywhere in this repository. The repository, not a chat transcript or assumed memory, is the source of truth.
 
+## CTO autonomous continuation — owner directive (issue #76)
+
+When the owner writes **«Продолжаем дальше»**, an agent acting as Wexum CTO / integrator must inspect live GitHub and autonomously **execute** the highest-priority available engineering step. Do not request a PR list, task allocation or repeated requirements from the owner. Use issues, PRs and checks to coordinate and verify actual work; delegate code within issue ownership and obtain repeat non-author audit for remediations. Escalate only owner-authority decisions (budget, strategy, substantial compromises, exceptional permissions). **This never waives green required CI, independent approval, security/privacy/religious review, branch protection or no-self-merge rules.**
+
+Mandatory CTO operating instructions: [`docs/engineering/CTO_OPERATING_PROTOCOL.md`](docs/engineering/CTO_OPERATING_PROTOCOL.md). New CTO sessions also read and maintain their owned [`docs/engineering/cto/HANDOFF.md`](docs/engineering/cto/HANDOFF.md) after checking the live repo; GitHub is the source of truth, not a previous chat transcript.
+
 ## Mandatory read order for every new session
 1. Inspect current repository, branch, status, latest commits and open PRs/issues. Do not assume the task is unfinished.
 2. Read this file, `README.md`, `docs/engineering/STATE.md`, `docs/architecture/SYSTEM.md`, `docs/architecture/BOUNDARIES.md`, `docs/engineering/QUALITY.md`, `docs/engineering/REVIEW_PROTOCOL.md`, and `docs/policy/RELIGIOUS_REVIEW.md`.
@@ -13,7 +19,7 @@ This document is binding for every ChatGPT, Codex and other coding agent working
 - One GitHub issue = one independently owned change = one branch = one PR, unless the issue explicitly defines a different arrangement.
 - Branch: `feat/<domain>/<issue-number>-<slug>`, `fix/<domain>/<issue-number>-<slug>`, or `docs/<domain>/<issue-number>-<slug>`.
 - Before changing a shared interface or cross-team file, create an interface proposal/ADR and obtain integrator approval. Avoid editing `docs/engineering/STATE.md` in parallel; only the integrator updates that file.
-- No direct commits to `main`, no force pushes, no self-approval, no unreviewed merge. Passing CI alone is not proof of production readiness.
+- No direct commits to `main`, no force pushes, no author self-approval and no unreviewed merge. For internal PRs, the distinct Independent Audit AI lane provides a documented verdict on the exact source SHA; passing mandatory GitHub Actions and clearing blockers remain necessary. Formal GitHub approval from a second human account is not a universal prerequisite unless the live ruleset requires it. Only the CTO/integrator may perform an authorized integration after these gates; an implementer must not self-merge. See `docs/engineering/INTERNAL_REVIEW_POLICY.md`. Passing CI alone is not proof of production readiness.
 - If blocked by unavailable API, dependency, tools or missing authority, report the blocker accurately; do not fabricate implementation or test results.
 - Do not introduce runtime dependencies, paid third-party APIs, cloud services or new infrastructure without a documented rationale and cost/security review.
 - No secrets, API tokens, credentials, private keys, user files or personal data in the repo, issues, test fixtures, logs or chat.

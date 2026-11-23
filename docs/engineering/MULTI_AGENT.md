@@ -8,7 +8,7 @@ GitHub is the coordination mechanism. More chats do not imply unlimited shared i
 - Agent creates one issue branch based on the latest accepted integration branch.
 - No agent edits another agent's branch or shares working directories. Never modify main directly.
 - Shared contracts, CI, lockfiles, policy and root AGENTS.md are integrator-owned. Product agents submit proposals before modifying them.
-- Agent opens a **draft PR** early, links issue and records blocked dependencies. Do not merge without green checks and independent review.
+- Agent opens a **draft PR** early, links issue and records blocked dependencies. Do not merge without all relevant mandatory green checks, a documented independent AI-auditor verdict on the exact SHA, and CTO integration authority. A separate human approver is not universally required for internal PRs; see `INTERNAL_REVIEW_POLICY.md`.
 - An integration agent serializes shared changes, verifies current base, resolves conflicts and updates STATE.md after merge only.
 
 ## Dependency order

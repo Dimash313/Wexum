@@ -11,7 +11,7 @@ This document describes only committed, reviewed, integrated work. It is maintai
 - No deployed VPN, identity server, billing system or enterprise readiness claim.
 
 ## Mandatory next integrations
-1. Review/merge foundation PR after CI succeeds and human approval.
+1. Review/merge foundation PR only after required current-head CI and an independent documented AI audit accepted by CTO; formal second-human GitHub approval is not mandatory for an internal PR unless the active ruleset requires it. Do not treat the foundation as integrated until the actual merge occurs.
 2. Define product trust boundaries and identity threat model.
 3. Implement isolated WexumVPN control-plane primitives and test harness.
 4. Build approved product architecture through separate issues and PRs.
