@@ -176,3 +176,9 @@ PRODUCT / WEXUM VPN      ← IBM Plex Mono, 12 px, uppercase
 - [ ] Прозрачность PNG проверена, шахматка не запечена в картинку.
 - [ ] Кириллица, казахские буквы, английский и арабский протестированы там, где используются.
 - [ ] Мобильный вид, доступность и контраст проверены.
+
+## 10. WEXUM Motion System — анимации и переходы
+
+Единый предлагаемый стандарт движения: [WEXUM Motion System](motion/WEXUM_MOTION_SYSTEM.md). Он описывает фирменные W-Trace, Precision Shift, Lock Pulse, Panel Reveal и Ambient Edge, тайминги, reduced motion, производительность и безопасные UI-состояния WexumVPN.
+
+> Motion-спецификация пока **PROPOSED** и не считается внедрённой в нативные приложения без отдельного CTO/UX-review и платформенных Draft PR.
