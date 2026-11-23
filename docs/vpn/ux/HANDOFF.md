@@ -1,3 +1,11 @@
+## 2026-11-23 — P1 Node Registry provenance regression (bounded cycle)
+
+- **Ownership:** Issue #39, branch `docs/vpn/39-interface-specs`, Draft PR #75. Foundation PR #1 is unmerged. Proposed UX state contract only; no working VPN or authenticated Node Registry adapter.
+- **Finding:** previously documented in PR #75 comment #7093206049: `no_eligible_nodes` accepted arbitrary recognized source labels, permitting proposed node-unavailable state drift.
+- **Change:** `validate_contract.py` requires `disconnected -> no_nodes` for `no_eligible_nodes` with `trusted_nodes` only. Regression tests include six invalid source labels, two invalid edges, one positive source case. Validator commit `33b86e9a29a1b8d5f78cf7667199a2f5c8710917`; tests commit `847cfd7f801fc8997930c7ede273755362c1d6a2`.
+- **Evidence:** GitHub Contents API accepted writes against fetched exact blob SHAs; HEAD rechecked between writes. Python unit/contract, compileall, native builds, integration and live VPN/device/DNS/IP: **NOT RUN**. Source checks are not runtime authentication; do not claim protection. Current-head mandatory CI and independent audit remain unverified.
+- **Next / acceptance:** UX owner execute `python docs/vpn/ux/validate_contract.py`, `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v`, `python -m compileall -q docs/vpn/ux` on final HEAD. CTO/Integration own authenticated Node Registry event boundary and mandatory CI for stacked PR; Independent Audit review exact SHA and negative cases. No merge before passing required checks and cleared blockers.
+
 ## 2026-11-23 — P1 OS network/restart event source guard
 
 - **Issue / branch / Draft PR:** #39 / `docs/vpn/39-interface-specs` / #75. Proposed UX contract only, not an operational VPN. Foundation #1 remains unmerged.
