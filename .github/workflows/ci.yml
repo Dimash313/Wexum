@@ -30,4 +30,16 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Catalog contract
         run: python scripts/validate_catalog.py
+      - name: Record Billing provenance
+        run: |
+          git log -1 --format='Checkout commit %H'
+          actual="$(git rev-parse HEAD:products/vpn/subscriptions)"
+          echo "Billing tree $actual"
+          test "$actual" = "c6b46df9888aec085f00098846349b05b3be947a"
+      - name: Billing syntax
+        run: python -m compileall -q products/vpn/subscriptions/src products/vpn/subscriptions/tests
+      - name: Billing full tests
+        env:
+          PYTHONPATH: products/vpn/subscriptions/src
+        run: python -m unittest discover -s products/vpn/subscriptions/tests -v
 
