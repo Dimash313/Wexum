@@ -21,6 +21,8 @@ flowchart TB
     Bill["Subscription authority"]
     Ent["Entitlements precheck"]
     Sign["Isolated signing authority"]
+    Auth["Fenced VPN authority, journal and outbox"]
+    Ctrl -->|scoped effective transitions| Auth
     ID -->|A verified actor| Ctrl
     Ctrl -->|B enrollment eligibility| Ent
     Bill -->|authoritative subscription| Ent
@@ -37,7 +39,9 @@ flowchart TB
   subgraph DP["Isolated Data Plane"]
     Verify["Gateway identity, verifier and admission state"]
     Worker["VPN packet engine"]
-    Verify -->|local admitted session| Worker
+    Gate["Expiring packet-path gate"]
+    Verify -->|fresh boot-bound allowance| Gate
+    Gate -->|enable or stop| Worker
   end
   Rig["Independent lab observers and QA"]
   Audit["Independent Audit and CTO"]
@@ -49,15 +53,18 @@ flowchart TB
   Reg -->|H advisory selection| Ctrl
   Sign -->|bounded permit via Control| Native
   Native -->|F permit and live peer proof| Verify
-  Verify -->|fresh admission check| Ctrl
+  Verify -->|F conditional admission and fresh activation| Auth
+  Auth -->|challenge-bound confirmation| Verify
   Native <-->|encrypted lab traffic| Worker
-  Ctrl -.->|J durable revoke| Dist
-  Dist -.->|versioned change and receipt| Verify
+  Auth -.->|J durable revoke| Dist
+  Dist -.->|versioned change| Verify
+  Verify -.->|boot-bound apply and enforcement receipt| Auth
+  Worker -.->|synthetic path sampled outside host| Rig
   Verify -.->|aggregate counters| Ops
   Rig -->|K sanitized measurements| Audit
 ```
 
-The lab fixture alternative feeds a private synthetic subscription authority. Its evidence cannot enter the real provider-ingestion interface. Gateway-to-Control interaction ends at admission, renewal or reconciliation. The packet worker has no Identity, Billing or Hub dependency.
+The lab fixture alternative feeds a private synthetic subscription authority. Its evidence cannot enter the real provider-ingestion interface. Gateway-to-Control traffic includes admission, activation, live authority challenges, renewal and reconciliation. The packet worker has no Identity, Billing or Hub dependency.
 
 ## 2. Login, verified actor and enrollment
 
@@ -135,14 +142,22 @@ sequenceDiagram
     G-->>C: Deny admission or report attempt pending
     C-->>U: No verified protection
   else Trusted and available
-    G->>G: Finalize one lease for confirmed current intent
-    G-->>C: Authenticated admission receipt and session generation
-    C->>O: Establish engine session and install approved routes and DNS
-    O-->>C: OS reports tunnel active
-    C-->>U: connected_unverified
-    O-->>C: Current engine, peer and local path evidence
-    C->>C: Match attempt, generation, entitlement, device and route policy
-    C-->>U: I verified_connected only when all evidence agrees
+    A-->>G: Committed revision and one reserved slot
+    G->>A: Fresh activation challenge for intent and current boot
+    A-->>G: Current disposition and anchored deadline
+    alt Positive fresh activation and matching local deny floor
+      G->>G: Arm gate once under local deny lock
+      G-->>C: Authenticated admission receipt and session generation
+      C->>O: Establish engine session and install approved routes and DNS
+      O-->>C: OS reports tunnel active
+      C-->>U: connected_unverified
+      O-->>C: Current engine, peer and local path evidence
+      C->>C: Match attempt, generation, entitlement, device and route policy
+      C-->>U: I verified_connected only when all evidence agrees
+    else Revoked or confirmation uncertain
+      G->>G: Leave gate closed and reconcile original allocation
+      G-->>C: Denied or pending with no forwarding
+    end
   end
 ```
 
@@ -161,7 +176,8 @@ sequenceDiagram
   else Current authority
     C-->>N: Successor permit bound to intended session and generation
     N->>G: Present successor with current peer proof
-    G->>C: Confirm current admission authority
+    G->>C: Commit successor against current floors and capacity
+    C-->>G: Fresh activation confirmation for current boot
     G->>G: Verify successor and atomically replace prior generation
     G-->>N: Replacement receipt or original result on identical retry
     Note over N,G: Engine rekey and policy renewal are distinct. Neither restores expired authority.
@@ -173,22 +189,25 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   participant A as Device or subscription authority
-  participant E as Outbox and delivery
+  participant E as VPN authority and outbox
   participant G as Gateway
   participant C as Privileged native adapter
   participant U as UI
-  A->>A: Commit revoke and outbox record in one transaction
-  A-->>E: J resource revision and event ID
+  A->>E: Submit scoped effective VPN restriction
+  E->>E: Serialize revoke at VPN authority with durable outbox
+  E-->>A: Committed VPN revision and event ID
   E-->>G: Authenticated asynchronous revoke
   alt Delivered or repeated
-    G->>G: Persist monotonic deny revision and cut off matching session
-    G-->>E: Applied receipt after enforcement
-    G-->>C: Authenticated session cutoff
+    G->>G: Persist contiguous deny floor and mark session closing
+    G-->>E: Applied receipt
+    G->>G: Close packet gate and drain queued traffic
+    G-->>E: Local enforced receipt if closure succeeded
+    G-->>C: Authenticated local enforcement disposition or unknown on failure
     C->>C: Stop engine and verify route cleanup
     C-->>U: Revoked or interrupted, clear verified claim
   else Receipt missing or Gateway restarted
     E->>E: Retry and reconcile from durable watermark
-    G->>A: Recover current deny state before new admissions
+    G->>E: Bootstrap from authoritative checkpoint and tail
     Note over A,G: Missing receipt means unknown enforcement. Escalate and isolate if required.
   end
 ```
@@ -207,7 +226,8 @@ sequenceDiagram
   C->>C: Invalidate prior attempt evidence and apply approved routing policy
   Note over C,G: Existing-session outage policy awaits CTO and Security. Measure actual forwarding.
   O-->>C: Network available again
-  C->>A: Resolve fresh actor, entitlement, peer and new attempt
+  C->>A: Resolve any unknown prior intent and prove prior session fenced
+  C->>A: Request fresh authority for reconnect after prior resolution
   alt Timeout, partition or unknown trust
     A-->>C: Deny fresh admission
     C-->>U: Offline or access check unavailable
@@ -241,3 +261,89 @@ flowchart TD
 ```
 
 Stage 3 can prove device enrollment against an explicitly approved private enrollment decision. Stage 4 validates the separate right to connect. Run order, owners, gates, artifacts and cleanup are in the [lab migration plan](LAB_MIGRATION_AND_ACCEPTANCE.md).
+
+## 9. Race at the authority and recovery of a lost commit reply
+
+```mermaid
+sequenceDiagram
+  participant D as Domain owner
+  participant G as Gateway boot G
+  participant A as Fenced VPN writer
+  participant L as Durable authority store
+  G->>A: Submit same tenant, intent, digest and prepared target
+  D->>A: Restrict bound device or session
+  alt Restriction takes writer first
+    A->>L: Commit deny floor and outbox at R
+    A->>L: Check admission against R and record denial
+    A-->>G: Denied with no slot
+  else Admission takes writer first
+    A->>L: Commit intent, spend, one slot, revision and outbox at R
+    A--xG: Admission response lost after commit
+    G->>G: Keep gate closed and outcome unknown
+    A->>L: Commit restriction and outbox at next revision
+    G->>A: Authenticated lookup of original intent and digest
+    A->>L: Linearizable read of outcome and present authority
+    A-->>G: Historical grant R, now revoked, no activation
+    G->>G: Persist deny and retire unused preparation
+  end
+  Note over G,L: If lookup is unavailable retain unknown. If still eligible obtain fresh activation for same allocation.
+```
+
+## 10. Active session during partition and independent cutoff evidence
+
+```mermaid
+sequenceDiagram
+  participant A as VPN authority
+  participant G as Gateway supervisor
+  participant F as Independent expiring packet gate
+  participant Q as QA ingress and egress observers
+  participant U as Native adapter and UI
+  G->>A: Fresh boot and session challenge at local send anchor
+  A-->>G: Current authorized revision and immutable limit
+  G->>F: Arm bounded deadline for current boot
+  Q->>Q: Calibrate each path and observe live markers
+  G--xA: Control partition while data path still forwards
+  A->>A: Commit revoke and retain outbox
+  G->>G: Detect loss by bounded deadline and refuse new work
+  G-->>U: Withdraw stale verified state if status channel reachable
+  alt A selected
+    F->>F: Expire positive confirmation and stop without grace
+  else B separately approved
+    F->>F: Honor only remaining pre-issued active lease
+    F->>F: Stop at fixed expiry or earlier explicit restriction
+  end
+  F-->>G: Report enforced if both directions closed
+  Q->>Q: Continue ingress, bound last egress and verify sensor health
+  alt Receipt and calibrated packet evidence match
+    Q->>Q: Confirm stopped for measured session and paths
+  else Missing observer or unreliable clock
+    Q->>Q: Mark cutoff unverified and block acceptance
+  end
+  Note over A,Q: Decision, packet cutoff and receipt arrival have distinct times. Lost ACK leaves the authority uncertain.
+```
+
+## 11. Restart, missing revisions and restored management
+
+```mermaid
+sequenceDiagram
+  participant G as Rebooted Gateway
+  participant F as Packet gate
+  participant M as Management
+  participant A as Fenced VPN authority
+  participant Q as QA observers
+  G->>F: Default deny before network forwarding
+  Q->>Q: Drive ingress and verify old traffic cannot resume
+  G->>M: Authenticate new boot and reader capabilities
+  M->>A: Fence prior peer generation and register successor
+  G->>A: Request snapshot at certified checkpoint and scoped stream tail
+  alt Unknown writer, old checkpoint, missing tail or incompatible reader
+    A-->>G: Quarantine, no new grant or activation
+  else Complete history and live authority
+    A-->>G: Current keys, denies, stream digest and high-water barrier
+    G->>G: Persist snapshot and contiguous suffix, reconcile old intents
+    G-->>A: Applied watermark for current boot
+    A->>A: Check fresh barrier, generation and retirement of prior paths
+    A-->>G: Eligible for fresh admission only after reconciliation
+  end
+  Note over M,A: Either channel may return first. Neither alone can resume an old session.
+```
