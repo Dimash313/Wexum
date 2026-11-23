@@ -133,6 +133,8 @@ def validate(data: Any) -> None:
                 _fail("engine lifecycle event requires trusted service and exact lifecycle edge")
         if event == "native_connected_unverified" and (origin != "connecting" or target != "connected_unverified" or source != "native_os"):
             _fail("native connection observation requires OS authority and exact unverified edge")
+        if event in {"network_lost", "network_restored", "app_restarted"} and source != "native_os":
+            _fail("network and app lifecycle observations require native OS authority")
         if event in {"permission_granted", "permission_denied", "permission_missing"} and source != "native_os":
             _fail("OS permission lifecycle event requires native OS authority")
         if event in {"sign_in_required", "sign_in_complete"} and source != "trusted_identity":
