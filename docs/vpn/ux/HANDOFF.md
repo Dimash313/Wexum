@@ -1,3 +1,13 @@
+## 2026-11-23 — P1 reviewed-transition allowlist hardening
+
+- **Scope:** Issue #39, branch `docs/vpn/39-interface-specs`, existing Draft PR #75. Foundation PR #1 unmerged. UX-only proposed contract; no native tunnel or protection evidence.
+- **Finding:** the validator previously accepted an undeclared event name on a new edge between recognized states (e.g. `verified_connected -> signed_out` with `user_forced_disconnected`), bypassing event-specific guards. Recorded in PR #75 comment #7103841370.
+- **Change:** explicit immutable `ALLOWED_TRANSITIONS` of 34 reviewed `(from,event,to,source)` tuples in `validate_contract.py`; any unknown or drifted edge is rejected before existing safety guards. This deliberately requires a reviewed code update for proposed state graph changes. Authored two regression methods (three unknown-edge negatives and two altered-edge negatives); existing reference-contract positive test remains.
+- **Commits:** validator `9bf6a443ec30fb2f8bada9b2b0b665c2bf2efe24`; regression tests `ff2d97e7ec33e13ad340973b8e89513b70ac049f`. HANDOFF commit follows. Changes confined to `docs/vpn/ux/`.
+- **Verification:** GitHub Contents API accepted blob-conditional writes. Local `git ls-remote` **FAILED** with `Could not resolve host: github.com`. Python unit/contract, compileall, native build, integration, and live VPN/device/DNS/IP **NOT RUN**. A code/source presence check is not a test PASS. Mandatory CI on final SHA and independent audit are pending.
+- **Risks:** source strings are documentation, not authenticated runtime provenance. An allowlist alone cannot guarantee genuine tunnel teardown or protection; OS/provider/identity/entitlement adapters and independent security review remain blocked by contracts and CI.
+- **Next owners / acceptance:** UX owner execute `python docs/vpn/ux/validate_contract.py`, `python -m unittest discover -s docs/vpn/ux -p 'test_*.py' -v`, `python -m compileall -q docs/vpn/ux` at exact final SHA. CTO/Integration own shared CI and authenticated event boundaries. Independent Audit independently inspect 34 allowlisted edges, negatives, exact SHA and required Actions; no merge before all mandatory checks and no BLOCKED findings.
+
 ## 2026-11-23 — P1 UX user-intent provenance guard (bounded cycle)
 
 - **Scope:** Issue #39, existing branch `docs/vpn/39-interface-specs`, Draft PR #75; proposed UX specification only, no operational VPN. Foundation PR #1 remains unmerged.
