@@ -131,6 +131,8 @@ def validate(data: Any) -> None:
             expected_target = "interrupted" if event == "engine_channel_lost" else "reconnecting"
             if origin != "verified_connected" or target != expected_target or source != "trusted_service":
                 _fail("engine lifecycle event requires trusted service and exact lifecycle edge")
+        if event in {"permission_granted", "permission_denied", "permission_missing"} and source != "native_os":
+            _fail("OS permission lifecycle event requires native OS authority")
         if event in {"sign_in_required", "sign_in_complete"} and source != "trusted_identity":
             _fail("identity lifecycle event requires trusted identity authority")
         if event in {"grant_revoked", "grant_expired", "entitlement_check_failed"} and source != "trusted_entitlement":
