@@ -1,0 +1,385 @@
+{
+  "schema": 1,
+  "status": "proposed",
+  "description": "UX-only contract. No native tunnel engine or trusted verification is implemented by this document.",
+  "default_state": "prototype_unavailable",
+  "verified_state": "verified_connected",
+  "verified_evidence": [
+    "os_tunnel_active",
+    "authenticated_engine_session",
+    "same_attempt_and_generation",
+    "fresh_authoritative_entitlement",
+    "device_not_revoked",
+    "network_path_current",
+    "verified_route_and_dns_policy"
+  ],
+  "runtime_feature_gates": [
+    "actual_connect_engine",
+    "authoritative_entitlement",
+    "real_node_registry",
+    "independent_security_review",
+    "network_and_dns_leak_device_tests"
+  ],
+  "states": [
+    {
+      "id": "prototype_unavailable",
+      "status_key": "vpn.status.prototype_unavailable",
+      "detail_key": "vpn.detail.prototype_unavailable",
+      "primary_action": "none",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "signed_out",
+      "status_key": "vpn.status.signed_out",
+      "detail_key": "vpn.detail.signed_out",
+      "primary_action": "sign_in",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "permission_required",
+      "status_key": "vpn.status.permission_required",
+      "detail_key": "vpn.detail.permission_required",
+      "primary_action": "request_permission",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "permission_denied",
+      "status_key": "vpn.status.permission_denied",
+      "detail_key": "vpn.detail.permission_denied",
+      "primary_action": "open_settings",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "disconnected",
+      "status_key": "vpn.status.disconnected",
+      "detail_key": "vpn.detail.disconnected",
+      "primary_action": "connect",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "connecting",
+      "status_key": "vpn.status.connecting",
+      "detail_key": "vpn.detail.connecting",
+      "primary_action": "cancel",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "connected_unverified",
+      "status_key": "vpn.status.connected_unverified",
+      "detail_key": "vpn.detail.connected_unverified",
+      "primary_action": "disconnect",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "verified_connected",
+      "status_key": "vpn.status.verified_connected",
+      "detail_key": "vpn.detail.verified_connected",
+      "primary_action": "disconnect",
+      "protection_claim": true,
+      "minimum_evidence": [
+        "os_tunnel_active",
+        "authenticated_engine_session",
+        "same_attempt_and_generation",
+        "fresh_authoritative_entitlement",
+        "device_not_revoked",
+        "network_path_current",
+        "verified_route_and_dns_policy"
+      ]
+    },
+    {
+      "id": "reconnecting",
+      "status_key": "vpn.status.reconnecting",
+      "detail_key": "vpn.detail.reconnecting",
+      "primary_action": "disconnect",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "disconnecting",
+      "status_key": "vpn.status.disconnecting",
+      "detail_key": "vpn.detail.disconnecting",
+      "primary_action": "none",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "interrupted",
+      "status_key": "vpn.status.interrupted",
+      "detail_key": "vpn.detail.interrupted",
+      "primary_action": "disconnect",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "offline",
+      "status_key": "vpn.status.offline",
+      "detail_key": "vpn.detail.offline",
+      "primary_action": "retry",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "subscription_expired",
+      "status_key": "vpn.status.subscription_expired",
+      "detail_key": "vpn.detail.subscription_expired",
+      "primary_action": "manage_subscription",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "access_check_unavailable",
+      "status_key": "vpn.status.access_check_unavailable",
+      "detail_key": "vpn.detail.access_check_unavailable",
+      "primary_action": "retry",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "revoked",
+      "status_key": "vpn.status.revoked",
+      "detail_key": "vpn.detail.revoked",
+      "primary_action": "sign_in",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "no_nodes",
+      "status_key": "vpn.status.no_nodes",
+      "detail_key": "vpn.detail.no_nodes",
+      "primary_action": "retry",
+      "protection_claim": false,
+      "minimum_evidence": []
+    },
+    {
+      "id": "error",
+      "status_key": "vpn.status.error",
+      "detail_key": "vpn.detail.error",
+      "primary_action": "retry",
+      "protection_claim": false,
+      "minimum_evidence": []
+    }
+  ],
+  "transitions": [
+    {
+      "from": "prototype_unavailable",
+      "event": "engine_integrated_and_preconditions_ready",
+      "to": "disconnected",
+      "source": "trusted_service"
+    },
+    {
+      "from": "disconnected",
+      "event": "sign_in_required",
+      "to": "signed_out",
+      "source": "trusted_identity"
+    },
+    {
+      "from": "signed_out",
+      "event": "sign_in_complete",
+      "to": "disconnected",
+      "source": "trusted_identity"
+    },
+    {
+      "from": "disconnected",
+      "event": "permission_missing",
+      "to": "permission_required",
+      "source": "native_os"
+    },
+    {
+      "from": "permission_required",
+      "event": "permission_granted",
+      "to": "disconnected",
+      "source": "native_os"
+    },
+    {
+      "from": "permission_required",
+      "event": "permission_denied",
+      "to": "permission_denied",
+      "source": "native_os"
+    },
+    {
+      "from": "disconnected",
+      "event": "start_requested",
+      "to": "connecting",
+      "source": "user"
+    },
+    {
+      "from": "connecting",
+      "event": "native_connected_unverified",
+      "to": "connected_unverified",
+      "source": "native_os"
+    },
+    {
+      "from": "connecting",
+      "event": "fresh_verified_snapshot",
+      "to": "verified_connected",
+      "source": "trusted_provider"
+    },
+    {
+      "from": "connected_unverified",
+      "event": "fresh_verified_snapshot",
+      "to": "verified_connected",
+      "source": "trusted_provider"
+    },
+    {
+      "from": "reconnecting",
+      "event": "fresh_verified_snapshot",
+      "to": "verified_connected",
+      "source": "trusted_provider"
+    },
+    {
+      "from": "verified_connected",
+      "event": "reassertion_started",
+      "to": "reconnecting",
+      "source": "trusted_service"
+    },
+    {
+      "from": "verified_connected",
+      "event": "disconnect_requested",
+      "to": "disconnecting",
+      "source": "user"
+    },
+    {
+      "from": "connected_unverified",
+      "event": "disconnect_requested",
+      "to": "disconnecting",
+      "source": "user"
+    },
+    {
+      "from": "connecting",
+      "event": "cancel_requested",
+      "to": "disconnecting",
+      "source": "user"
+    },
+    {
+      "from": "reconnecting",
+      "event": "disconnect_requested",
+      "to": "disconnecting",
+      "source": "user"
+    },
+    {
+      "from": "interrupted",
+      "event": "disconnect_requested",
+      "to": "disconnecting",
+      "source": "user"
+    },
+    {
+      "from": "disconnecting",
+      "event": "service_stopped",
+      "to": "disconnected",
+      "source": "trusted_service"
+    },
+    {
+      "from": "verified_connected",
+      "event": "network_lost",
+      "to": "interrupted",
+      "source": "native_os"
+    },
+    {
+      "from": "connected_unverified",
+      "event": "network_lost",
+      "to": "interrupted",
+      "source": "native_os"
+    },
+    {
+      "from": "reconnecting",
+      "event": "network_lost",
+      "to": "interrupted",
+      "source": "native_os"
+    },
+    {
+      "from": "interrupted",
+      "event": "network_restored",
+      "to": "reconnecting",
+      "source": "native_os"
+    },
+    {
+      "from": "verified_connected",
+      "event": "grant_expired",
+      "to": "subscription_expired",
+      "source": "trusted_entitlement"
+    },
+    {
+      "from": "connecting",
+      "event": "grant_expired",
+      "to": "subscription_expired",
+      "source": "trusted_entitlement"
+    },
+    {
+      "from": "verified_connected",
+      "event": "grant_revoked",
+      "to": "revoked",
+      "source": "trusted_entitlement"
+    },
+    {
+      "from": "connected_unverified",
+      "event": "grant_revoked",
+      "to": "revoked",
+      "source": "trusted_entitlement"
+    },
+    {
+      "from": "verified_connected",
+      "event": "engine_channel_lost",
+      "to": "interrupted",
+      "source": "trusted_service"
+    },
+    {
+      "from": "verified_connected",
+      "event": "app_restarted",
+      "to": "interrupted",
+      "source": "native_os"
+    },
+    {
+      "from": "verified_connected",
+      "event": "entitlement_check_failed",
+      "to": "access_check_unavailable",
+      "source": "trusted_entitlement"
+    },
+    {
+      "from": "disconnected",
+      "event": "no_eligible_nodes",
+      "to": "no_nodes",
+      "source": "trusted_nodes"
+    },
+    {
+      "from": "disconnected",
+      "event": "network_lost",
+      "to": "offline",
+      "source": "native_os"
+    },
+    {
+      "from": "offline",
+      "event": "network_restored",
+      "to": "disconnected",
+      "source": "native_os"
+    },
+    {
+      "from": "connecting",
+      "event": "engine_failed",
+      "to": "error",
+      "source": "trusted_service"
+    },
+    {
+      "from": "error",
+      "event": "retry",
+      "to": "interrupted",
+      "source": "user"
+    }
+  ],
+  "explicitly_forbidden_claim_triggers": [
+    "permission_granted",
+    "native_connected_unverified",
+    "network_restored",
+    "animation_finished",
+    "timer_elapsed",
+    "cached_snapshot",
+    "ui_toggle"
+  ],
+  "notes": "Transitions are illustrative UX handoff scenarios, not a complete state reducer. All authoritative state changes require current-session freshness checks; verified_state has no legitimate event producer in existing scaffolds. A retry after engine failure is non-protected and must not assert confirmed tunnel teardown; only a trusted service stop acknowledgement after a disconnecting phase may establish disconnected."
+}
