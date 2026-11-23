@@ -158,6 +158,25 @@ class VPNUXContractTests(unittest.TestCase):
         edge["source"] = "trusted_service"
         validate(data)
 
+    def test_os_permission_events_reject_non_os_sources(self):
+        for event in ("permission_missing", "permission_granted", "permission_denied"):
+            for source in ("user", "trusted_identity", "trusted_entitlement",
+                           "trusted_nodes", "trusted_service", "trusted_provider"):
+                with self.subTest(event=event, source=source):
+                    data = copy.deepcopy(self.data)
+                    edge = next(t for t in data["transitions"] if t["event"] == event)
+                    edge["source"] = source
+                    with self.assertRaises(ValueError):
+                        validate(data)
+
+    def test_os_permission_events_accept_native_os(self):
+        for event in ("permission_missing", "permission_granted", "permission_denied"):
+            with self.subTest(event=event):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == event)
+                edge["source"] = "native_os"
+                validate(data)
+
     def test_identity_lifecycle_requires_trusted_identity(self):
         for event in ("sign_in_required", "sign_in_complete"):
             for source in ("user", "native_os", "trusted_entitlement", "trusted_service", "trusted_provider", "trusted_nodes"):
