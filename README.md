@@ -2,7 +2,7 @@
 
 Wexum is a planned global technology ecosystem by **IhsanSoft**, with standalone applications and one integrated **Wexum Hub**. The repository is the **source of truth** for specifications, decisions, task ownership and code. No product is claimed to be ready for public release.
 
-**Start here:** [AGENTS.md](AGENTS.md) → [current state](docs/engineering/STATE.md) → [architecture](docs/architecture/SYSTEM.md) → [product catalog](docs/catalog/products.json).
+**Start here:** [AGENTS.md](AGENTS.md) → [current state](docs/engineering/STATE.md) → [architecture](docs/architecture/SYSTEM.md) → [product catalog](docs/catalog/products.json). CTO/integrator agents resuming after a chat replacement must also read the [CTO operating protocol](docs/engineering/CTO_OPERATING_PROTOCOL.md).
 
 ## Principles
 - Standalone products remain useful independently of Hub.
