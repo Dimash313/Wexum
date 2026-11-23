@@ -30,4 +30,19 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Catalog contract
         run: python scripts/validate_catalog.py
-
+      - name: Entitlements source provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          git log -1 --format='Checked out commit %H'
+          actual_tree="$(git rev-parse HEAD:products/vpn/entitlements)"
+          echo "Entitlements source tree: $actual_tree"
+          test "$actual_tree" = "7562a38aaab5defd9d114d38bac83e7160e105e5"
+          test -f products/vpn/entitlements/src/wexum_vpn_entitlements/policy.py
+          test -f products/vpn/entitlements/tests/test_policy.py
+      - name: Entitlements syntax
+        run: python -m compileall -q products/vpn/entitlements/src products/vpn/entitlements/tests
+      - name: Entitlements Python 3.12 complete suite
+        env:
+          PYTHONPATH: products/vpn/entitlements/src
+        run: python -m unittest discover -s products/vpn/entitlements/tests -v
