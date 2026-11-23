@@ -31,3 +31,109 @@ jobs:
       - name: Catalog contract
         run: python scripts/validate_catalog.py
 
+      - name: Verify Security checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show -s --format='checkout=%H parents=%P' HEAD
+          echo "ref=$GITHUB_REF"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          tree=$(git rev-parse HEAD:docs/vpn/security)
+          echo "security_tree=$tree"
+          test "$tree" = 2389c2962fad6f4dcc4f8215f8e912995ed309a9
+          git ls-tree -r HEAD -- docs/vpn/security
+          while read -r mode type blob path; do
+            test "$type" = blob
+            test "$(git hash-object --no-filters -- "$path")" = "$blob"
+          done < <(git ls-tree -r HEAD -- docs/vpn/security)
+          git diff --exit-code HEAD -- docs/vpn/security
+      - name: Compile Security on Python 3.12
+        shell: bash
+        run: |
+          set -euo pipefail
+          python --version
+          python -c 'import sys; assert sys.version_info[:2] == (3, 12)'
+          status=0
+          python -m compileall -q docs/vpn/security || status=$?
+          echo "compileall exit=$status"
+          exit "$status"
+      - name: Run the complete Security unittest suite
+        env:
+          PYTHONPATH: docs/vpn/security
+        shell: bash
+        run: |
+          set -euo pipefail
+          output=$(mktemp)
+          trap 'rm -f "$output"' EXIT
+          status=0
+          python -m unittest discover -s docs/vpn/security -p 'test_gate_check.py' -v >"$output" 2>&1 || status=$?
+          cat "$output"
+          echo "unittest exit=$status"
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+          grep -Eq '^Ran 29 tests in ' "$output"
+          grep -Fxq 'OK' "$output"
+      - name: Verify Security CLI exit codes and release blockers
+        env:
+          PYTHONPATH: docs/vpn/security
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          import subprocess
+          import sys
+          from tempfile import TemporaryDirectory
+
+          from test_gate_check import artificial_complete, baseline
+
+          security = Path("docs/vpn/security")
+          manifest = security / "release_gates.json"
+          warning = "this tool does NOT verify security evidence or grant release."
+
+          def check(label, path, expected, *messages, attested=False):
+              command = [sys.executable, str(security / "gate_check.py")]
+              if attested:
+                  command.append("--require-attested")
+              result = subprocess.run([*command, str(path)], capture_output=True, text=True)
+              print(f"{label}: exit={result.returncode} expected={expected}", flush=True)
+              print(result.stdout, end="")
+              print(result.stderr, end="", file=sys.stderr)
+              if result.returncode != expected or "Traceback" in result.stdout + result.stderr:
+                  raise SystemExit(f"{label}: unexpected process result")
+              if any(message not in result.stdout for message in messages):
+                  raise SystemExit(f"{label}: missing expected diagnostic")
+              if expected == 2 and "SCHEMA OK" in result.stdout:
+                  raise SystemExit(f"{label}: invalid input reported schema success")
+
+          schema = "SCHEMA OK; 14 unresolved metadata blockers; "
+          check("baseline schema", manifest, 0, schema + warning)
+          blocked = [f"BLOCKED: {gate['id']}: blocked" for gate in baseline()["gates"]]
+          check("baseline release", manifest, 1, schema + warning, *blocked,
+                "BLOCKED: SEC-CTRL-001: unresolved high finding", attested=True)
+
+          with TemporaryDirectory() as directory:
+              sample = Path(directory) / "manifest.json"
+              data = artificial_complete()
+              sample.write_text(json.dumps(data), encoding="utf-8")
+              check("synthetic schema", sample, 0, warning, "METADATA COMPLETE ONLY")
+              check("synthetic release", sample, 1, "0 unresolved metadata blockers",
+                    "BLOCKED: independent, externally verified release evidence is required", attested=True)
+
+              for kind in ([], {}, 1, None, "unknown"):
+                  data["gates"][0]["evidence"][0]["kind"] = kind
+                  sample.write_text(json.dumps(data), encoding="utf-8")
+                  check(f"invalid evidence.kind {kind!r}", sample, 2, "INVALID MANIFEST:",
+                        "evidence kind must be unique verification/independent_review", attested=True)
+
+              data = baseline()
+              data["unrecognized_scope"] = data.pop("scope")
+              sample.write_text(json.dumps(data), encoding="utf-8")
+              check("unknown field in place of required scope", sample, 2,
+                    "INVALID MANIFEST: scope must be WexumVPN", attested=True)
+
+              data = baseline()
+              data["target_sha"] = "invalid"
+              sample.write_text(json.dumps(data), encoding="utf-8")
+              check("invalid target SHA", sample, 2, "INVALID MANIFEST: target_sha", attested=True)
+
+              sample.write_text("{", encoding="utf-8")
+              check("malformed JSON", sample, 2, "INVALID MANIFEST: JSONDecodeError", attested=True)
