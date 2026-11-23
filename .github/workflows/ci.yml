@@ -1,0 +1,45 @@
+name: foundation-checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foundation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Syntax
+        run: python -m compileall -q src tests
+      - name: Tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+      - name: Catalog contract
+        run: python scripts/validate_catalog.py
+      - name: Record Billing provenance
+        run: |
+          git log -1 --format='Checkout commit %H'
+          actual="$(git rev-parse HEAD:products/vpn/subscriptions)"
+          echo "Billing tree $actual"
+          test "$actual" = "4ea5d93a52c4916ac70124a653f23c4bb1b09896"
+      - name: Billing syntax
+        run: python -m compileall -q products/vpn/subscriptions/src products/vpn/subscriptions/tests
+      - name: Billing full tests
+        env:
+          PYTHONPATH: products/vpn/subscriptions/src
+        run: python -m unittest discover -s products/vpn/subscriptions/tests -v
+
