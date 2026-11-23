@@ -1,0 +1,48 @@
+name: foundation-checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foundation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Syntax
+        run: python -m compileall -q src tests
+      - name: Tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+      - name: Catalog contract
+        run: python scripts/validate_catalog.py
+      - name: Entitlements source provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          git log -1 --format='Checked out commit %H'
+          actual_tree="$(git rev-parse HEAD:products/vpn/entitlements)"
+          echo "Entitlements source tree: $actual_tree"
+          test "$actual_tree" = "7562a38aaab5defd9d114d38bac83e7160e105e5"
+          test -f products/vpn/entitlements/src/wexum_vpn_entitlements/policy.py
+          test -f products/vpn/entitlements/tests/test_policy.py
+      - name: Entitlements syntax
+        run: python -m compileall -q products/vpn/entitlements/src products/vpn/entitlements/tests
+      - name: Entitlements Python 3.12 complete suite
+        env:
+          PYTHONPATH: products/vpn/entitlements/src
+        run: python -m unittest discover -s products/vpn/entitlements/tests -v
