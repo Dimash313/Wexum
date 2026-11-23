@@ -200,6 +200,10 @@ def validate(data: Any) -> None:
             _fail("verified proof event must target verified state")
         if event in FORBIDDEN and target == "verified_connected":
             _fail("forbidden event creates a protection claim")
+    if len(seen) != len(ALLOWED_TRANSITIONS) or {
+        (t["from"], t["event"], t["to"], t["source"]) for t in transitions
+    } != ALLOWED_TRANSITIONS:
+        _fail("reviewed UX transition graph is incomplete or changed")
     if not any(t["to"] == "verified_connected" for t in transitions):
         _fail("verified-state transition guard is untestable")
 
