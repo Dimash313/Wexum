@@ -219,6 +219,30 @@ class VPNUXContractTests(unittest.TestCase):
                 edge["source"] = "native_os"
                 validate(data)
 
+    def test_node_unavailable_rejects_untrusted_sources_and_wrong_edges(self):
+        for source in ("user", "native_os", "trusted_identity",
+                       "trusted_entitlement", "trusted_service", "trusted_provider"):
+            with self.subTest(source=source):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == "no_eligible_nodes")
+                edge["source"] = source
+                with self.assertRaises(ValueError):
+                    validate(data)
+        for origin, target in (("connecting", "no_nodes"), ("disconnected", "error")):
+            with self.subTest(origin=origin, target=target):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == "no_eligible_nodes")
+                edge["from"] = origin
+                edge["to"] = target
+                with self.assertRaises(ValueError):
+                    validate(data)
+
+    def test_node_unavailable_accepts_trusted_registry(self):
+        data = copy.deepcopy(self.data)
+        edge = next(t for t in data["transitions"] if t["event"] == "no_eligible_nodes")
+        edge["source"] = "trusted_nodes"
+        validate(data)
+
     def test_identity_lifecycle_requires_trusted_identity(self):
         for event in ("sign_in_required", "sign_in_complete"):
             for source in ("user", "native_os", "trusted_entitlement", "trusted_service", "trusted_provider", "trusted_nodes"):
