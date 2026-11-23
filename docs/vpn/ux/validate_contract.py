@@ -137,6 +137,8 @@ def validate(data: Any) -> None:
             _fail("network and app lifecycle observations require native OS authority")
         if event in {"permission_granted", "permission_denied", "permission_missing"} and source != "native_os":
             _fail("OS permission lifecycle event requires native OS authority")
+        if event == "no_eligible_nodes" and (origin != "disconnected" or target != "no_nodes" or source != "trusted_nodes"):
+            _fail("node availability requires trusted registry and exact unavailable edge")
         if event in {"sign_in_required", "sign_in_complete"} and source != "trusted_identity":
             _fail("identity lifecycle event requires trusted identity authority")
         if event in {"grant_revoked", "grant_expired", "entitlement_check_failed"} and source != "trusted_entitlement":
