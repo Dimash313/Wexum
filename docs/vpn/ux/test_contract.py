@@ -38,6 +38,19 @@ class VPNUXContractTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate(data)
 
+    def test_reviewed_transition_deletion_is_rejected(self):
+        for event in ("grant_revoked", "service_stopped", "fresh_verified_snapshot"):
+            with self.subTest(event=event):
+                data = copy.deepcopy(self.data)
+                edge = next(t for t in data["transitions"] if t["event"] == event)
+                data["transitions"].remove(edge)
+                with self.assertRaisesRegex(ValueError, "incomplete or changed"):
+                    validate(data)
+
+    def test_reference_graph_has_exact_reviewed_edge_count(self):
+        self.assertEqual(len(self.data["transitions"]), 34)
+        validate(self.data)
+
     def test_reference_contract_is_valid(self):
         validate(self.data)
 
