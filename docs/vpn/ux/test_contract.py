@@ -123,6 +123,35 @@ class VPNUXContractTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate(data)
 
+    def test_engine_lifecycle_provenance_rejects_untrusted_sources_and_wrong_edges(self):
+        for event, expected_target in (("engine_channel_lost", "interrupted"),
+                                       ("reassertion_started", "reconnecting")):
+            for source in ("user", "native_os", "trusted_identity",
+                           "trusted_entitlement", "trusted_nodes", "trusted_provider"):
+                with self.subTest(event=event, source=source):
+                    data = copy.deepcopy(self.data)
+                    edge = next(x for x in data["transitions"] if x["event"] == event)
+                    edge["source"] = source
+                    with self.assertRaises(ValueError):
+                        validate(data)
+            for origin, target in (("connecting", expected_target),
+                                   ("verified_connected", "disconnected")):
+                with self.subTest(event=event, origin=origin, target=target):
+                    data = copy.deepcopy(self.data)
+                    edge = next(x for x in data["transitions"] if x["event"] == event)
+                    edge["from"] = origin
+                    edge["to"] = target
+                    with self.assertRaises(ValueError):
+                        validate(data)
+
+    def test_engine_lifecycle_provenance_accepts_trusted_service(self):
+        for event in ("engine_channel_lost", "reassertion_started"):
+            with self.subTest(event=event):
+                data = copy.deepcopy(self.data)
+                edge = next(x for x in data["transitions"] if x["event"] == event)
+                edge["source"] = "trusted_service"
+                validate(data)
+
     def test_engine_failure_accepts_trusted_service(self):
         data = copy.deepcopy(self.data)
         edge = next(t for t in data["transitions"] if t["event"] == "engine_failed")
