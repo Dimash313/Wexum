@@ -1,0 +1,98 @@
+name: wexum-desktop-checks
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - integration/7-desktop-ci-candidate
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout candidate source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Identify exact Desktop source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git log -1 --format='Checked out commit %H'
+          git rev-parse HEAD:apps/vpn/desktop
+          test -f apps/vpn/desktop/CMakeLists.txt
+      - name: Build and test C++20 core with GCC and Clang
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compiler in g++ clang++; do
+            "$compiler" --version | head -n 1
+            if [[ "$compiler" == "g++" ]]; then suffix=gcc; else suffix=clang; fi
+            cmake -S apps/vpn/desktop -B "build-desktop-$suffix" \
+              -DCMAKE_CXX_COMPILER="$compiler" \
+              -DBUILD_TESTING=ON -DWEXUM_DESKTOP_BUILD_UI=OFF
+            cmake --build "build-desktop-$suffix" --parallel 2
+            ctest --test-dir "build-desktop-$suffix" --output-on-failure --no-tests=error
+          done
+      - name: Audit CI test discovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          for suffix in gcc clang; do
+            test -x "build-desktop-$suffix/wexum_desktop_tests"
+            test -s "build-desktop-$suffix/Testing/Temporary/LastTest.log"
+            grep -q "wexum_desktop_core_tests" "build-desktop-$suffix/Testing/Temporary/LastTest.log"
+          done
+
+  desktop-qt-gui:
+    name: desktop-qt-gui
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Verify Desktop source provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          git log -1 --format='Checked out commit %H'
+          actual_tree="$(git rev-parse HEAD:apps/vpn/desktop)"
+          echo "Desktop source tree: $actual_tree"
+          test "$actual_tree" = "bd7a61529f7ef999650f9eb36639fa640664c73f"
+      - name: Install Ubuntu-packaged Qt6 Widgets
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat /etc/os-release
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qt6-base-dev qt6-base-dev-tools pkg-config
+          qt_version="$(pkg-config --modversion Qt6Widgets)"
+          echo "Qt6Widgets version: $qt_version"
+          dpkg --compare-versions "$qt_version" ge 6.5
+          cmake --version
+          c++ --version | head -n 1
+      - name: Configure and compile real Qt Widgets GUI target
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S apps/vpn/desktop -B build-desktop-qt-gui \
+            -DBUILD_TESTING=ON -DWEXUM_DESKTOP_BUILD_UI=ON \
+            -DCMAKE_BUILD_TYPE=Debug
+          grep -Fxq 'WEXUM_DESKTOP_BUILD_UI:BOOL=ON' build-desktop-qt-gui/CMakeCache.txt
+          cmake --build build-desktop-qt-gui \
+            --target wexumvpn_desktop wexum_desktop_tests --parallel 2
+          test -x build-desktop-qt-gui/wexumvpn_desktop
+          ctest --test-dir build-desktop-qt-gui --output-on-failure --no-tests=error
+          test -s build-desktop-qt-gui/Testing/Temporary/LastTest.log
+          grep -q 'wexum_desktop_core_tests' build-desktop-qt-gui/Testing/Temporary/LastTest.log
